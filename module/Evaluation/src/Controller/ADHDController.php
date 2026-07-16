@@ -14,6 +14,7 @@ class ADHDController extends AbstractActionController
      *     path="/api/evaluation/adhd",
      *     tags={"Evaluation - ADHD"},
      *     description="Get a list of ADHD records",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
      * )
      */
@@ -27,6 +28,7 @@ class ADHDController extends AbstractActionController
      *     path="/api/evaluation/adhd/create",
      *     tags={"Evaluation - ADHD"},
      *     description="Create a new ADHD record",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
      * )
      */
@@ -41,6 +43,7 @@ class ADHDController extends AbstractActionController
      *     tags={"Evaluation - ADHD"},
      *     description="Update an ADHD record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Updated")
      * )
      */
@@ -55,6 +58,7 @@ class ADHDController extends AbstractActionController
      *     tags={"Evaluation - ADHD"},
      *     description="Delete an ADHD record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Deleted")
      * )
      */

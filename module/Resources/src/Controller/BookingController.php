@@ -14,6 +14,7 @@ class BookingController extends AbstractActionController
      *     path="/api/resources/booking",
      *     tags={"Resources - Booking"},
      *     description="Get a list of Bookings",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
      * )
      */
@@ -30,6 +31,7 @@ class BookingController extends AbstractActionController
      *     path="/api/resources/booking/create",
      *     tags={"Resources - Booking"},
      *     description="Create a new Booking",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
      * )
      */
@@ -44,6 +46,7 @@ class BookingController extends AbstractActionController
      *     tags={"Resources - Booking"},
      *     description="Update a Booking",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Updated")
      * )
      */
@@ -58,6 +61,7 @@ class BookingController extends AbstractActionController
      *     tags={"Resources - Booking"},
      *     description="Delete a Booking",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Deleted")
      * )
      */

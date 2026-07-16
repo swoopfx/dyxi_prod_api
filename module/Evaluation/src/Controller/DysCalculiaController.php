@@ -14,6 +14,7 @@ class DysCalculiaController extends AbstractActionController
      *     path="/api/evaluation/dyscalculia",
      *     tags={"Evaluation - DysCalculia"},
      *     description="Get a list of DysCalculia records",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
      * )
      */
@@ -27,6 +28,7 @@ class DysCalculiaController extends AbstractActionController
      *     path="/api/evaluation/dyscalculia/create",
      *     tags={"Evaluation - DysCalculia"},
      *     description="Create a new DysCalculia record",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
      * )
      */
@@ -41,6 +43,7 @@ class DysCalculiaController extends AbstractActionController
      *     tags={"Evaluation - DysCalculia"},
      *     description="Update a DysCalculia record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Updated")
      * )
      */
@@ -55,6 +58,7 @@ class DysCalculiaController extends AbstractActionController
      *     tags={"Evaluation - DysCalculia"},
      *     description="Delete a DysCalculia record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Deleted")
      * )
      */

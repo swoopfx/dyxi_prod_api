@@ -14,6 +14,7 @@ class SettingsController extends AbstractActionController
      *     path="/api/resources/settings",
      *     tags={"Resources - Settings"},
      *     description="Get Settings",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
      * )
      */
@@ -30,6 +31,7 @@ class SettingsController extends AbstractActionController
      *     path="/api/resources/settings/create",
      *     tags={"Resources - Settings"},
      *     description="Create a new Setting",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
      * )
      */
@@ -44,6 +46,7 @@ class SettingsController extends AbstractActionController
      *     tags={"Resources - Settings"},
      *     description="Update a Setting",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Updated")
      * )
      */
@@ -58,6 +61,7 @@ class SettingsController extends AbstractActionController
      *     tags={"Resources - Settings"},
      *     description="Delete a Setting",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Deleted")
      * )
      */

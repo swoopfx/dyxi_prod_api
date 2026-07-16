@@ -14,6 +14,7 @@ class DyslexiaSubtypeController extends AbstractActionController
      *     path="/api/evaluation/dyslexia-subtype",
      *     tags={"Evaluation - DyslexiaSubtype"},
      *     description="Get a list of Dyslexia Subtypes",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
      * )
      */
@@ -27,6 +28,7 @@ class DyslexiaSubtypeController extends AbstractActionController
      *     path="/api/evaluation/dyslexia-subtype/create",
      *     tags={"Evaluation - DyslexiaSubtype"},
      *     description="Create a new Dyslexia Subtype",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
      * )
      */
@@ -41,6 +43,7 @@ class DyslexiaSubtypeController extends AbstractActionController
      *     tags={"Evaluation - DyslexiaSubtype"},
      *     description="Update a Dyslexia Subtype",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Updated")
      * )
      */
@@ -55,6 +58,7 @@ class DyslexiaSubtypeController extends AbstractActionController
      *     tags={"Evaluation - DyslexiaSubtype"},
      *     description="Delete a Dyslexia Subtype",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Deleted")
      * )
      */

@@ -14,6 +14,7 @@ class BillingController extends AbstractActionController
      *     path="/api/resources/billing",
      *     tags={"Resources - Billing"},
      *     description="Get a list of Billings",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
      * )
      */
@@ -30,6 +31,7 @@ class BillingController extends AbstractActionController
      *     path="/api/resources/billing/create",
      *     tags={"Resources - Billing"},
      *     description="Create a new Billing",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
      * )
      */
@@ -44,6 +46,7 @@ class BillingController extends AbstractActionController
      *     tags={"Resources - Billing"},
      *     description="Update a Billing",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Updated")
      * )
      */
@@ -58,6 +61,7 @@ class BillingController extends AbstractActionController
      *     tags={"Resources - Billing"},
      *     description="Delete a Billing",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Deleted")
      * )
      */

@@ -45,6 +45,7 @@ class GeneralController extends AbstractActionController
     /**
      * Used to retrieve list of gender
      * @OA\GET( path="/general/api/get-gender", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),
      * security={{"bearerAuth":{}}}
@@ -82,6 +83,7 @@ class GeneralController extends AbstractActionController
     /**
      * Used to retrieve The Users Profile
      * @OA\GET( path="/general/api/get-user-profile", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),
      * security={{"bearerAuth":{}}}
@@ -138,6 +140,7 @@ class GeneralController extends AbstractActionController
     /**
      * Used to retirve a list of waste Type
      * @OA\GET( path="/general/api/get-waste-type", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),
      * security={{"bearerAuth":{}}}
@@ -174,6 +177,7 @@ class GeneralController extends AbstractActionController
     /**
      * Used to retirve a list of waste Type
      * @OA\GET( path="/general/api/get-waste-collection-type", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),
      * security={{"bearerAuth":{}}}
@@ -208,6 +212,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * @OA\GET( path="/general/api/get-waste-request-type", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
      * @OA\Response(response="401", description="Not Authorized"),
@@ -245,6 +250,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * @OA\GET( path="/general/api/get-estimated-weight", tags={"General"}, description="get Estimted weight parameters",
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
      * @OA\Response(response="401", description="Not Authorized"),
@@ -282,6 +288,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * @OA\GET( path="/general/api/get-post-waste-status", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
      * @OA\Response(response="401", description="Not Authorized"),
@@ -320,6 +327,7 @@ class GeneralController extends AbstractActionController
     /**
      * Used to retirve pusher real time configuration parameter
      * @OA\GET( path="/general/api/get-pusher-config", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
      * @OA\Response(response="401", description="Not Authorized"),
@@ -353,6 +361,7 @@ class GeneralController extends AbstractActionController
     /**
      * Reteieves all events registered for real time communication
      * @OA\GET( path="/general/api/get-pusher-events", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
      * @OA\Response(response="401", description="Not Authorized"),
@@ -386,6 +395,7 @@ class GeneralController extends AbstractActionController
     /**
      * Reteieves all AWS credentials
      * @OA\GET( path="/general/api/get-aws-credentials", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
      * @OA\Response(response="401", description="Not Authorized"),
@@ -450,6 +460,7 @@ class GeneralController extends AbstractActionController
     /**
      * Reteieves all Banks
      * @OA\GET( path="/general/api/get-banks", tags={"General"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
      * @OA\Response(response="401", description="Not Authorized"),

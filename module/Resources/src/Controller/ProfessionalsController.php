@@ -14,6 +14,7 @@ class ProfessionalsController extends AbstractActionController
      *     path="/api/resources/professionals",
      *     tags={"Resources - Professionals"},
      *     description="Get a list of Professionals",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
      * )
      */
@@ -30,6 +31,7 @@ class ProfessionalsController extends AbstractActionController
      *     path="/api/resources/professionals/create",
      *     tags={"Resources - Professionals"},
      *     description="Create a new Professional",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
      * )
      */
@@ -44,6 +46,7 @@ class ProfessionalsController extends AbstractActionController
      *     tags={"Resources - Professionals"},
      *     description="Update a Professional",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Updated")
      * )
      */
@@ -58,6 +61,7 @@ class ProfessionalsController extends AbstractActionController
      *     tags={"Resources - Professionals"},
      *     description="Delete a Professional",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Deleted")
      * )
      */

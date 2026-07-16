@@ -14,6 +14,7 @@ class Ctoop2Controller extends AbstractActionController
      *     path="/api/evaluation/ctoop2",
      *     tags={"Evaluation - Ctoop2"},
      *     description="Get a list of Ctoop2 records",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
      * )
      */
@@ -27,6 +28,7 @@ class Ctoop2Controller extends AbstractActionController
      *     path="/api/evaluation/ctoop2/create",
      *     tags={"Evaluation - Ctoop2"},
      *     description="Create a new Ctoop2 record",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
      * )
      */
@@ -41,6 +43,7 @@ class Ctoop2Controller extends AbstractActionController
      *     tags={"Evaluation - Ctoop2"},
      *     description="Update a Ctoop2 record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Updated")
      * )
      */
@@ -55,6 +58,7 @@ class Ctoop2Controller extends AbstractActionController
      *     tags={"Evaluation - Ctoop2"},
      *     description="Delete a Ctoop2 record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Deleted")
      * )
      */

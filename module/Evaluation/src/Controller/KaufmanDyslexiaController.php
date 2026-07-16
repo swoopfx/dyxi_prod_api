@@ -14,6 +14,7 @@ class KaufmanDyslexiaController extends AbstractActionController
      *     path="/api/evaluation/kaufman-dyslexia",
      *     tags={"Evaluation - KaufmanDyslexia"},
      *     description="Get a list of Kaufman Dyslexia records",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
      * )
      */
@@ -27,6 +28,7 @@ class KaufmanDyslexiaController extends AbstractActionController
      *     path="/api/evaluation/kaufman-dyslexia/create",
      *     tags={"Evaluation - KaufmanDyslexia"},
      *     description="Create a new Kaufman Dyslexia record",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
      * )
      */
@@ -41,6 +43,7 @@ class KaufmanDyslexiaController extends AbstractActionController
      *     tags={"Evaluation - KaufmanDyslexia"},
      *     description="Update a Kaufman Dyslexia record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Updated")
      * )
      */
@@ -55,6 +58,7 @@ class KaufmanDyslexiaController extends AbstractActionController
      *     tags={"Evaluation - KaufmanDyslexia"},
      *     description="Delete a Kaufman Dyslexia record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Deleted")
      * )
      */

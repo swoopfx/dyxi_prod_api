@@ -25,7 +25,10 @@ class IndexController extends AbstractActionController
     {
         $openapi = (new \OpenApi\Generator())->generate([
             __DIR__ . '/../../../Application/src/Controller',
-            __DIR__ . '/../../../Authentication/src/Controller'
+            __DIR__ . '/../../../Authentication/src/Controller',
+            __DIR__ . '/../../../Resources/src/Controller',
+            __DIR__ . '/../../../Evaluation/src/Controller',
+            __DIR__ . '/../../../General/src/Controller'
         ]);
         $response = $this->getResponse();
         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');

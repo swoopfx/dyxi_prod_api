@@ -731,6 +731,7 @@ class ApiauthenticateController extends AbstractActionController
      * )
      * ),
      * ),
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success",
      *  content={
      *             @OA\MediaType(
@@ -865,6 +866,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * Reteieves a refresh token based on the validity of the old one
      * @OA\GET( path="/auth/ipa/refresh-token", tags={"Authentication"},
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="201", description="Success",
      *  content={
      *             @OA\MediaType(
@@ -1005,6 +1007,7 @@ class ApiauthenticateController extends AbstractActionController
      * )
      * ),
      * ),
+     * security={{"bearerAuth":{}}},
      *  @OA\Response(response="200", description="Success",
      *  content={
      *             @OA\MediaType(
@@ -1158,6 +1161,7 @@ class ApiauthenticateController extends AbstractActionController
      * )
      * ),
      * ),
+     * security={{"bearerAuth":{}}},
      *  @OA\Response(response="200", description="Success",
      *  content={
      *             @OA\MediaType(
@@ -1345,6 +1349,7 @@ class ApiauthenticateController extends AbstractActionController
      * )
      * ),
      * ),
+     * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="401", description="Not Authorized"),
      * @OA\Response(response="403", description="Not permitted")
@@ -1802,6 +1807,7 @@ class ApiauthenticateController extends AbstractActionController
      *             )
      *         )
      *     ),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(
      *         response="200",
      *         description="Success",
@@ -1920,6 +1926,7 @@ class ApiauthenticateController extends AbstractActionController
      *     path="/auth/ipa/google-initiate",
      *     tags={"Authentication"},
      *     description="Generates a stateless HMAC-signed anti-forgery state token and redirects to Google's authorization URL. No server-side session is required — the state is self-verifying.",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="302", description="Redirect to Google authorization page"),
      *     @OA\Response(response="500", description="Server configuration error")
      * )
@@ -1972,6 +1979,7 @@ class ApiauthenticateController extends AbstractActionController
      *     description="Google OAuth redirect callback. Validates the HMAC-signed stateless state parameter to prevent CSRF, then exchanges the code for tokens.",
      *     @OA\Parameter(name="code", in="query", required=true, description="Authorization code returned by Google", @OA\Schema(type="string")),
      *     @OA\Parameter(name="state", in="query", required=true, description="Stateless HMAC-signed anti-forgery token", @OA\Schema(type="string")),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(
      *         response="200",
      *         description="Success",
@@ -2105,6 +2113,7 @@ class ApiauthenticateController extends AbstractActionController
      *     path="/auth/ipa/apple-initiate",
      *     tags={"Authentication"},
      *     description="Generates a stateless HMAC-signed anti-forgery state token and redirects to Apple's authorization URL. No server-side session is required — the state is self-verifying.",
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(response="302", description="Redirect to Apple authorization page"),
      *     @OA\Response(response="500", description="Server configuration error")
      * )
@@ -2171,6 +2180,7 @@ class ApiauthenticateController extends AbstractActionController
      *             )
      *         }
      *     ),
+     * security={{"bearerAuth":{}}},
      *     @OA\Response(
      *         response="200",
      *         description="Success",
