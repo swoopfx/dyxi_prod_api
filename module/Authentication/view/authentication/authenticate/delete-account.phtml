@@ -1,0 +1,81 @@
+<div class="page-header bg-gradient-primary  position-relative m-3 border-radius-xl">
+
+    <div class="container pb-lg-9 pb-10 pt-7 postion-relative z-index-2">
+        <div class="row">
+            <div class="col-md-6 mx-auto text-center">
+                <h3 class="text-white">Delete account</h3>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="mt-n8">
+    <div class="container">
+
+    </div>
+</div>
+<div class="container my-6">
+    <div class="row">
+
+    </div>
+
+    <div id="ddd" class="row mt-8">
+        <div class="col-md-6 mx-auto text-center">
+            <h2>Provide us an email </h2>
+            <p>Use the form below to request an account deletion </p>
+            <div class="row">
+                <div class="col-8">
+                    <label>Email or Phone Number</label>
+                    <input v-model="dEmail" class="form-control" type="text">
+                </div>
+
+                <div class="col-3">
+                    <br>
+                    <button @click="submit()" class="btn btn-block form-control btn-success">SUBMIT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const deapp = Vue.createApp({
+        data() {
+            return {
+                dEmail: "",
+            }
+        },
+
+        methods: {
+            submit() {
+                if (this.dEmail == "") {
+                    this.$toast.open({
+                        message: "Field cannot be empty",
+                        type: "error",
+                        position: "top-right",
+                        duration: 20000,
+                        dismissible: true
+                    })
+                } else {
+                    let formData = new FormData();
+                    axios.post("/delete-account", formData).then((result) => {
+                        if (result.status == 201) {
+                            this.$toast.open({
+                                message: "We have received your request we will process it",
+                                type: "success",
+                                position: "top-right",
+                                duration: 20000,
+                                dismissible: true
+                            });
+                        }
+                    }).catch((err) => {
+
+                    });;
+                }
+            }
+        },
+    });
+    deapp.use(VueToast.ToastPlugin);
+    deapp.mount("#ddd");
+</script>

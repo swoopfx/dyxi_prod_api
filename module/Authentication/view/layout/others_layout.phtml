@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+
+use Application\Service\ApplicationService;
+
+?>
+<?= $this->doctype() ?>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <?= $this->headTitle(ApplicationService::APP_NAME)->setSeparator(' - ')->setAutoEscape(false) ?>
+
+    <!-- Font Awesome Icons -->
+    <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+    <?= $this->headMeta()
+        ->appendName('viewport', 'width=device-width, initial-scale=1.0')
+        ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
+    ?>
+
+    <!-- Le styles -->
+    <?= $this->headLink([
+        'rel' => 'shortcut icon',
+        'type' => 'image/vnd.microsoft.icon',
+        'href' => $this->basePath() . '/img/favicon.ico'
+    ])
+        ->prependStylesheet("https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css")
+        ->prependStylesheet($this->basePath("soft/assets/css/soft-ui-dashboard.css?v=1.0.6"))
+        ->prependStylesheet($this->basePath("soft/assets/css/nucleo-svg.css"))
+        ->prependStylesheet($this->basePath("soft/assets/css/nucleo-svg.css"))
+        ->prependStylesheet($this->basePath("soft/assets/css/nucleo-icons.css"))
+        ->prependStylesheet("https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700")
+
+    ?>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue-toast-notification@3"></script>
+    <link href="https://cdn.jsdelivr.net/npm/vue-toast-notification@3/dist/theme-sugar.css" rel="stylesheet">
+
+    <!-- Scripts -->
+    <?= $this->headScript() ?>
+</head>
+
+<body class="g-sidenav-show  bg-gray-100">
+   <?= $this->content ?>
+</body>
+
+
+
+</html>

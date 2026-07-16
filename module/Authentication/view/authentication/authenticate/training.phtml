@@ -1,0 +1,36 @@
+<?= $this->headtitle("Training"); ?>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <!-- Card header -->
+            <div class="card-header">
+                <h5 class="mb-0">Video Training</h5>
+
+            </div>
+            <div class="table-responsive">
+                <table class="table table-flush" id="datatable-basic">
+                    <thead class="thead-light">
+                        <tr>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Title</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Link</th>
+                            
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($data as $dat) : ?>
+                            <tr>
+                                <td class="text-sm font-weight-normal"><?= $dat["videoTitle"] ?></td>
+                                <td class="text-sm font-weight-normal"><a href="<?= $dat["videoLink"] ?>" target="_blank">Video</a></td>
+                                <td class="text-sm font-weight-normal">Edinburgh</td>
+
+                            </tr>
+                        <?php endforeach; ?>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
