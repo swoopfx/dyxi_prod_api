@@ -1,0 +1,18 @@
+<?php
+
+return [
+    'google_oauth' => [
+        'client_id' => 'dummy-google-client-id.apps.googleusercontent.com',
+        'client_secret' => 'dummy-google-client-secret',
+        'redirect_uri' => 'https://your-domain.com/auth/ipa/google-callback',
+        'scope' => 'openid email profile',
+        'frontend_redirect_url' => 'https://your-domain.com/auth/redirect',
+    ],
+    'apple_oauth' => [
+        'client_id' => 'dummy-apple-client-id',
+        'redirect_uri' => 'https://your-domain.com/auth/ipa/apple-initiate',
+        'scope' => 'name email',
+        'response_mode' => 'form_post',
+        'frontend_redirect_url' => 'https://your-domain.com/auth/redirect',
+    ],
+];

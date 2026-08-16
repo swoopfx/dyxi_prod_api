@@ -192,6 +192,12 @@ class User
      */
     private $appleId;
 
+    /**
+     * @ORM\Column(name="profile_pic", type="string", length=500, nullable=true)
+     * @var string|null
+     */
+    private $profilePic;
+
 
 
 
@@ -771,6 +777,30 @@ class User
     public function setAppleId(?string $appleId)
     {
         $this->appleId = $appleId;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of profilePic
+     *
+     * @return  string|null
+     */
+    public function getProfilePic()
+    {
+        return $this->profilePic;
+    }
+
+    /**
+     * Set the value of profilePic
+     *
+     * @param   string|null  $profilePic
+     *
+     * @return  self
+     */
+    public function setProfilePic(?string $profilePic)
+    {
+        $this->profilePic = $profilePic;
 
         return $this;
     }

@@ -99,145 +99,143 @@ class ApiauthenticateController extends AbstractActionController
     private $authPostmarkService;
 
 
-    public function indexAction()
-    {
-    }
-
     /**
-     * This API is used to authenticate the user
-     * @OA\POST( path="/auth/ipa/login", tags={"Authentication"}, description="The  authenticate connecting entities.You need to be authenticated and be authorized to access the rest endpoints for integration. To authenticate, need to make a request for a token.This token is then added to the authorization header of the request you send to the api endpoint. the granst_type must be client_credentials",
-     * @OA\RequestBody(
-     * @OA\MediaType(
-     * mediaType="application/json",
-     * @OA\Schema(required={"username", "password", "user_agent", "user_ip"},
-     * @OA\Property(property="username", type="string", example="ezekiel_a@yahoo.com", description="This could be either email or phone number "),
-     * @OA\Property(property="password", type="string", example="Oluwaseun1"),
-     * @OA\Property(property="user_agent", type="string", example="AppleWebKit/535.19 (KHTML, like Gecko)"),
-     * @OA\Property(property="user_ip", type="string", example="127.0.0.1"),
-     *
-     * )
-     * ),
-     * ),
-     *
-     * @OA\Response(response="200", description="Success",
-     *  content={
+     * This API is used to authenticate the user and retrieve a JWT bearer token.
+     * @OA\POST(
+     *     path="/auth/ipa/login",
+     *     tags={"Authentication"},
+     *     description="Authenticates client credentials (email or username, and password). On success, returns a JWT access token, user profile, and sets an HttpOnly cookie with the rotated refresh token.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *                     @OA\Property(
-     *                         property="schema",
-     *                         type="string",
-     *                         description="The type  of Authentication "
-     *                     ),
-     *
-     *                    @OA\Property(
-     *                         property="expires_in",
-     *                         type="integer",
-     *                         description="The response message"
-     *                     ),
-     *                    @OA\Property(
-     *                         property="token",
-     *                         type="string",
-     *                         description="The Bearer token"
-     *                     ),
-     *                     @OA\Property(
-     *                         property="luhn_token",
-     *                         type="array",
-     *                         description="Unique identifierfor the bearer token",
-     *                         @OA\Items
-     *                     ),
-     *                     example={
-     *                         "success": true,
-     *                         "schema": "Bearer",
-     *                         "expires_in": 7200,
-     *                        "token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0IiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdCIsImp0aSI6ImV6ZWtpZWxfYUB5YWhvby5jb20iLCJzdWIiOiJlemVraWVsX2FAeWFob28uY29tIiwiY29kZWQiOnsidXVpZCI6IjBhZjM1ODU3LWZhNTQtNGNiZi1iNTllLWUyYWI1ZjUzN2Y3MyIsInVpZCI6InJlc3U2NDUwMTk3MjZhNDc5IiwiYXVkIjoiNGJlODBlMTgtMmNlNi00YzM1LTgzYzEtNDU1NGVlMGM3ZjNlIiwiZW1haWwiOiJlemVraWVsX2FAeWFob28uY29tIiwicm9sZSI6MTAwLCJ0b2tlbl9pZCI6IjA2MzZiMTNkLThkNzQtNDRjYy05YjlhLWRhOThjZmU2MGI3MiJ9LCJpYXQiOjE2ODY4OTYxNzUuODAwNzY0LCJleHAiOjE2ODY4OTgwOTUuODAwNzY0fQ.mI71-srLbpX6V0g9yyFsaN4pKoa8UXydbG_td2_wu8g",
-     *                         "luhn_token": "26a14737-407b-4579-9f9d-a1df668e060a"
-     *                     }
+     *                     required={"username", "password", "user_agent", "user_ip"},
+     *                     @OA\Property(property="username", type="string", example="ezekiel_a@yahoo.com", description="User's registered email address or username"),
+     *                     @OA\Property(property="password", type="string", example="Oluwaseun1", description="User's plain text password"),
+     *                     @OA\Property(property="user_agent", type="string", example="Mozilla/5.0...", description="User agent string of the client device"),
+     *                     @OA\Property(property="user_ip", type="string", example="127.0.0.1", description="IP address of the client device"),
+     *                     @OA\Property(property="remember_me", type="boolean", example=true, description="Optional. If true, extends refresh token and session cookie lifetime to 90 days.")
      *                 )
      *             )
-     *         } ),
-     * @OA\Response(response="400", description="Error", content={
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Successful login, tokens and profile returned",
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="schema", type="string", example="Bearer"),
+     *                     @OA\Property(property="expires_in", type="integer", example=1800, description="Access token lifetime in seconds"),
+     *                     @OA\Property(property="token", type="string", example="eyJ0eXAi..."),
+     *                     @OA\Property(property="refresh_token", type="string", example="rt_64b...", description="Opaque refresh token value"),
+     *                     @OA\Property(property="luhn_token", type="string", example="26a14737...", description="Unique token ID value"),
      *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *                     @OA\Property(
-     *                         property="message",
-     *                         type="string",
-     *                         description="Information about the error"
-     *                     ),
-     *
-     *
-     *                     example={
-     *                         "success": false,
-     *                         "message": "Something went wrong",
-     *
-     *                     }
+     *                         property="user",
+     *                         type="object",
+     *                         @OA\Property(property="fullname", type="string", example="John Doe"),
+     *                         @OA\Property(property="email", type="string", example="john@doe.com"),
+     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="username", type="string", example="john_doe"),
+     *                         @OA\Property(property="uuid", type="string", example="d3b07384..."),
+     *                         @OA\Property(property="wallet", type="integer", example=120)
+     *                     )
      *                 )
      *             )
-     *         }),
-     * @OA\Response(response="403", description="Not permitted")
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. invalid credentials, unconfirmed email, or disabled account)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="AuthenticationError"),
+     *                     @OA\Property(property="description", type="string", example="Invalid Credentials")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed (non-POST request)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST.")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
      *
-     * @return void
+     * @return JsonModel
      */
     public function loginAction()
     {
-        // var_dump(GeneralService::generateKey(32));
-
         $request = $this->getRequest();
         $response = $this->getResponse();
         $jsonModel = new JsonModel();
-        if ($request->isPost()) {
-            // $json = file_get_contents('php://input');
-            $json = $request->getContent();
-            // Converts it into a PHP object
-            $postData = json_decode($json, true);
-            // $postData = (array) $postData;
-            // $this->loginInputFilter->setData($postData);
-            $errorMessageContainer = new Container("error_code");
-            try {
-                // Authenticate here
-                /**
-                 * @var ApiAuthenticateService
-                 */
-                $authResponse = $this->apiAuthService->setPost($postData)->authenticate();
-                $response->getHeaders()->addHeader($authResponse["cookie"]);
-                $response->setStatusCode(200);
-                $jsonModel->setVariables([
-                    "success"       => true,
-                    "schema"        => "Bearer",
-                    "expires_in"    => $authResponse["expire"],
-                    "token"         => $authResponse["token"],
-                    "refresh_token" => $authResponse["refresh_token"],  // opaque refresh token (also in HttpOnly cookie)
-                    "luhn_token"    => $authResponse["token_id"],
-                    "user" => [
-                        "fullname" => $authResponse["fullname"],
-                        "email"    => $authResponse["email"],
-                        "role"     => $authResponse["role"],
-                        "username" => $authResponse["username"],
-                        "uuid"     => $authResponse["uuid"],
-                        "wallet"   => intval($authResponse["wallet"])
-                    ]
-                ]);
-            } catch (\Throwable $th) {
-                $jsonModel->setVariables([
-                    "success"     => false,
-                    "description" => $th->getMessage(),
-                    "data"        => $th->getTrace()
-                ]);
 
-                $response->setStatusCode($errorMessageContainer->code);
-            }
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST."
+            ]);
+            return $jsonModel;
+        }
+
+        // $json = file_get_contents('php://input');
+        $json = $request->getContent();
+        // Converts it into a PHP object
+        $postData = json_decode($json, true);
+        // $postData = (array) $postData;
+        // $this->loginInputFilter->setData($postData);
+        $errorMessageContainer = new Container("error_code");
+        try {
+            // Authenticate here
+            /**
+             * @var ApiAuthenticateService
+             */
+            $authResponse = $this->apiAuthService->setPost($postData)->authenticate();
+            $response->getHeaders()->addHeader($authResponse["cookie"]);
+            $response->setStatusCode(200);
+            $jsonModel->setVariables([
+                "success"       => true,
+                "schema"        => "Bearer",
+                "expires_in"    => $authResponse["expire"],
+                "token"         => $authResponse["token"],
+                "refresh_token" => $authResponse["refresh_token"],  // opaque refresh token (also in HttpOnly cookie)
+                "luhn_token"    => $authResponse["token_id"],
+                "user" => [
+                    "fullname" => $authResponse["fullname"],
+                    "email"    => $authResponse["email"],
+                    "role"     => $authResponse["role"],
+                    "username" => $authResponse["username"],
+                    "uuid"     => $authResponse["uuid"],
+                    "wallet"   => intval($authResponse["wallet"]),
+                    "profile_pic" => $authResponse["profile_pic"] ?? null
+                ]
+            ]);
+        } catch (\Throwable $th) {
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "AuthenticationError",
+                "description" => $th->getMessage()
+            ]);
+
+            $response->setStatusCode($errorMessageContainer->code ?: 400);
         }
 
         return $jsonModel;
@@ -272,18 +270,44 @@ class ApiauthenticateController extends AbstractActionController
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(property="success",       type="boolean"),
+     *                     @OA\Property(property="success",       type="boolean", example=true),
      *                     @OA\Property(property="schema",        type="string",  example="Bearer"),
      *                     @OA\Property(property="expires_in",    type="integer", example=1800),
      *                     @OA\Property(property="token",         type="string",  description="New access token"),
      *                     @OA\Property(property="refresh_token", type="string",  description="New rotated refresh token — store this and discard the old one"),
-     *                     @OA\Property(property="luhn_token",    type="string")
+     *                     @OA\Property(property="luhn_token",    type="string",  example="rt_xyz789")
      *                 )
      *             )
      *         }
      *     ),
-     *     @OA\Response(response="401", description="Invalid or expired refresh token"),
-     *     @OA\Response(response="400", description="Error")
+     *     @OA\Response(
+     *         response="401",
+     *         description="Unauthorized (Invalid, revoked, or expired refresh token)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="Unauthorized"),
+     *                     @OA\Property(property="description", type="string", example="Refresh token has been revoked or does not exist")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST.")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
      */
     public function refreshAction()
@@ -291,6 +315,16 @@ class ApiauthenticateController extends AbstractActionController
         $request   = $this->getRequest();
         $response  = $this->getResponse();
         $jsonModel = new JsonModel();
+
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST."
+            ]);
+            return $jsonModel;
+        }
 
         try {
             // Accept refresh token from: 1) Authorization header, 2) JSON body, 3) HttpOnly cookie
@@ -339,7 +373,8 @@ class ApiauthenticateController extends AbstractActionController
                     'role'     => $authResponse['role'],
                     'username' => $authResponse['username'],
                     'uuid'     => $authResponse['uuid'],
-                    'wallet'   => intval($authResponse['wallet'])
+                    'wallet'   => intval($authResponse['wallet']),
+                    'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
             ]);
 
@@ -364,7 +399,7 @@ class ApiauthenticateController extends AbstractActionController
      * @OA\POST(
      *     path="/auth/ipa/logout",
      *     tags={"Authentication"},
-     *     description="Revokes the supplied refresh token so it can never be used again. Send the refresh token in the Authorization header as `Bearer <refresh_token>`, or pass it in the JSON body.",
+     *     description="Revokes the supplied refresh token so it can never be used again, logging out the user device session. Send the refresh token in the Authorization header as `Bearer <refresh_token>`, or pass it in the JSON body.",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=false,
@@ -372,13 +407,52 @@ class ApiauthenticateController extends AbstractActionController
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(property="refresh_token", type="string")
+     *                     @OA\Property(property="refresh_token", type="string", description="Refresh token to revoke.")
      *                 )
      *             )
      *         }
      *     ),
-     *     @OA\Response(response="200", description="Logged out successfully"),
-     *     @OA\Response(response="400", description="Error")
+     *     @OA\Response(
+     *         response="200",
+     *         description="Logged out successfully",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="description", type="string", example="Logged out successfully")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. missing refresh token)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="LogoutError"),
+     *                     @OA\Property(property="description", type="string", example="Refresh token is missing")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST.")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
      */
     public function logoutAction()
@@ -386,6 +460,16 @@ class ApiauthenticateController extends AbstractActionController
         $request   = $this->getRequest();
         $response  = $this->getResponse();
         $jsonModel = new JsonModel();
+
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST."
+            ]);
+            return $jsonModel;
+        }
 
         try {
             $refreshToken = null;
@@ -436,88 +520,81 @@ class ApiauthenticateController extends AbstractActionController
     /**
      * Registers a Customer
      *
-     * @OA\POST( path="/auth/ipa/register", tags={"Authentication"}, description="This registeres a user",
-     * @OA\RequestBody(
-     * @OA\MediaType(
-     * mediaType="application/json",
-     * @OA\Schema(required={"fullname", "username", "email",  "password", "comfirm_password", "address_longitude", "address_google_place_id",  "userAgent", "userIp", "device_type"},
-     * @OA\Property(property="fullname", type="string", example="Idowu Yusuf Chukwuma"),
-     * @OA\Property(property="username", type="string", example="09012121212"),
-     * @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com"),
-     * @OA\Property(property="password", type="string", example="Oluwaseun1"),
-     * @OA\Property(property="address", type="string", example="15 Jacob adeleye street"),
-     * @OA\Property(property="address_google_place_id", type="string", example="erriindhikpsfjuhkjnooifjni3", description="Google place Id extracted from the google maps autocomplate functionality"),
-     * @OA\Property(property="address_longitude", type="string", example="3.4556666", description="address up longitude"),
-     * @OA\Property(property="address_latitude", type="string", example="1.45322", description="address latitude"),
-     * @OA\Property(property="confirm_password", type="string", example="Oluwaseun1"),
-     * @OA\Property(property="userIp", type="string", example="127.0.0.1"),
-     * @OA\Property(property="device_type", type="string", example="mobile", description="<p><ul><li>web</li> <li>mobile</li> <li>others</li></ul></p> "),
-     * )
-     * ),
-     * ),
-     * @OA\Response(response="200", description="Success",
-     *  content={
+     * @OA\POST(
+     *     path="/auth/ipa/register",
+     *     tags={"Authentication"},
+     *     description="Registers a new customer account in the system and triggers an email confirmation flow. Requires complete user profile information including address and geo-coordinates.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
+     *                     required={"fullname", "username", "email", "password", "confirm_password", "address_longitude", "address_latitude", "address_google_place_id", "userAgent", "userIp", "device_type"},
+     *                     @OA\Property(property="fullname", type="string", example="Idowu Yusuf Chukwuma", description="Full legal name of the user"),
+     *                     @OA\Property(property="username", type="string", example="09012121212", description="Desired unique username (phone number recommended)"),
+     *                     @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com", description="Valid, unique email address for verification"),
+     *                     @OA\Property(property="password", type="string", example="Oluwaseun1", description="Plain text password meeting strength requirements"),
+     *                     @OA\Property(property="confirm_password", type="string", example="Oluwaseun1", description="Must match password exactly"),
+     *                     @OA\Property(property="address", type="string", example="15 Jacob Adeleye Street", description="Formatted residential street address"),
+     *                     @OA\Property(property="address_google_place_id", type="string", example="ChIJN1t_tDeuEmsRUsoyG83VSY4", description="Google Place ID for location verification"),
+     *                     @OA\Property(property="address_longitude", type="string", example="3.4556666", description="Address longitude coordinate"),
+     *                     @OA\Property(property="address_latitude", type="string", example="1.45322", description="Address latitude coordinate"),
+     *                     @OA\Property(property="userAgent", type="string", example="Mozilla/5.0..."),
+     *                     @OA\Property(property="userIp", type="string", example="127.0.0.1"),
+     *                     @OA\Property(property="device_type", type="string", example="mobile", description="Device type context ('web', 'mobile', or 'others')")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="User registered successfully",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
      *                     @OA\Property(
      *                         property="data",
      *                         type="object",
-     *                         description="The type  of Authentication "
+     *                         @OA\Property(property="fullname", type="string", example="Idowu Yusuf Chukwuma"),
+     *                         @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com")
      *                     ),
-     *
-     *
-     *                    @OA\Property(
-     *                         property="description",
-     *                         type="string",
-     *                         description="The Bearer token"
-     *                     ),
-     *
-     *                     example={
-     *                         "success": true,
-     *                         "data": {
-     *                            "fullname": "Idowu Yusuf Chukwuma",
-     *                            "email": "ezekiel@yahoo.com"
-     *                          },
-     *                          "description": "Successfully Created Idowu Yusuf Chukwuma,  profile, please vist Email to confirm email"
-     *
-     *                     }
+     *                     @OA\Property(property="description", type="string", example="Successfully Created Idowu Yusuf Chukwuma, profile, please visit email to confirm email")
      *                 )
      *             )
-     *         } ),
-     * @OA\Response(response="400", description="Error", content={
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. email or username already exists, passwords mismatch, or validation failed)",
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *                     @OA\Property(
-     *                         property="message",
-     *                         type="string",
-     *                         description="Information about the error "
-     *                     ),
-     *
-     *
-     *                     example={
-     *                         "success": false,
-     *                         "message": "Something went wrong",
-     *
-     *                     }
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="RegisterError"),
+     *                     @OA\Property(property="description", type="string", example="A user with this email already exists")
      *                 )
      *             )
-     *         }),
-     * @OA\Response(response="403", description="Not permitted")
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST.")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
-     *
-     * @return void
      */
 
 
@@ -526,265 +603,266 @@ class ApiauthenticateController extends AbstractActionController
         $jsonModel = new JsonModel();
         $request = $this->getRequest();
         $response = $this->getResponse();
-        if ($request->isPost()) {
-            $json = file_get_contents('php://input');
 
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST."
+            ]);
+            return $jsonModel;
+        }
 
-            // Converts it into a PHP object
-            $postData = (array) json_decode($json, true);
+        $json = $request->getContent();
+        // Converts it into a PHP object
+        $postData = (array) json_decode($json, true);
 
-            try {
-                //code...
-                $responseData = $this->registerService->register($postData);
-                if (!is_null($responseData)) {
-                    $response->setStatusCode(201);
-
-                    $jsonModel->setVariables([
-                        "success" => true,
-                        "data" => [
-                            "fullname" => $responseData["fullname"],
-                            "email" => $responseData["email"],
-                        ],
-                        "description" => "Successfully Created {$responseData['fullname']},  profile, please vist Email to confirm email"
-                    ]);
-                }
-            } catch (\Throwable $th) {
-                //throw $th;
+        try {
+            $responseData = $this->registerService->register($postData);
+            if (!is_null($responseData)) {
+                $response->setStatusCode(201);
                 $jsonModel->setVariables([
-                    "success" => false,
-                    "description" => $th->getMessage(),
-                    // "errors" => $
+                    "success" => true,
+                    "data" => [
+                        "fullname" => $responseData["fullname"],
+                        "email" => $responseData["email"],
+                    ],
+                    "description" => "Successfully Created {$responseData['fullname']}, profile, please visit Email to confirm email"
                 ]);
-
-                $response->setStatusCode(400);
             }
+        } catch (\Throwable $th) {
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "RegistrationError",
+                "description" => $th->getMessage()
+            ]);
+            $response->setStatusCode(400);
         }
 
         return $jsonModel;
     }
 
     /**
-     * This API is used to verity users email
-     * @OA\POST( path="/auth/ipa/verify", tags={"Authentication"}, description="Verify user Email",
-     * @OA\RequestBody(
-     * @OA\MediaType(
-     * mediaType="application/json",
-     * @OA\Schema(required={"code", "email"},
-     * @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com"),
-     * @OA\Property(property="code", type="string", example="345634"),
-     * )
-     * ),
-     * ),
-     * @OA\Response(response="200", description="Success",
-     *  content={
+     * This API is used to verify the user's email address using the registration code.
+     *
+     * @OA\POST(
+     *     path="/auth/ipa/verify",
+     *     tags={"Authentication"},
+     *     description="Verifies the user's email address using a verification code sent during registration. On successful verification, the account state is set to Enabled.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *
-     *
-     *                     example={
-     *                         "success": true,
-     *
-     *                     }
+     *                     required={"code", "email"},
+     *                     @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com", description="The user's registered email address"),
+     *                     @OA\Property(property="code", type="string", example="345634", description="The verification code sent to the user's email")
      *                 )
      *             )
-     *         } ),
-     * @OA\Response(response="400", description="Error", content={
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Email verified successfully",
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *                     @OA\Property(
-     *                         property="message",
-     *                         type="string",
-     *                         description="Information about the error "
-     *                     ),
-     *       @OA\Property(
-     *                         property="error",
-     *                         type="string",
-     *                         description="Provide more information about the error "
-     *                     ),
-     *
-     *
-     *                     example={
-     *                         "success": false,
-     *                        "error":"Validation",
-     *                         "message": "Something went wrong",
-     *
-     *                     }
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="description", type="string", example="Email verified successfully")
      *                 )
      *             )
-     *         }),
-     * @OA\Response(response="403", description="Not permitted")
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. invalid code, email not found, or registration code mismatch)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="VerificationError"),
+     *                     @OA\Property(property="description", type="string", example="Invalid verification code")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST.")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
-     *
-     * @return void
      */
     public function verifyAction()
     {
         $jsonModel = new JsonModel();
         $request = $this->getRequest();
         $response = $this->getResponse();
-        // var_dump("Here");
-        if ($request->isPost()) {
-            $son = $request->getContent();
-            // var_dump($son);
-            $postData = json_decode($son, true);
-            // var_dump($postData);
-            $inputFilter = new InputFilter();
 
-            $inputFilter->add([
-                'name' => 'code',
-                'required' => true,
-                'allow_empty' => false,
-                'filters' => [
-                    [
-                        'name' => 'StripTags'
-                    ],
-                    [
-                        'name' => 'StringTrim'
-                    ]
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST."
+            ]);
+            return $jsonModel;
+        }
+
+        $son = $request->getContent();
+        $postData = json_decode($son, true);
+        $inputFilter = new InputFilter();
+
+        $inputFilter->add([
+            'name' => 'code',
+            'required' => true,
+            'allow_empty' => false,
+            'filters' => [
+                [
+                    'name' => 'StripTags'
                 ],
-                'validators' => [
-                    [
-                        'name' => 'NotEmpty',
-                        'options' => [
-                            'messages' => [
-                                'isEmpty' => 'Code is required'
-                            ]
+                [
+                    'name' => 'StringTrim'
+                ]
+            ],
+            'validators' => [
+                [
+                    'name' => 'NotEmpty',
+                    'options' => [
+                        'messages' => [
+                            'isEmpty' => 'Code is required'
                         ]
                     ]
                 ]
-            ]);
+            ]
+        ]);
 
-            $inputFilter->add([
-                'name' => 'email',
-                'required' => true,
-                'allow_empty' => false,
-                'filters' => [
-                    [
-                        'name' => 'StripTags'
-                    ],
-                    [
-                        'name' => 'StringTrim'
-                    ]
+        $inputFilter->add([
+            'name' => 'email',
+            'required' => true,
+            'allow_empty' => false,
+            'filters' => [
+                [
+                    'name' => 'StripTags'
                 ],
-                'validators' => [
-                    [
-                        'name' => 'NotEmpty',
-                        'options' => [
-                            'messages' => [
-                                'isEmpty' => 'Email is required'
-                            ]
+                [
+                    'name' => 'StringTrim'
+                ]
+            ],
+            'validators' => [
+                [
+                    'name' => 'NotEmpty',
+                    'options' => [
+                        'messages' => [
+                            'isEmpty' => 'Email is required'
                         ]
                     ]
                 ]
-            ]);
-            $inputFilter->setData($postData);
-            if ($inputFilter->isValid()) {
-                try {
-                    $data = $inputFilter->getValues();
-                    $this->registerService->confirmEmailMobile($data);
+            ]
+        ]);
+        $inputFilter->setData($postData);
+        if ($inputFilter->isValid()) {
+            try {
+                $data = $inputFilter->getValues();
+                $this->registerService->confirmEmailMobile($data);
 
-                    $jsonModel->setVariables([
-                        "success" => true
-                    ]);
-                } catch (\Throwable $th) {
-                    return $jsonModel->setVariables([
-                        "success" => false,
-                        "error" => "Logic",
-                        "description" => $th->getMessage()
-                    ]);
-                }
-            } else {
+                $jsonModel->setVariables([
+                    "success" => true
+                ]);
+            } catch (\Throwable $th) {
+                $response->setStatusCode(400);
                 $jsonModel->setVariables([
                     "success" => false,
-                    "error" => "Validation Error",
-                    "description" => $inputFilter->getMessages()
+                    "error" => "VerificationError",
+                    "description" => $th->getMessage()
                 ]);
-                $response = $this->getResponse();
-                $response->setStatusCode(400);
             }
+        } else {
+            $response->setStatusCode(400);
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "ValidationError",
+                "description" => $inputFilter->getMessages()
+            ]);
         }
         return $jsonModel;
     }
 
 
     /**
-     * Request another confimation code
-     * @OA\POST( path="/auth/ipa/resend-mobile-code", tags={"Authentication"}, description="Use this endpoint to request another account confimation code",
-     * @OA\RequestBody(
-     * @OA\MediaType(
-     * mediaType="application/json",
-     * @OA\Schema(required={"email"},
-     * @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com"),
+     * Request another confirmation code.
      *
-     * )
-     * ),
-     * ),
-     * security={{"bearerAuth":{}}},
-     * @OA\Response(response="200", description="Success",
-     *  content={
+     * @OA\POST(
+     *     path="/auth/ipa/resend-mobile-code",
+     *     tags={"Authentication"},
+     *     description="Generates a new verification code and resends it to the user's registered email or phone.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *
-     *
-     *                     example={
-     *                         "success": true,
-     *
-     *                     }
+     *                     required={"email"},
+     *                     @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com", description="Registered email address of the user")
      *                 )
      *             )
-     *         } ),
-     * @OA\Response(response="400", description="Error", content={
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Verification code resent successfully",
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *                     @OA\Property(
-     *                         property="message",
-     *                         type="string",
-     *                         description="Information about the error "
-     *                     ),
-     *       @OA\Property(
-     *                         property="error",
-     *                         type="string",
-     *                         description="Provide more information about the error "
-     *                     ),
-     *
-     *
-     *                     example={
-     *                         "success": false,
-     *                        "error":"Validation",
-     *                         "message": "Something went wrong",
-     *
-     *                     }
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="description", type="string", example="Confirmation code resent successfully")
      *                 )
      *             )
-     *         }),
-     * @OA\Response(response="403", description="Not permitted")
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. email not found, validation error)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="ValidationError"),
+     *                     @OA\Property(property="description", type="string", example="Email is required")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST.")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
-     *
-     * @return void
      */
     public function resendMobileCodeAction()
     {
@@ -792,69 +870,81 @@ class ApiauthenticateController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
         $em = $this->entityManager;
-        if ($request->isPost()) {
-            $json = $request->getContent();
-            $postData = json_decode($json, true);
-            $inputFilter = new InputFilter();
-            $inputFilter->add([
-                'name' => 'email',
-                'required' => true,
-                'allow_empty' => false,
-                'filters' => [
-                    [
-                        'name' => 'StripTags'
-                    ],
-                    [
-                        'name' => 'StringTrim'
-                    ]
+
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST."
+            ]);
+            return $jsonModel;
+        }
+
+        $json = $request->getContent();
+        $postData = json_decode($json, true);
+        $inputFilter = new InputFilter();
+        $inputFilter->add([
+            'name' => 'email',
+            'required' => true,
+            'allow_empty' => false,
+            'filters' => [
+                [
+                    'name' => 'StripTags'
                 ],
-                'validators' => [
-                    [
-                        'name' => 'NotEmpty',
-                        'options' => [
-                            'messages' => [
-                                'isEmpty' => 'Email is required'
-                            ]
+                [
+                    'name' => 'StringTrim'
+                ]
+            ],
+            'validators' => [
+                [
+                    'name' => 'NotEmpty',
+                    'options' => [
+                        'messages' => [
+                            'isEmpty' => 'Email is required'
                         ]
                     ]
                 ]
-            ]);
-            $inputFilter->setData($postData);
-            if ($inputFilter->isValid()) {
-                try {
-                    $data = $inputFilter->getValues();
-                    $mailData["email"] = $data["email"];
-                    $mailData["code"] = RegisterService::generateMobileCode();
-                    /**
-                     * @var User
-                     *
-                     */
-                    $userEntity = $em->getRepository(User::class)->findOneBy([
-                        "email" => $data["email"]
-                    ]);
-                    $userEntity->setUpdatedOn(new \Datetime())->setMobileActivateCode($mailData["code"]);
-                    $em->persist($userEntity);
-                    $em->flush();
-                    $this->mailtrapService->confirmEmail($mailData);
-                    $jsonModel->setVariables([
-                        "success" => true
-                    ]);
-                } catch (\Throwable $th) {
-                    $response->setStatusCode(400);
-                    $jsonModel->setVariables([
-                        "success" => false,
-                        "error" => "Process Error",
-                        "description" => "System culd not resend the code"
-                    ]);
-                }
-            } else {
-                $jsonModel->setVariables([
-                    "error" => "Validation Error",
-                    "description" => $inputFilter->getMessages()
+            ]
+        ]);
+        $inputFilter->setData($postData);
+        if ($inputFilter->isValid()) {
+            try {
+                $data = $inputFilter->getValues();
+                $mailData["email"] = $data["email"];
+                $mailData["code"] = RegisterService::generateMobileCode();
+                /**
+                 * @var User
+                 *
+                 */
+                $userEntity = $em->getRepository(User::class)->findOneBy([
+                    "email" => $data["email"]
                 ]);
-
+                if (!$userEntity) {
+                    throw new \Exception("User does not exist");
+                }
+                $userEntity->setUpdatedOn(new \Datetime())->setMobileActivateCode($mailData["code"]);
+                $em->persist($userEntity);
+                $em->flush();
+                $this->mailtrapService->confirmEmail($mailData);
+                $jsonModel->setVariables([
+                    "success" => true
+                ]);
+            } catch (\Throwable $th) {
                 $response->setStatusCode(400);
+                $jsonModel->setVariables([
+                    "success" => false,
+                    "error" => "ProcessError",
+                    "description" => $th->getMessage()
+                ]);
             }
+        } else {
+            $response->setStatusCode(400);
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "ValidationError",
+                "description" => $inputFilter->getMessages()
+            ]);
         }
         return $jsonModel;
     }
@@ -995,151 +1085,156 @@ class ApiauthenticateController extends AbstractActionController
 
 
     /**
-     * Used to initiate a new passcode and reset password
-     * @OA\POST( path="/auth/ipa/intitiate-change-pasword", tags={"Authentication"}, description="Used to initiate a new passcode and reset password",
-     * @OA\RequestBody(
-     * @OA\MediaType(
-     * mediaType="application/json",
-     * @OA\Schema(required={"email"},
-     * @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com"),
+     * Initiate password reset flow.
      *
-     *
-     * )
-     * ),
-     * ),
-     * security={{"bearerAuth":{}}},
-     *  @OA\Response(response="200", description="Success",
-     *  content={
+     * @OA\POST(
+     *     path="/auth/ipa/intitiate-change-pasword",
+     *     tags={"Authentication"},
+     *     description="Initiates a password reset flow for the user with the given email address. A numeric reset code is generated, stored, and sent to the user's email.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *
-     *
-     *                     example={
-     *                         "success": true,
-     *
-     *                     }
+     *                     required={"email"},
+     *                     @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com", description="User's registered email address")
      *                 )
      *             )
-     *         } ),
-     * @OA\Response(response="400", description="Error", content={
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Reset code generated and email sent successfully",
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *                     @OA\Property(
-     *                         property="message",
-     *                         type="string",
-     *                         description="Information about the error "
-     *                     ),
-     *       @OA\Property(
-     *                         property="error",
-     *                         type="string",
-     *                         description="Provide more information about the error "
-     *                     ),
-     *
-     *
-     *                     example={
-     *                         "success": false,
-     *                        "error":"Validation",
-     *                         "message": "Something went wrong",
-     *
-     *                     }
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="description", type="string", example="Reset code generated and email sent")
      *                 )
      *             )
-     *         }),
-     * @OA\Response(response="403", description="Not permitted")
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. email not found, validation error)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="ValidationError"),
+     *                     @OA\Property(property="description", type="string", example="Email is required")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST.")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
-     *
-     * @return void
-     *  TODO initiate change passord
      */
     public function intitiateChangePaswordAction()
     {
         $jsonModel = new JsonModel();
         $request = $this->getRequest();
         $response = $this->getResponse();
-        if ($request->isPost()) {
-            $json = $request->getContent();
-            $postData = json_decode($json, true);
-            $inputFilter = new InputFilter();
-            $inputFilter->add([
-                'name' => 'email',
-                'required' => true,
-                'allow_empty' => false,
-                'filters' => [
-                    [
-                        'name' => 'StripTags'
-                    ],
-                    [
-                        'name' => 'StringTrim'
-                    ]
+
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST."
+            ]);
+            return $jsonModel;
+        }
+
+        $json = $request->getContent();
+        $postData = json_decode($json, true);
+        $inputFilter = new InputFilter();
+        $inputFilter->add([
+            'name' => 'email',
+            'required' => true,
+            'allow_empty' => false,
+            'filters' => [
+                [
+                    'name' => 'StripTags'
                 ],
-                'validators' => [
-                    [
-                        'name' => 'NotEmpty',
-                        'options' => [
-                            'messages' => [
-                                'isEmpty' => 'Email is required'
-                            ]
+                [
+                    'name' => 'StringTrim'
+                ]
+            ],
+            'validators' => [
+                [
+                    'name' => 'NotEmpty',
+                    'options' => [
+                        'messages' => [
+                            'isEmpty' => 'Email is required'
                         ]
                     ]
                 ]
-            ]);
-            $inputFilter->setData($postData);
-            $em = $this->entityManager;
-            if ($inputFilter->isValid()) {
-                $values = $inputFilter->getValues();
-                try {
-                    /**
-                     * @var User
-                     *
-                     */
-                    $userEntity = $em->getRepository(User::class)->findOneBy([
-                        "email" => $values["email"]
-                    ]);
-                    if ($userEntity == null) {
-                        throw new \Throwable("User does not exist");
-                    }
-                    $mailData["to"] = $userEntity->getEmail();
-                    $mailData["code"] =
+            ]
+        ]);
+        $inputFilter->setData($postData);
+        $em = $this->entityManager;
 
-                        $mailData["to"] = $userEntity->getEmail();
-                    $mailData["subject"] = "Recyclepoint Reset Password";
-                    $mailData["toName"] = $userEntity->getFullname();
-                    // $mailData["template"] = "reset-password-mail";
-                    $mailData["fulllink"] = $userEntity->getMobileActivateCode();
-                   
-                    $this->authPostmarkService->resetpassword($mailData);
-                    // $this->postmarkService->resetPassword($mailData);
-
-                    // $this->authMailtrapService->sendMobileVerifyCode($mailData);
-
-                    $jsonModel->setVariables([
-                        "success" => true
-                    ]);
-                    $response->setStatusCode(200);
-                } catch (\Throwable $th) {
-                    $jsonModel->setVariables([
-                        "success" => false,
-                        "description" => $th->getMessage()
-                    ]);
-                    $response->setStatusCode(400);
+        if ($inputFilter->isValid()) {
+            $values = $inputFilter->getValues();
+            try {
+                /**
+                 * @var User
+                 */
+                $userEntity = $em->getRepository(User::class)->findOneBy([
+                    "email" => $values["email"]
+                ]);
+                if ($userEntity == null) {
+                    throw new \Exception("User does not exist");
                 }
+
+                $resetCode = RegisterService::generateMobileCode();
+                $userEntity->setMobileActivateCode($resetCode)->setUpdatedOn(new \Datetime());
+                $em->persist($userEntity);
+                $em->flush();
+
+                $mailData = [
+                    "to"       => $userEntity->getEmail(),
+                    "code"     => $resetCode,
+                    "subject"  => "Recyclepoint Reset Password",
+                    "toName"   => $userEntity->getFullname(),
+                    "fulllink" => $resetCode
+                ];
+               
+                $this->authPostmarkService->resetpassword($mailData);
+
+                $jsonModel->setVariables([
+                    "success" => true
+                ]);
+                $response->setStatusCode(200);
+            } catch (\Throwable $th) {
+                $jsonModel->setVariables([
+                    "success" => false,
+                    "error" => "ResetError",
+                    "description" => $th->getMessage()
+                ]);
+                $response->setStatusCode(400);
             }
         } else {
-            // input filter error
             $jsonModel->setVariables([
                 "success" => false,
+                "error" => "ValidationError",
                 "description" => $inputFilter->getMessages()
             ]);
             $response->setStatusCode(400);
@@ -1149,84 +1244,68 @@ class ApiauthenticateController extends AbstractActionController
 
 
     /**
-     * Used to confirm code sent to the email for reseting password
-     * @OA\POST( path="/auth/ipa/confirmnew-code", tags={"Authentication"}, description="Used to confirm code sent to the email for resetting pasword ",
-     * @OA\RequestBody(
-     * @OA\MediaType(
-     * mediaType="application/json",
-     * @OA\Schema(required={"code", "email"},
-     * @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com"),
-     * @OA\Property(property="code", type="string", example="340958"),
+     * Confirm password reset code.
      *
-     * )
-     * ),
-     * ),
-     * security={{"bearerAuth":{}}},
-     *  @OA\Response(response="200", description="Success",
-     *  content={
+     * @OA\POST(
+     *     path="/auth/ipa/confirmnew-code",
+     *     tags={"Authentication"},
+     *     description="Validates the password reset code sent to the user's email. On successful validation, returns the confirmed code to be used in the password update step.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *
-     *                     @OA\Property(
-     *                         property="reset_code",
-     *                         type="string",
-     *                         description="Reset Code"
-     *                     ),
-     *
-     *                     @OA\Property(
-     *                         property="description",
-     *                         type="string",
-     *                         description="Information about the request"
-     *                     ),
-     *
-     *                     example={
-     *                         "success": true,
-     *                       "reset_code":123456,
-     *                      "description":"Code Confirmed"
-     *                     }
+     *                     required={"code", "email"},
+     *                     @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com", description="User's registered email address"),
+     *                     @OA\Property(property="code", type="string", example="340958", description="Reset code received via email")
      *                 )
      *             )
-     *         } ),
-     * @OA\Response(response="400", description="Error", content={
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Code confirmed successfully",
+     *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(
-     *                         property="success",
-     *                         type="boolean",
-     *                         description="Defines the state of the request"
-     *                     ),
-     *                     @OA\Property(
-     *                         property="message",
-     *                         type="string",
-     *                         description="Information about the error "
-     *                     ),
-     *       @OA\Property(
-     *                         property="error",
-     *                         type="string",
-     *                         description="Provide more information about the error "
-     *                     ),
-     *
-     *
-     *                     example={
-     *                         "success": false,
-     *                        "error":"Validation",
-     *                         "message": "Something went wrong",
-     *
-     *                     }
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="reset_code", type="string", example="340958", description="Confirmed reset code"),
+     *                     @OA\Property(property="description", type="string", example="Code Confirmed")
      *                 )
      *             )
-     *         }),
-     * @OA\Response(response="403", description="Not permitted")
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. invalid code, mismatched email, or expired code)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="ResetCodeError"),
+     *                     @OA\Property(property="description", type="string", example="Invalid or mismatched reset code")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST.")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
-     *
-     * @return void
      */
     public function confirmnewCodeAction()
     {
@@ -1234,294 +1313,347 @@ class ApiauthenticateController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
         $em = $this->entityManager;
-        if ($request->isPost()) {
-            $json = $request->getContent();
-            $postData  = json_decode($json, true);
-            $inputFilter = new InputFilter();
-            $inputFilter->add([
-                'name' => 'code',
-                'required' => true,
-                'allow_empty' => false,
-                'filters' => [
-                    [
-                        'name' => 'StripTags'
-                    ],
-                    [
-                        'name' => 'StringTrim'
-                    ]
-                ],
-                'validators' => [
-                    [
-                        'name' => 'NotEmpty',
-                        'options' => [
-                            'messages' => [
-                                'isEmpty' => 'Email is required'
-                            ]
-                        ]
-                    ]
-                ]
-            ]);
-            $inputFilter->add([
-                'name' => 'email',
-                'required' => true,
-                'allow_empty' => false,
-                'filters' => [
-                    [
-                        'name' => 'StripTags'
-                    ],
-                    [
-                        'name' => 'StringTrim'
-                    ]
-                ],
-                'validators' => [
-                    [
-                        'name' => 'NotEmpty',
-                        'options' => [
-                            'messages' => [
-                                'isEmpty' => 'Email is required'
-                            ]
-                        ]
-                    ]
-                ]
-            ]);
-            $inputFilter->setData($postData);
-            if ($inputFilter->isValid()) {
-                try {
-                    $values = $inputFilter->getValues();
-                    $newCode = RegisterService::generateMobileCode();
-                    /**
-                     * @var User
-                     */
-                    $userEntity = $em->getRepository(User::class)->findOneBy([
-                        "email" => $values["email"]
-                    ]);
-                    if ($userEntity == null) {
-                        throw new \Throwable("User does not exist");
-                    }
-                    if ($values["code"] == $userEntity->getMobileActivateCode()) {
-                        $userEntity->setMobileActivateCode($newCode)->setUpdatedOn(new \Datetime());
 
-                        $em->persist($userEntity);
-                        $em->flush();
-                        $response->setStatusCode(201);
-                        $jsonModel->setVariables([
-                            "success" => true,
-                            "reset_code" => $userEntity->getMobileActivateCode(),
-                            "description" => "Code Confirmed"
-                        ]);
-                        return $jsonModel;
-                    }else{
-                        throw new \Exception("Invalid Code");
-                    }
-                } catch (\Throwable $th) {
-                    $jsonModel->setVariables([
-                        "success" => false,
-                        "message" => $th->getMessage()
-                    ]);
-                    $response->setStatusCode(400);
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST."
+            ]);
+            return $jsonModel;
+        }
+
+        $json = $request->getContent();
+        $postData  = json_decode($json, true);
+        $inputFilter = new InputFilter();
+        $inputFilter->add([
+            'name' => 'code',
+            'required' => true,
+            'allow_empty' => false,
+            'filters' => [
+                [
+                    'name' => 'StripTags'
+                ],
+                [
+                    'name' => 'StringTrim'
+                ]
+            ],
+            'validators' => [
+                [
+                    'name' => 'NotEmpty',
+                    'options' => [
+                        'messages' => [
+                            'isEmpty' => 'Code is required'
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+        $inputFilter->add([
+            'name' => 'email',
+            'required' => true,
+            'allow_empty' => false,
+            'filters' => [
+                [
+                    'name' => 'StripTags'
+                ],
+                [
+                    'name' => 'StringTrim'
+                ]
+            ],
+            'validators' => [
+                [
+                    'name' => 'NotEmpty',
+                    'options' => [
+                        'messages' => [
+                            'isEmpty' => 'Email is required'
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+        $inputFilter->setData($postData);
+        if ($inputFilter->isValid()) {
+            try {
+                $values = $inputFilter->getValues();
+                $newCode = RegisterService::generateMobileCode();
+                /**
+                 * @var User
+                 */
+                $userEntity = $em->getRepository(User::class)->findOneBy([
+                    "email" => $values["email"]
+                ]);
+                if ($userEntity == null) {
+                    throw new \Exception("User does not exist");
                 }
-            } else {
+                if ($values["code"] == $userEntity->getMobileActivateCode()) {
+                    $userEntity->setMobileActivateCode($newCode)->setUpdatedOn(new \Datetime());
+
+                    $em->persist($userEntity);
+                    $em->flush();
+                    $response->setStatusCode(201);
+                    $jsonModel->setVariables([
+                        "success" => true,
+                        "reset_code" => $userEntity->getMobileActivateCode(),
+                        "description" => "Code Confirmed"
+                    ]);
+                    return $jsonModel;
+                } else {
+                    throw new \Exception("Invalid Code");
+                }
+            } catch (\Throwable $th) {
                 $jsonModel->setVariables([
                     "success" => false,
-                    "message" => $inputFilter->getMessages()
+                    "error" => "ConfirmCodeError",
+                    "description" => $th->getMessage()
                 ]);
                 $response->setStatusCode(400);
             }
+        } else {
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "ValidationError",
+                "description" => $inputFilter->getMessages()
+            ]);
+            $response->setStatusCode(400);
         }
-        // $response->setStatusCode(400);
         return $jsonModel;
     }
 
 
 
     /**
-     * Updates the new password
-     * @OA\POST( path="/auth/ipa/update-password", tags={"Authentication"}, description="Used to confirm code sent to the email for resetting pasword ",
-     * @OA\RequestBody(
-     * @OA\MediaType(
-     * mediaType="application/json",
-     * @OA\Schema(required={"password", "email", "confirm_password", "reset_code"},
-     * @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com"),
-     * @OA\Property(property="password", type="string", example="gthr!@#ju"),
-     * @OA\Property(property="reset_code", type="string", example="123456"),
-     * @OA\Property(property="confirm_password", type="string", example="gthr!@#ju"),
+     * Updates user password.
      *
+     * @OA\POST(
+     *     path="/auth/ipa/update-password",
+     *     tags={"Authentication"},
+     *     description="Updates user password to the new value. Requires the confirmed reset_code generated in the verify step, email address, password, and confirmation password.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     required={"password", "email", "confirm_password", "reset_code"},
+     *                     @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com", description="User's registered email address"),
+     *                     @OA\Property(property="password", type="string", example="gthr!@#ju", description="New plain text password"),
+     *                     @OA\Property(property="reset_code", type="string", example="123456", description="The confirmed reset code"),
+     *                     @OA\Property(property="confirm_password", type="string", example="gthr!@#ju", description="Must match the new password exactly")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Password updated successfully",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="description", type="string", example="Password updated successfully")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. invalid code, passwords do not match, validation error)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="UpdatePasswordError"),
+     *                     @OA\Property(property="description", type="string", example="Passwords do not match")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST.")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
-     * ),
-     * ),
-     * security={{"bearerAuth":{}}},
-     * @OA\Response(response="200", description="Success"),
-     * @OA\Response(response="401", description="Not Authorized"),
-     * @OA\Response(response="403", description="Not permitted")
-     * )
-     *
-     * @return void
      */
     public function updatePasswordAction()
     {
         $request = $this->getRequest();
         $jsonModel = new JsonModel();
         $response = $this->getResponse();
-        if ($request->isPost()) {
-            $json = $request->getContent();
-            $postData = json_decode($json, true);
-            $inputFilter = new InputFilter();
-            $inputFilter->add([
-                "name" => "password",
-                "required" => true,
-                "allow_empty" => false,
-                "filters" => [
-                    [
-                        'name' => 'StripTags'
-                    ],
-                    [
-                        'name' => 'StringTrim'
+
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST."
+            ]);
+            return $jsonModel;
+        }
+
+        $json = $request->getContent();
+        $postData = json_decode($json, true);
+        $inputFilter = new InputFilter();
+        $inputFilter->add([
+            "name" => "password",
+            "required" => true,
+            "allow_empty" => false,
+            "filters" => [
+                [
+                    'name' => 'StripTags'
+                ],
+                [
+                    'name' => 'StringTrim'
+                ]
+            ],
+            "validators" => [
+                [
+                    'name' => 'StringLength',
+                    'options' => [
+                        'encoding' => 'UTF-8',
+                        'min' => 6,
+                        "messages" => [
+                            StringLength::TOO_SHORT => "The password must be more than 6 characters",
+                            StringLength::TOO_LONG => "This password is too long to memorize"
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+        $inputFilter->add([
+            "name" => "email",
+            "required" => true,
+            "allow_empty" => false,
+            "filters" => [
+                [
+                    'name' => 'StripTags'
+                ],
+                [
+                    'name' => 'StringTrim'
+                ]
+            ],
+            "validators" => [
+                [
+                    'name' => 'StringLength',
+                    'options' => [
+                        'encoding' => 'UTF-8',
+                        'min' => 6,
+                        "messages" => [
+                            StringLength::TOO_SHORT => "Email is too short",
+                            StringLength::TOO_LONG => "This Email is too long to memorize"
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+        $inputFilter->add([
+            "name" => "reset_code",
+            "required" => true,
+            "allow_empty" => false,
+            "filters" => [
+                [
+                    'name' => 'StripTags'
+                ],
+                [
+                    'name' => 'StringTrim'
+                ]
+            ],
+            "validators" => [
+                [
+                    'name' => 'NotEmpty',
+                    'options' => [
+                        'messages' => [
+                            'isEmpty' => 'Reset code is required'
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+        $inputFilter->add([
+            "name" => "confirm_password",
+            "required" => true,
+            "allow_empty" => false,
+            "validators" => [
+                [
+                    'name' => 'StringLength',
+                    'options' => [
+                        'encoding' => 'UTF-8',
+                        'min' => 6,
+                        "messages" => [
+                            StringLength::TOO_SHORT => "The password must be more than 6 characters",
+                            StringLength::TOO_LONG => "This password is too long to memorize"
+                        ]
                     ]
                 ],
-                "validators" => [
-                    [
-                        'name' => 'StringLength',
-                        'options' => [
-                            'encoding' => 'UTF-8',
-                            'min' => 6,
-                            // 'max' => 50,
-                            "messages" => [
-                                StringLength::TOO_SHORT => "The password must be more than 6 characters",
-                                StringLength::TOO_LONG => "This password is too long to memorize"
-                            ]
+                [
+                    'name' => 'Identical',
+                    'options' => [
+                        'token' => 'password',
+                        "messages" => [
+                            Identical::NOT_SAME => "The passwords are not identical"
                         ]
                     ]
                 ]
+            ]
+        ]);
+        $inputFilter->setData($postData);
+        $em = $this->entityManager;
+        if ($inputFilter->isValid()) {
+            $values = $inputFilter->getValues();
 
-            ]);
-            $inputFilter->add([
-                "name" => "email",
-                "required" => true,
-                "allow_empty" => false,
-                "filters" => [
-                    [
-                        'name' => 'StripTags'
-                    ],
-                    [
-                        'name' => 'StringTrim'
-                    ]
-                ],
-                "validators" => [
-                    [
-                        'name' => 'StringLength',
-                        'options' => [
-                            'encoding' => 'UTF-8',
-                            'min' => 6,
-                            // 'max' => 7,
-                            "messages" => [
-                                StringLength::TOO_SHORT => "Email is too short",
-                                StringLength::TOO_LONG => "This Email is too long to memorize"
-                            ]
-                        ]
-                    ]
-                ]
+            try {
+                /**
+                 * @var User
+                 */
+                $userEntity = $em->getRepository(User::class)->findOneBy([
+                    "email" => $values["email"]
+                ]);
 
-            ]);
-            $inputFilter->add([
-                "name" => "password",
-                "required" => true,
-                "allow_empty" => false,
-                "filters" => [
-                    [
-                        'name' => 'StripTags'
-                    ],
-                    [
-                        'name' => 'StringTrim'
-                    ]
-                ],
-                "validators" => [
-                    [
-                        'name' => 'StringLength',
-                        'options' => [
-                            'encoding' => 'UTF-8',
-                            'min' => 6,
-                            // 'max' => 50,
-                            "messages" => [
-                                StringLength::TOO_SHORT => "The password must be more than 6 characters",
-                                StringLength::TOO_LONG => "This password is too long to memorize"
-                            ]
-                        ]
-                    ]
-                ]
-
-            ]);
-            $inputFilter->add([
-                "name" => "confirm_password",
-                "required" => true,
-                "allow_empty" => false,
-                "validators" => [
-                    [
-                        'name' => 'StringLength',
-                        'options' => [
-                            'encoding' => 'UTF-8',
-                            'min' => 6,
-                            // 'max' => 50,
-                            "messages" => [
-                                StringLength::TOO_SHORT => "The password must be more than 6 characters",
-                                StringLength::TOO_LONG => "This password is too long to memorize"
-                            ]
-                        ]
-                    ],
-                    [
-                        'name' => 'Identical',
-                        'options' => [
-                            'token' => 'password',
-                            "messages" => [
-                                Identical::NOT_SAME => "The passwords are not identical"
-                            ]
-                        ]
-                    ]
-                ]
-
-            ]);
-            $inputFilter->setData($postData);
-            $em = $this->entityManager;
-            if ($inputFilter->isValid()) {
-                $values = $inputFilter->getValues();
-
-                try {
-                    /**
-                     * @var User
-                     */
-                    $userEntity = $em->getRepository(User::class)->findOneBy([
-                        "email" => $values["email"]
-                    ]);
-
-                    if ($values["reset_code"] != $userEntity->getMobileActivateCode()) {
-                        throw new \Exception("Wrong access code");
-                    }
-                    if ($userEntity == null) {
-                        throw new \Throwable("User does not exist");
-                    }
-
-                    $userEntity->setPassword(AuthenticationService::encryptPassword($values["passord"]))->setUpdatedOn(new \Datetime());
-
-                    $em->persist($userEntity);
-                    $em->flush();
-
-                    $jsonModel->setVariables([
-                        "success" => true
-                    ]);
-                    $response->setStatusCode(201);
-                } catch (\Throwable $th) {
-                    $jsonModel->setVariables([
-                        "success" => false,
-                        "description" => $th->getMessage()
-                    ]);
-                    $response->setStatusCode(400);
+                if ($userEntity == null) {
+                    throw new \Exception("User does not exist");
                 }
-            } else {
+
+                if ($values["reset_code"] != $userEntity->getMobileActivateCode()) {
+                    throw new \Exception("Wrong access code");
+                }
+
+                $userEntity->setPassword(AuthenticationService::encryptPassword($values["password"]))->setUpdatedOn(new \Datetime());
+
+                $em->persist($userEntity);
+                $em->flush();
+
+                $jsonModel->setVariables([
+                    "success" => true
+                ]);
+                $response->setStatusCode(201);
+            } catch (\Throwable $th) {
                 $jsonModel->setVariables([
                     "success" => false,
-                    "description" => $inputFilter->getMessages()
+                    "error" => "PasswordUpdateError",
+                    "description" => $th->getMessage()
                 ]);
                 $response->setStatusCode(400);
             }
+        } else {
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "ValidationError",
+                "description" => $inputFilter->getMessages()
+            ]);
+            $response->setStatusCode(400);
         }
         return $jsonModel;
     }
@@ -1600,18 +1732,7 @@ class ApiauthenticateController extends AbstractActionController
     //  *   @OA\Response(response="401",description="Unauthorized"),
     //  * )
     //  */
-    public function forgotAction()
-    {
-    }
 
-
-    public function revokeToken()
-    {
-        $jsonmodel = new JsonModel([
-            // "data"=> var_dump(GeneralService::generateKey(32))
-        ]);
-        return $jsonmodel;
-    }
 
 
     /**
@@ -1794,20 +1915,22 @@ class ApiauthenticateController extends AbstractActionController
      * @OA\POST(
      *     path="/auth/ipa/social-login",
      *     tags={"Authentication"},
-     *     description="Authenticate user with social provider (Google or Apple)",
+     *     description="Authenticate user with social provider (Google or Apple). Validates the ID token directly with the provider, logs in or auto-registers the user, and sets the HttpOnly cookie with the rotated refresh token.",
      *     @OA\RequestBody(
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 required={"provider", "token", "user_agent", "user_ip"},
-     *                 @OA\Property(property="provider", type="string", example="google", description="The social identity provider (google or apple)"),
-     *                 @OA\Property(property="token", type="string", example="eyJhbGci...", description="The ID Token from Google or Apple SDK"),
-     *                 @OA\Property(property="user_agent", type="string", example="AppleWebKit/535.19"),
-     *                 @OA\Property(property="user_ip", type="string", example="127.0.0.1")
+     *         required=true,
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     required={"provider", "token", "user_agent", "user_ip"},
+     *                     @OA\Property(property="provider", type="string", example="google", description="The social identity provider (google or apple)"),
+     *                     @OA\Property(property="token", type="string", example="eyJhbGci...", description="The ID Token from Google or Apple SDK"),
+     *                     @OA\Property(property="user_agent", type="string", example="AppleWebKit/535.19"),
+     *                     @OA\Property(property="user_ip", type="string", example="127.0.0.1")
+     *                 )
      *             )
-     *         )
+     *         }
      *     ),
-     * security={{"bearerAuth":{}}},
      *     @OA\Response(
      *         response="200",
      *         description="Success",
@@ -1815,14 +1938,53 @@ class ApiauthenticateController extends AbstractActionController
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(property="success", type="boolean"),
-     *                     @OA\Property(property="schema", type="string"),
-     *                     @OA\Property(property="token", type="string")
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="schema", type="string", example="Bearer"),
+     *                     @OA\Property(property="expires_in", type="integer", example=1800),
+     *                     @OA\Property(property="token", type="string", example="eyJhbGci..."),
+     *                     @OA\Property(property="luhn_token", type="string", example="rt_abc123"),
+     *                     @OA\Property(
+     *                         property="user",
+     *                         type="object",
+     *                         @OA\Property(property="fullname", type="string", example="John Doe"),
+     *                         @OA\Property(property="email", type="string", example="john.doe@gmail.com"),
+     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="username", type="string", example="john.doe@gmail.com"),
+     *                         @OA\Property(property="uuid", type="string", example="d3b07384-d113-4956-a5db-e172e2cf69ef"),
+     *                         @OA\Property(property="wallet", type="integer", example=150)
+     *                     )
      *                 )
      *             )
      *         }
      *     ),
-     *     @OA\Response(response="400", description="Error")
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. invalid provider token, missing parameters)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="SocialLoginError"),
+     *                     @OA\Property(property="description", type="string", example="Failed to verify Google Token")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed (e.g. GET instead of POST)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
      */
     public function socialLoginAction()
@@ -1848,6 +2010,7 @@ class ApiauthenticateController extends AbstractActionController
                 $email = '';
                 $name = '';
                 $providerId = '';
+                $profilePic = null;
 
                 if ($provider === 'google') {
                     $client = new \Laminas\Http\Client();
@@ -1866,6 +2029,7 @@ class ApiauthenticateController extends AbstractActionController
                     $email = $payload['email'];
                     $name = $payload['name'] ?? '';
                     $providerId = $payload['sub'] ?? '';
+                    $profilePic = $payload['picture'] ?? null;
                 } elseif ($provider === 'apple') {
                     $parser = new \Lcobucci\JWT\Token\Parser(new \Lcobucci\JWT\Encoding\JoseEncoder());
                     $token = $parser->parse($idToken);
@@ -1882,7 +2046,7 @@ class ApiauthenticateController extends AbstractActionController
                     throw new \Exception("Unsupported provider: " . $provider);
                 }
 
-                $authResponse = $this->apiAuthService->authenticateSocial($email, $name, $provider, $providerId, $userIp, $userAgent);
+                $authResponse = $this->apiAuthService->authenticateSocial($email, $name, $provider, $providerId, $userIp, $userAgent, $profilePic);
                 $response->getHeaders()->addHeader($authResponse["cookie"]);
                 $response->setStatusCode(200);
 
@@ -1905,8 +2069,8 @@ class ApiauthenticateController extends AbstractActionController
                 $response->setStatusCode(400);
                 $jsonModel->setVariables([
                     "success" => false,
-                    "description" => $th->getMessage(),
-                    "data" => $th->getTrace()
+                    "error" => "SocialLoginError",
+                    "description" => $th->getMessage()
                 ]);
             }
         } else {
@@ -1921,36 +2085,87 @@ class ApiauthenticateController extends AbstractActionController
     }
 
     /**
-     * Google Sign-In Initiate (Stateless CSRF State Generation)
-     * @OA\Get(
+     * Google OAuth (Initiate or Callback)
+     * @OA\GET(
      *     path="/auth/ipa/google-initiate",
      *     tags={"Authentication"},
-     *     description="Generates a stateless HMAC-signed anti-forgery state token and redirects to Google's authorization URL. No server-side session is required — the state is self-verifying.",
-     * security={{"bearerAuth":{}}},
+     *     description="Handles Google OAuth. If the 'code' parameter is absent, redirects the user to Google. If present, processes the callback to authenticate the user.",
+     *     @OA\Parameter(name="code", in="query", required=false, description="Authorization code returned by Google", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="state", in="query", required=false, description="Stateless HMAC-signed anti-forgery token", @OA\Schema(type="string")),
+     *     @OA\Response(response="302", description="Redirect to Google authorization page (when code is missing)"),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Success",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="schema", type="string", example="Bearer"),
+     *                     @OA\Property(property="expires_in", type="integer", example=1800),
+     *                     @OA\Property(property="token", type="string", example="eyJhbGci..."),
+     *                     @OA\Property(property="luhn_token", type="string", example="rt_abc123"),
+     *                     @OA\Property(
+     *                         property="user",
+     *                         type="object",
+     *                         @OA\Property(property="fullname", type="string", example="John Doe"),
+     *                         @OA\Property(property="email", type="string", example="john.doe@gmail.com"),
+     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="username", type="string", example="john.doe@gmail.com"),
+     *                         @OA\Property(property="uuid", type="string", example="d3b07384-d113-4956-a5db-e172e2cf69ef"),
+     *                         @OA\Property(property="wallet", type="integer", example=150),
+     *                         @OA\Property(property="profile_pic", type="string", example="https://...")
+     *                     )
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(response="400", description="Bad Request"),
+     *     @OA\Response(response="500", description="Server configuration error")
+     * )
+     */
+    /**
+     * Google OAuth Initiate
+     * @OA\GET(
+     *     path="/auth/ipa/google-initiate",
+     *     tags={"Authentication"},
+     *     description="Generates a stateless HMAC-signed anti-forgery state token and redirects to Google's authorization URL.",
      *     @OA\Response(response="302", description="Redirect to Google authorization page"),
      *     @OA\Response(response="500", description="Server configuration error")
      * )
      */
     public function googleInitiateAction()
     {
+        // Fetch the response object that will contain the response headers
         $response = $this->getResponse();
+        // Initialize a new JsonModel for structured JSON responses
         $jsonModel = new JsonModel();
 
         try {
+            // Retrieve the application Service Manager instance
             $sm = $this->getEvent()->getApplication()->getServiceManager();
+            // Retrieve the application configuration array
             $config = $sm->get('config');
+            // Fetch the Google OAuth specific configurations or default to empty array
             $googleConfig = $config['google_oauth'] ?? [];
 
-            $clientId    = $googleConfig['client_id'] ?? '';
+            // Get the configured Google Client ID
+            $clientId = $googleConfig['client_id'] ?? '';
+            // Get the configured redirect URI for the callback
             $redirectUri = $googleConfig['redirect_uri'] ?? '';
-            $scope       = $googleConfig['scope'] ?? 'openid email profile';
+            // Get the requested scope or default to openid, email, and profile
+            $scope = $googleConfig['scope'] ?? 'openid email profile';
 
+            // Check if the critical client ID and redirect URI configurations exist
             if (empty($clientId) || empty($redirectUri)) {
-                throw new \Exception('Google OAuth configuration is incomplete');
+                // Throw an exception if the required configuration is missing
+                throw new \Exception("Google OAuth configuration is missing on the server");
             }
 
+            // Generate a stateless HMAC-signed state token for anti-forgery verification
             $state = $this->generateOAuthState($sm);
 
+            // Build the Google OAuth authorization redirect URL with query params
             $authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
                 'response_type'  => 'code',
                 'client_id'      => $clientId,
@@ -1960,127 +2175,219 @@ class ApiauthenticateController extends AbstractActionController
                 'access_type'    => 'online',
             ]);
 
+            // Add the Location header to redirect to Google's sign-in page
             $response->getHeaders()->addHeaderLine('Location', $authUrl);
+            // Set the HTTP response status code to 302 Found
             $response->setStatusCode(302);
+            // Return the response object to perform the redirect
             return $response;
 
         } catch (\Throwable $th) {
+            // Set HTTP response code to 500
             $response->setStatusCode(500);
-            $jsonModel->setVariables(['success' => false, 'description' => $th->getMessage()]);
+            // Populate JsonModel with the error details
+            $jsonModel->setVariables([
+                "success" => false,
+                "description" => $th->getMessage()
+            ]);
+            // Return the JsonModel
             return $jsonModel;
         }
     }
-
     /**
-     * Google OAuth Callback
-     * @OA\GET(
-     *     path="/auth/ipa/google-callback",
+     * Google Sign-In via ID Token (Verify & Login)
+     * @OA\POST(
+     *     path="/auth/ipa/google-oauth",
      *     tags={"Authentication"},
-     *     description="Google OAuth redirect callback. Validates the HMAC-signed stateless state parameter to prevent CSRF, then exchanges the code for tokens.",
-     *     @OA\Parameter(name="code", in="query", required=true, description="Authorization code returned by Google", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="state", in="query", required=true, description="Stateless HMAC-signed anti-forgery token", @OA\Schema(type="string")),
-     * security={{"bearerAuth":{}}},
+     *     description="Authenticates a user via a Google ID Token. Verifies the signature, issuer, audience, finds/creates local user, and returns access & refresh tokens.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/x-www-form-urlencoded",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="id_token", type="string", description="Google ID Token (JWT)")
+     *                 )
+     *             )
+     *         }
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Success",
-     *         content={@OA\MediaType(mediaType="application/json", @OA\Schema(@OA\Property(property="success", type="boolean"), @OA\Property(property="token", type="string")))}
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="schema", type="string", example="Bearer"),
+     *                     @OA\Property(property="expires_in", type="integer", example=1800),
+     *                     @OA\Property(property="token", type="string", example="eyJhbGci..."),
+     *                     @OA\Property(property="luhn_token", type="string", example="rt_abc123"),
+     *                     @OA\Property(
+     *                         property="user",
+     *                         type="object",
+     *                         @OA\Property(property="fullname", type="string", example="John Doe"),
+     *                         @OA\Property(property="email", type="string", example="john.doe@gmail.com"),
+     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="username", type="string", example="john.doe@gmail.com"),
+     *                         @OA\Property(property="uuid", type="string", example="d3b07384-d113-4956-a5db-e172e2cf69ef"),
+     *                         @OA\Property(property="wallet", type="integer", example=150),
+     *                         @OA\Property(property="profile_pic", type="string", example="https://...")
+     *                     )
+     *                 )
+     *             )
+     *         }
      *     ),
+     *     @OA\Response(response="400", description="Bad Request"),
+     *     @OA\Response(response="500", description="Server configuration error")
+     * )
+     * @OA\GET(
+     *     path="/auth/ipa/google-oauth",
+     *     tags={"Authentication"},
+     *     description="Authenticates a user via Google ID Token passed in query string",
+     *     @OA\Parameter(name="id_token", in="query", required=true, description="Google ID Token (JWT)", @OA\Schema(type="string")),
+     *     @OA\Response(response="200", description="Success"),
      *     @OA\Response(response="400", description="Error")
      * )
      */
-    public function googleCallbackAction()
+    public function googleOauthAction()
     {
+        // Fetch the request object representing the HTTP request
         $request = $this->getRequest();
+        // Fetch the response object that will contain the response headers and body
         $response = $this->getResponse();
+        // Initialize a new JsonModel for structured JSON responses
         $jsonModel = new JsonModel();
 
-        $code  = $request->getQuery('code');
-        $state = $request->getQuery('state');
+        // Get ID token from POST body or query parameter
+        $idToken = $request->getPost('id_token') ?? $request->getQuery('id_token');
+        // Get the user agent string from request environment, fallback to empty string
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        // Get the remote user IP address from request environment, fallback to localhost
         $userIp    = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
         try {
-            // Stateless CSRF validation — no session needed
-            $sm = $this->getEvent()->getApplication()->getServiceManager();
-            $this->verifyOAuthState($state, $sm);
-
-            if (empty($code)) {
-                throw new \Exception("Authorization code is missing");
+            // Check if the ID token is missing
+            if (empty($idToken)) {
+                throw new \Exception("ID Token is required");
             }
 
+            // Retrieve the application Service Manager and configuration
+            $sm = $this->getEvent()->getApplication()->getServiceManager();
             $config = $sm->get('config');
             $googleConfig = $config['google_oauth'] ?? [];
 
+            // Get the Google Client ID from configuration
             $clientId = $googleConfig['client_id'] ?? '';
-            $clientSecret = $googleConfig['client_secret'] ?? '';
-            $redirectUri = $googleConfig['redirect_uri'] ?? '';
 
-            if (empty($clientId) || empty($clientSecret) || empty($redirectUri)) {
+            // Check if Google configurations exist
+            if (empty($clientId)) {
                 throw new \Exception("Google OAuth configuration is missing on the server");
             }
 
-            // Exchange authorization code for tokens
+            // Verify Google ID Token via Google tokeninfo endpoint (performs signature verification)
             $client = new \Laminas\Http\Client();
-            $client->setUri('https://oauth2.googleapis.com/token');
-            $client->setMethod('POST');
-            $client->setParameterPost([
-                'code' => $code,
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret,
-                'redirect_uri' => $redirectUri,
-                'grant_type' => 'authorization_code'
+            // Configure HTTP client options (disable SSL verification to prevent issues on local dev environments)
+            $client->setOptions([
+                'sslverifypeer' => false,
+                'sslverifyhost' => false,
             ]);
-            $res = $client->send();
-
-            if (!$res->isSuccess()) {
-                throw new \Exception("Failed to exchange auth code with Google: " . $res->getBody());
-            }
-
-            $payload = json_decode($res->getBody(), true);
-            $idToken = $payload['id_token'] ?? '';
-
-            if (empty($idToken)) {
-                throw new \Exception("Google token exchange did not return ID token");
-            }
-
-            // Verify ID Token
             $client->setUri('https://oauth2.googleapis.com/tokeninfo');
             $client->setMethod('GET');
             $client->setParameterGet(['id_token' => $idToken]);
             $res = $client->send();
 
+            // Check if verification failed
             if (!$res->isSuccess()) {
-                throw new \Exception("Failed to verify Google Token");
+                throw new \Exception("Failed to verify Google Token signature or expired token");
             }
 
+            // Parse verification payload from Google
             $tokenPayload = json_decode($res->getBody(), true);
+
+            // Verify Issuer claim
+            $issuer = $tokenPayload['iss'] ?? '';
+            if ($issuer !== 'accounts.google.com' && $issuer !== 'https://accounts.google.com') {
+                throw new \Exception("Invalid Google token issuer: " . $issuer);
+            }
+
+            // Verify Audience claim (matches our client ID)
+            $audience = $tokenPayload['aud'] ?? '';
+            if ($audience !== $clientId) {
+                throw new \Exception("Invalid Google token audience");
+            }
+
+            // Check if email exists in token claims
             if (empty($tokenPayload['email'])) {
-                throw new \Exception("Google token does not contain email");
+                throw new \Exception("Google token does not contain email address");
             }
 
             $email = $tokenPayload['email'];
             $name = $tokenPayload['name'] ?? '';
             $providerId = $tokenPayload['sub'] ?? '';
+            $profilePic = $tokenPayload['picture'] ?? null;
 
-            $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'google', $providerId, $userIp, $userAgent);
+            // Fetch Entity Manager from the Service Manager to query the database
+            $em = $sm->get(EntityManager::class);
             
-            // Set Cookie
-            $response->getHeaders()->addHeader($authResponse["cookie"]);
-
-            // If a frontend redirect URL is configured, redirect the user
-            $frontendRedirect = $googleConfig['frontend_redirect_url'] ?? '';
-            if (!empty($frontendRedirect)) {
-                $redirectUrl = $frontendRedirect . '?' . http_build_query([
-                    'token' => $authResponse['token'],
-                    'refresh_token' => $authResponse['token_id'],
-                    'fullname' => $authResponse['fullname']
-                ]);
-                $response->getHeaders()->addHeaderLine('Location', $redirectUrl);
-                $response->setStatusCode(302);
-                return $response;
+            // Search if the user exists in the database by googleId (sub) or email
+            $user = $em->getRepository(User::class)->findOneBy(['googleId' => $providerId]);
+            if (!$user && !empty($email)) {
+                $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
             }
 
+            // If the user does not exist, persist google_id, email, fullname, and profile_pic
+            if (!$user) {
+                // Construct a new User entity
+                $user = new User();
+                $user->setUsername($email)
+                    ->setEmail($email)
+                    ->setFullname($name ?: strstr($email, '@', true))
+                    // Generate random password
+                    ->setPassword(AuthenticationService::encryptPassword(bin2hex(random_bytes(16))))
+                    ->setRole($em->find(\Authentication\Entity\Roles::class, AuthenticationService::USER_ROLE_CUSTOMER))
+                    ->setState($em->find(\Authentication\Entity\UserState::class, AuthenticationService::USER_STATE_ENABLED))
+                    ->setCreatedOn(new \DateTime())
+                    ->setRegistrationDate(new \DateTime())
+                    ->setEmailConfirmed(true)
+                    ->setIsProfiled(false)
+                    ->setUid(uniqid("resu"))
+                    ->setUuid($this->generateUuid())
+                    ->setGoogleId($providerId);
+                
+                // Set profile picture if present
+                if ($profilePic !== null && $profilePic !== '') {
+                    $user->setProfilePic($profilePic);
+                }
+
+                $em->persist($user);
+                $em->flush();
+            } else {
+                // If they exist, verify/link googleId and update profile picture if needed
+                $modified = false;
+                if (empty($user->getGoogleId())) {
+                    $user->setGoogleId($providerId);
+                    $modified = true;
+                }
+                if ($profilePic !== null && $profilePic !== '' && $user->getProfilePic() !== $profilePic) {
+                    $user->setProfilePic($profilePic);
+                    $modified = true;
+                }
+                if ($modified) {
+                    $em->persist($user);
+                    $em->flush();
+                }
+            }
+
+            // Issue access JWT and refresh token using social authentication service
+            $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'google', $providerId, $userIp, $userAgent, $profilePic);
+            
+            // Set the HttpOnly refresh token cookie on the response headers
+            $response->getHeaders()->addHeader($authResponse["cookie"]);
+
+            // Set the response status code to 200 OK
             $response->setStatusCode(200);
+            // Populate the JsonModel with final user profile and tokens
             $jsonModel->setVariables([
                 "success" => true,
                 "schema" => "Bearer",
@@ -2093,10 +2400,12 @@ class ApiauthenticateController extends AbstractActionController
                     "role" => $authResponse["role"],
                     "username" => $authResponse["username"],
                     "uuid" => $authResponse["uuid"],
-                    "wallet" => intval($authResponse["wallet"])
+                    "wallet" => intval($authResponse["wallet"]),
+                    "profile_pic" => $authResponse["profile_pic"] ?? null
                 ]
             ]);
         } catch (\Throwable $th) {
+            // Set HTTP response code to 400
             $response->setStatusCode(400);
             $jsonModel->setVariables([
                 "success" => false,
@@ -2105,69 +2414,16 @@ class ApiauthenticateController extends AbstractActionController
         }
 
         return $jsonModel;
-    }
-
+    }    
+    
     /**
-     * Apple Sign-In Initiate (Stateless CSRF State Generation)
-     * @OA\Get(
+     * Apple Sign-In (Initiate or Callback)
+     * @OA\POST(
      *     path="/auth/ipa/apple-initiate",
      *     tags={"Authentication"},
-     *     description="Generates a stateless HMAC-signed anti-forgery state token and redirects to Apple's authorization URL. No server-side session is required — the state is self-verifying.",
-     * security={{"bearerAuth":{}}},
-     *     @OA\Response(response="302", description="Redirect to Apple authorization page"),
-     *     @OA\Response(response="500", description="Server configuration error")
-     * )
-     */
-    public function appleInitiateAction()
-    {
-        $response = $this->getResponse();
-        $jsonModel = new JsonModel();
-
-        try {
-            $sm = $this->getEvent()->getApplication()->getServiceManager();
-            $config = $sm->get('config');
-            $appleConfig = $config['apple_oauth'] ?? [];
-
-            $clientId     = $appleConfig['client_id'] ?? '';
-            $redirectUri  = $appleConfig['redirect_uri'] ?? '';
-            $scope        = $appleConfig['scope'] ?? 'name email';
-            $responseMode = $appleConfig['response_mode'] ?? 'form_post';
-
-            if (empty($clientId) || empty($redirectUri)) {
-                throw new \Exception('Apple OAuth configuration is incomplete');
-            }
-
-            // Generate a stateless HMAC-signed state token — no session stored
-            $state = $this->generateOAuthState($sm);
-
-            $authUrl = 'https://appleid.apple.com/auth/authorize?' . http_build_query([
-                'response_type' => 'code id_token',
-                'response_mode' => $responseMode,
-                'client_id'     => $clientId,
-                'redirect_uri'  => $redirectUri,
-                'state'         => $state,
-                'scope'         => $scope,
-            ]);
-
-            $response->getHeaders()->addHeaderLine('Location', $authUrl);
-            $response->setStatusCode(302);
-            return $response;
-
-        } catch (\Throwable $th) {
-            $response->setStatusCode(500);
-            $jsonModel->setVariables(['success' => false, 'description' => $th->getMessage()]);
-            return $jsonModel;
-        }
-    }
-
-    /**
-     * Apple ID Callback
-     * @OA\POST(
-     *     path="/auth/ipa/apple-callback",
-     *     tags={"Authentication"},
-     *     description="Apple OAuth redirect callback endpoint (Form Post response mode)",
+     *     description="Handles Apple OAuth. If parameters (code or id_token) are absent, redirects to Apple's authorization page. If present, processes the callback to authenticate the user.",
      *     @OA\RequestBody(
-     *         required=true,
+     *         required=false,
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/x-www-form-urlencoded",
@@ -2180,7 +2436,7 @@ class ApiauthenticateController extends AbstractActionController
      *             )
      *         }
      *     ),
-     * security={{"bearerAuth":{}}},
+     *     @OA\Response(response="302", description="Redirect to Apple authorization page (when id_token is missing)"),
      *     @OA\Response(
      *         response="200",
      *         description="Success",
@@ -2188,40 +2444,41 @@ class ApiauthenticateController extends AbstractActionController
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(property="success", type="boolean"),
-     *                     @OA\Property(property="token", type="string")
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="schema", type="string", example="Bearer"),
+     *                     @OA\Property(property="expires_in", type="integer", example=1800),
+     *                     @OA\Property(property="token", type="string", example="eyJhbGci..."),
+     *                     @OA\Property(property="luhn_token", type="string", example="rt_abc123"),
+     *                     @OA\Property(
+     *                         property="user",
+     *                         type="object",
+     *                         @OA\Property(property="fullname", type="string", example="John Doe"),
+     *                         @OA\Property(property="email", type="string", example="john.doe@gmail.com"),
+     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="username", type="string", example="john.doe@gmail.com"),
+     *                         @OA\Property(property="uuid", type="string", example="d3b07384-d113-4956-a5db-e172e2cf69ef"),
+     *                         @OA\Property(property="wallet", type="integer", example=150),
+     *                         @OA\Property(property="profile_pic", type="string", example="null")
+     *                     )
      *                 )
      *             )
      *         }
      *     ),
-     *     @OA\Response(response="400", description="Error")
+     *     @OA\Response(response="400", description="Bad Request"),
+     *     @OA\Response(response="500", description="Server configuration error")
      * )
      * @OA\GET(
-     *     path="/auth/ipa/apple-callback",
+     *     path="/auth/ipa/apple-initiate",
      *     tags={"Authentication"},
-     *     description="Apple OAuth redirect callback endpoint (GET backup)",
-     *     @OA\Parameter(
-     *         name="code",
-     *         in="query",
-     *         required=false,
-     *         description="Authorization code",
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="id_token",
-     *         in="query",
-     *         required=false,
-     *         description="Identity Token (JWT)",
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(
-     *         response="200",
-     *         description="Success"
-     *     ),
+     *     description="Apple OAuth redirect callback endpoint (GET backup/initiate)",
+     *     @OA\Parameter(name="code", in="query", required=false, description="Authorization code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="id_token", in="query", required=false, description="Identity Token (JWT)", @OA\Schema(type="string")),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="302", description="Redirect to Apple authorization page (when id_token is missing)"),
      *     @OA\Response(response="400", description="Error")
      * )
      */
-    public function appleCallbackAction()
+    public function appleInitiateAction()
     {
         $request = $this->getRequest();
         $response = $this->getResponse();
@@ -2237,14 +2494,41 @@ class ApiauthenticateController extends AbstractActionController
         $userIp = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
         try {
-            // Stateless CSRF validation — verify HMAC-signed state token, no session needed
             $sm = $this->getEvent()->getApplication()->getServiceManager();
+            $config = $sm->get('config');
+            $appleConfig = $config['apple_oauth'] ?? [];
+
+            $clientId     = $appleConfig['client_id'] ?? '';
+            $redirectUri  = $appleConfig['redirect_uri'] ?? '';
+            $scope        = $appleConfig['scope'] ?? 'name email';
+            $responseMode = $appleConfig['response_mode'] ?? 'form_post';
+
+            if (empty($clientId) || empty($redirectUri)) {
+                throw new \Exception('Apple OAuth configuration is incomplete');
+            }
+
+            // If id_token is absent, run Initiate logic
+            if (empty($idToken)) {
+                $state = $this->generateOAuthState($sm);
+
+                $authUrl = 'https://appleid.apple.com/auth/authorize?' . http_build_query([
+                    'response_type' => 'code id_token',
+                    'response_mode' => $responseMode,
+                    'client_id'     => $clientId,
+                    'redirect_uri'  => $redirectUri,
+                    'state'         => $state,
+                    'scope'         => $scope,
+                ]);
+
+                $response->getHeaders()->addHeaderLine('Location', $authUrl);
+                $response->setStatusCode(302);
+                return $response;
+            }
+
+            // Otherwise, process Callback logic
+            // Stateless CSRF validation — verify HMAC-signed state token
             $this->verifyOAuthState($state, $sm);
 
-            if (empty($idToken)) {
-                throw new \Exception('ID token is missing');
-            }
-            
             // Parse JWT token from Apple
             $parser = new \Lcobucci\JWT\Token\Parser(new \Lcobucci\JWT\Encoding\JoseEncoder());
             $token = $parser->parse($idToken);
@@ -2272,10 +2556,6 @@ class ApiauthenticateController extends AbstractActionController
             $response->getHeaders()->addHeader($authResponse["cookie"]);
 
             // Get Apple configuration for frontend redirect
-            $sm = $this->getEvent()->getApplication()->getServiceManager();
-            $config = $sm->get('config');
-            $appleConfig = $config['apple_oauth'] ?? [];
-            
             $frontendRedirect = $appleConfig['frontend_redirect_url'] ?? '';
             if (!empty($frontendRedirect)) {
                 $redirectUrl = $frontendRedirect . '?' . http_build_query([
@@ -2301,15 +2581,181 @@ class ApiauthenticateController extends AbstractActionController
                     "role" => $authResponse["role"],
                     "username" => $authResponse["username"],
                     "uuid" => $authResponse["uuid"],
-                    "wallet" => intval($authResponse["wallet"])
+                    "wallet" => intval($authResponse["wallet"]),
+                    "profile_pic" => $authResponse["profile_pic"] ?? null
                 ]
+            ]);
+        } catch (\Throwable $th) {
+            $response->setStatusCode(empty($idToken) ? 500 : 400);
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "AppleCallbackError",
+                "description" => $th->getMessage()
+            ]);
+        }
+
+        return $jsonModel;
+    }
+
+    /**
+     * Delete user account (conforms to App Store requirement)
+     *
+     * @OA\DELETE(
+     *     path="/auth/ipa/delete-user",
+     *     tags={"Authentication"},
+     *     description="Deactivates the authenticated user account and anonymizes personal data. All active sessions (refresh tokens) are immediately deleted.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response="200",
+     *         description="Account successfully deleted",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="description", type="string", example="Account successfully deleted")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="401",
+     *         description="Unauthorized (token expired, missing, or invalid)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="Unauthorized"),
+     *                     @OA\Property(property="description", type="string", example="token expired")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (e.g. user does not exist or already deactivated)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="DeleteUserError"),
+     *                     @OA\Property(property="description", type="string", example="User does not exist")
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     * @OA\POST(
+     *     path="/auth/ipa/delete-user",
+     *     tags={"Authentication"},
+     *     description="Deactivates the authenticated user account (POST alternative)",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(response="200", description="Account successfully deleted"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="400", description="Bad Request")
+     * )
+     */
+    public function deleteUserAction()
+    {
+        $request = $this->getRequest();
+        $response = $this->getResponse();
+        $jsonModel = new JsonModel();
+
+        if (!$request->isPost() && !$request->isDelete()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use DELETE or POST."
+            ]);
+            return $jsonModel;
+        }
+
+        try {
+            // 1. Authenticate the user via the bearer token
+            $identity = $this->apiAuthService->getIdentity();
+            if (empty($identity['uuid'])) {
+                throw new \Exception("Invalid token payload: missing uuid");
+            }
+
+            $em = $this->entityManager;
+
+            // 2. Retrieve user entity
+            /** @var User $userEntity */
+            $userEntity = $em->getRepository(User::class)->findOneBy([
+                "uuid" => $identity['uuid']
+            ]);
+
+            if ($userEntity === null) {
+                throw new \Exception("User does not exist");
+            }
+
+            if ($userEntity->getState()->getId() === AuthenticationService::USER_STATE_DISABLED) {
+                throw new \Exception("User account is already deleted/disabled");
+            }
+
+            // 3. Anonymize/scrub personal data & nullify social IDs to comply with GDPR & App Store rules
+            $timestamp = time();
+            $userEntity->setFullname("Deleted User " . $timestamp);
+            $userEntity->setEmail("deleted_" . $timestamp . "_" . $userEntity->getEmail());
+            $userEntity->setUsername("deleted_" . $timestamp . "_" . $userEntity->getUsername());
+            $userEntity->setGoogleId(null);
+            $userEntity->setAppleId(null);
+            $userEntity->setPassword(AuthenticationService::encryptPassword(bin2hex(random_bytes(16))));
+
+            // 4. Set state to disabled
+            $disabledState = $em->find(\Authentication\Entity\UserState::class, AuthenticationService::USER_STATE_DISABLED);
+            if ($disabledState !== null) {
+                $userEntity->setState($disabledState);
+            }
+
+            $em->persist($userEntity);
+
+            // 5. Invalidate and delete all active refresh tokens of this user
+            $tokens = $em->getRepository(UserRefreshToken::class)->findBy([
+                "userId" => $userEntity->getId()
+            ]);
+            foreach ($tokens as $token) {
+                $em->remove($token);
+            }
+
+            $em->flush();
+
+            $response->setStatusCode(200);
+            $jsonModel->setVariables([
+                "success" => true,
+                "description" => "Account successfully deleted"
+            ]);
+
+        } catch (\Authentication\Exceptions\ExpiredAuthDateException $e) {
+            $response->setStatusCode(401);
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "Unauthorized",
+                "description" => "token expired"
+            ]);
+        } catch (\Authentication\Exceptions\InvalidTokenException $e) {
+            $response->setStatusCode(401);
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "Unauthorized",
+                "description" => "invalid_token"
+            ]);
+        } catch (\Authentication\Exceptions\EmptyTokenException $e) {
+            $response->setStatusCode(401);
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "Unauthorized",
+                "description" => "empty_token"
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
                 "success" => false,
-                "description" => $th->getMessage(),
-                "data" => $th->getTrace()
+                "error" => "DeleteUserError",
+                "description" => $th->getMessage()
             ]);
         }
 
@@ -2395,13 +2841,28 @@ class ApiauthenticateController extends AbstractActionController
      */
     private function getOAuthSigningKey($sm): string
     {
-        /** @var \Authentication\Service\JWTIssuer $jwtIssuer */
-        $jwtIssuer  = $sm->get(\Authentication\Service\JWTIssuer::class);
-        $jwtConfig  = $jwtIssuer->getConfig()->getJwtConfigEntity();
-        $signKey    = $jwtConfig->getSignKey();
+        $config = $sm->get('config');
+        $jwtConfig = $config['jwt'] ?? [];
+        $signKey = $jwtConfig['sign_key'] ?? '';
 
         // The stored key may be base64-encoded; decode and use raw bytes
         $raw = base64_decode($signKey, true);
         return ($raw !== false && strlen($raw) >= 16) ? $raw : $signKey;
+    }
+
+    /**
+     * Generate a UUID v4.
+     *
+     * @return string
+     */
+    private function generateUuid(): string
+    {
+        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
     }
 }

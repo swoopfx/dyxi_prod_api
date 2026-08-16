@@ -151,7 +151,9 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             $errorMessageContainer->code = 400;
 
             $em = $this->entityManager;
-            $user = $em->createQuery("SELECT u FROM Authentication\Entity\User u WHERE u.email = '$phoneOrEmail' OR u.username = '$phoneOrEmail'")->getResult(\Doctrine\ORM\Query::HYDRATE_OBJECT);
+            $user = $em->createQuery("SELECT u FROM Authentication\Entity\User u WHERE u.email = :phoneOrEmail OR u.username = :phoneOrEmail")
+                ->setParameter('phoneOrEmail', $phoneOrEmail)
+                ->getResult(\Doctrine\ORM\Query::HYDRATE_OBJECT);
 
             if (count($user) == 0) {
                 throw new \Exception("Invalid Credentials");
@@ -210,6 +212,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 $data["role"] = $user->getRole()->getName();
                 $data["role_id"] = $user->getRole()->getId();
                 $data["wallet"] = $user->getWallet() == null ? 0 : $user->getWallet()->getBalance();
+                $data["profile_pic"] = $user->getProfilePic();
 
 
                 // var_dump($data["user_agent"]);
@@ -224,11 +227,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 $refreshData["uid"] = $data_r["uid"];
                 $refreshData["user_id"] = $user->getId();
 
-                $refreshToken = $this->jwtIssuer->generateRefreshToken($refreshData);
+                $longLived = isset($post['remember_me']) && (bool)$post['remember_me'];
+                $refreshToken = $this->jwtIssuer->generateRefreshToken($refreshData, $longLived);
                 $cookie = new SetCookie(self::COOKIE_NAME);
 
                 $cookie->setValue($refreshToken);
-                $cookie->setExpires(60 * 60 * 24 * 30);
+                $cookie->setExpires($longLived ? (60 * 60 * 24 * 90) : (60 * 60 * 24 * 30));
                 $cookie->setPath("/");
                 $cookie->setSecure(true);
                 $cookie->setHttponly(true);
@@ -374,6 +378,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             'role'     => $user->getRole()->getName(),
             'role_id'  => $user->getRole()->getId(),
             'wallet'   => $user->getWallet() == null ? 0 : $user->getWallet()->getBalance(),
+            'profile_pic' => $user->getProfilePic(),
         ];
 
         $cookie = new SetCookie(self::COOKIE_NAME);
@@ -833,7 +838,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         return $this;
     }
 
-    public function authenticateSocial($email, $name, $provider, $providerId, $ip, $userAgent)
+    public function authenticateSocial($email, $name, $provider, $providerId, $ip, $userAgent, ?string $profilePic = null)
     {
         $em = $this->entityManager;
         $user = null;
@@ -867,6 +872,9 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
             if ($provider === 'google' && !empty($providerId)) {
                 $user->setGoogleId($providerId);
+                if ($profilePic !== null && $profilePic !== '') {
+                    $user->setProfilePic($profilePic);
+                }
             } elseif ($provider === 'apple' && !empty($providerId)) {
                 $user->setAppleId($providerId);
             }
@@ -885,6 +893,11 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 $modified = true;
             } elseif ($provider === 'apple' && !empty($providerId) && empty($user->getAppleId())) {
                 $user->setAppleId($providerId);
+                $modified = true;
+            }
+
+            if ($provider === 'google' && $profilePic !== null && $profilePic !== '' && $user->getProfilePic() !== $profilePic) {
+                $user->setProfilePic($profilePic);
                 $modified = true;
             }
 
@@ -920,6 +933,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $data["role"] = $user->getRole()->getName();
         $data["role_id"] = $user->getRole()->getId();
         $data["wallet"] = $user->getWallet() == null ? 0 : $user->getWallet()->getBalance();
+        $data["profile_pic"] = $user->getProfilePic();
 
         // Generate refresh token
         $refreshData = [];

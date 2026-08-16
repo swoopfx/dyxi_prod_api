@@ -2,13 +2,13 @@
 
 namespace Authentication\Service\Factory;
 
-use Authentication\Entity\Jwt;
+use Authentication\Service\JWTConfig;
 use Authentication\Service\JWTConfiguration;
 use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Lcobucci\JWT\Configuration;
-use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Lcobucci\JWT\Signer\Rsa\Sha256;
 use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Validation\Constraint\IssuedBy;
 use Lcobucci\JWT\Validation\Constraint\PermittedFor;
@@ -22,24 +22,26 @@ class JWTConfigurationFactory implements FactoryInterface
         }
 
         $config = $container->get("config");
+        if (! isset($config['jwt'])) {
+            throw new InvalidArgumentException("JWT configuration is missing in the configuration file");
+        }
+        $jwtConfigEntity = new JWTConfig($config['jwt']);
         $algo = new Sha256();
-        $generalService = $container->get("general_service");
-        $em = $generalService->getEm();
-      /**
-       * @var Jwt
-       */
-        $jwtConfigEntity = $em->find(Jwt::class, 100);
-      // var_dump($jwtConfigEntity->getSignKey());
-        $key = InMemory::base64Encoded($jwtConfigEntity->getSignKey());
-      // $refeshKey = InMemory::base64Encoded($config["jwt"]["refreshKey"]);
-        $configuration = Configuration::forSymmetricSigner($algo, $key);
+
+        // Load RSA keys for asymmetric encryption
+        $baseDir = realpath(__DIR__ . '/../../../../../');
+        $privateKeyPath = $baseDir . '/data/keys/private.pem';
+        $publicKeyPath = $baseDir . '/data/keys/public.pem';
+        
+        $privateKey = InMemory::file('file://' . $privateKeyPath);
+        $publicKey = InMemory::file('file://' . $publicKeyPath);
+
+        $configuration = Configuration::forAsymmetricSigner($algo, $privateKey, $publicKey);
         $configuration->setValidationConstraints(
             new IssuedBy($jwtConfigEntity->getIssuer())
         );
 
-        $refreshKey = InMemory::base64Encoded($jwtConfigEntity->getRefreshKey());
-        $refreshConfig = Configuration::forSymmetricSigner($algo, $refreshKey);
-      // $refreshConfig->setValidationConstraints()
+        $refreshConfig = Configuration::forAsymmetricSigner($algo, $privateKey, $publicKey);
 
         $xserv = new JWTConfiguration();
         $xserv->setConfiguration($configuration)->setJwtConfigEntity($jwtConfigEntity)->setRefreshConfig($refreshConfig);

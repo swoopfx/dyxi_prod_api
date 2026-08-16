@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "org.qtproject.oruladyxiprod",
+      "sha256_cert_fingerprints": [
+        "77:AC:D9:A9:97:49:3A:E5:6B:40:FE:04:83:92:73:14:C5:61:1B:58:08:86:75:B5:E4:36:54:1B:D7:A1:83:FB"
+      ]
+    }
+  }
+]

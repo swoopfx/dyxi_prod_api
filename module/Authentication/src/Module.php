@@ -98,7 +98,8 @@ class Module
             // retrieve claim
             // verify
             // return required status code
-        } elseif ($interface == "web") {
+        } 
+        elseif ($interface == "web") {
             try {
                 $generalService = $sm->get("general_service");
                 $authService = $generalService->getAuthService();

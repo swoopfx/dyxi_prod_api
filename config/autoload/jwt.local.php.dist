@@ -1,0 +1,11 @@
+<?php
+
+return [
+    'jwt' => [
+        'issuer' => 'https://dyxi.com',
+        'secret_key_expires' => '+30 days',
+        'refresh_key_expires' => '+365 days',
+        'sign_key' => 'super_secret_signing_key_at_least_16_bytes',
+        'url' => 'https://dyxi.com',
+    ],
+];

@@ -23,7 +23,7 @@ return [
     'Laminas\ApiTools\ApiProblem',
     'Laminas\ApiTools\ContentNegotiation',
     'Laminas\ApiTools\Documentation',
-    // 'Laminas\ApiTools\Documentation\Swagger',
+    'Laminas\ApiTools\Documentation\Swagger',
     'Laminas\Cache\Storage\Adapter\Filesystem',
     'Laminas\Cache\Storage\Adapter\Memory',
     'DoctrineModule',

@@ -14,7 +14,7 @@ use Doctrine\ORM\EntityManager;
 use Exception;
 use Laminas\Db\Sql\Ddl\Column\Datetime;
 use Laminas\Mvc\Plugin\Identity\Identity;
-use Authentication\Entity\Jwt;
+use Authentication\Service\JWTConfig;
 use Authentication\Exceptions\EmptyTokenException;
 use Authentication\Exceptions\InvalidTokenException;
 use Lcobucci\JWT\Validation\Constraint\SignedWith;
@@ -63,14 +63,17 @@ class JWTIssuer
          * @var Configuration
          */
         $config = $this->config->getConfiguration();
-        $jwtConfigEntity = $this->config->getJwtConfigEntity();
+        $jwtConfig = $this->systemConfig['jwt'] ?? [];
+        $issuer = $jwtConfig['issuer'] ?? '';
+        $secretKeyExpires = $jwtConfig['secret_key_expires'] ?? '';
+
         return  $config->builder()
-            ->issuedBy($jwtConfigEntity->getIssuer())
-            ->permittedFor($jwtConfigEntity->getIssuer())
+            ->issuedBy($issuer)
+            ->permittedFor($issuer)
             ->identifiedBy($data["email"]) // device ID
             ->relatedTo($data["email"])->withClaim("coded", $data)
             ->issuedAt($now)
-            ->expiresAt($now->modify($jwtConfigEntity->getSecretKeyExpires()))
+            ->expiresAt($now->modify($secretKeyExpires))
             ->getToken($config->signer(), $config->signingKey());
     }
 
@@ -106,7 +109,7 @@ class JWTIssuer
     }
 
 
-    public function generateRefreshToken($data)
+    public function generateRefreshToken($data, bool $longLived = false)
     {
         try {
             // generate refresh token
@@ -115,20 +118,15 @@ class JWTIssuer
              * @var Configuration
              */
             $config = $this->config->getRefreshConfig();
-            $jwtConfigEntity = $this->config->getJwtConfigEntity();
-            $expiresOn = $now->modify($jwtConfigEntity->getRefreshKeyExpires());
+            $jwtConfig = $this->systemConfig['jwt'] ?? [];
+            $issuer = $jwtConfig['issuer'] ?? '';
+            $refreshKeyExpires = $jwtConfig['refresh_key_expires'] ?? '';
+
+            $ttlOverride = $longLived ? '+90 days' : $refreshKeyExpires;
+            $expiresOn = $now->modify($ttlOverride);
             $refreshToken = $config->builder()
-
-                // ->issuedBy($this->jwtConfig->getIssuer())
-                // ->permittedFor($this->jwtConfig->getIssuer())
-                // ->identifiedBy($data["email"]) // device ID
-                // ->relatedTo($data["email"])->withClaim("coded", $data)
-                // ->issuedAt($now)
-                // ->expiresAt($now->modify($this->jwtConfig->getSecretKeyExpires()))
-                // ->getToken($this->config->signer(), $this->config->signingKey());
-
-                ->issuedBy($jwtConfigEntity->getIssuer())
-                ->permittedFor($jwtConfigEntity->getIssuer())
+                ->issuedBy($issuer)
+                ->permittedFor($issuer)
                 ->identifiedBy($data["data"]["email"])
                 ->relatedTo($data["data"]["email"])->withClaim("coded", $data["data"])
                 ->issuedAt($now)
@@ -163,7 +161,8 @@ class JWTIssuer
     {
         try {
             $config = $this->config->getRefreshConfig();
-            $jwtConfigEntity = $this->config->getJwtConfigEntity();
+            $jwtConfig = $this->systemConfig['jwt'] ?? [];
+            $issuer = $jwtConfig['issuer'] ?? '';
 
             if (! isset($jwt)) {
                 throw new \Exception("No token provided");
@@ -177,12 +176,14 @@ class JWTIssuer
 
             assert($token instanceof UnencryptedToken);
 
-            $validation = new Validator();
-            $validation->assert($token, new IssuedBy($jwtConfigEntity->getIssuer()));
-            $validation->assert($token, new PermittedFor($jwtConfigEntity->getIssuer()));
-            $validation->assert($token, new LooseValidAt(new FrozenClock(new \DateTimeImmutable())));
-            $validation->assert($token, new IdentifiedBy($token->claims()->get("jti")));
-            $validation->assert($token, new SignedWith($config->signer(), $config->signingKey()));
+            $config->validator()->assert(
+                $token,
+                new IssuedBy($issuer),
+                new PermittedFor($issuer),
+                new LooseValidAt(new FrozenClock(new \DateTimeImmutable())),
+                new IdentifiedBy($token->claims()->get("jti")),
+                new SignedWith($config->signer(), $config->verificationKey())
+            );
             // if ($token instanceof UnencryptedToken) {
             //     $constraints = $config->validationConstraints();
             //     if ($config->validator()->validate($token, ...$constraints)) {
@@ -208,7 +209,8 @@ class JWTIssuer
     {
         try {
             $config = $this->config->getConfiguration();
-            $jwtConfigEntity = $this->config->getJwtConfigEntity();
+            $jwtConfig = $this->systemConfig['jwt'] ?? [];
+            $issuer = $jwtConfig['issuer'] ?? '';
 
             if (! isset($jwt)) {
                 throw new \Exception("No token provided");
@@ -222,12 +224,14 @@ class JWTIssuer
 
             assert($token instanceof UnencryptedToken);
 
-            $validation = new Validator();
-            $validation->assert($token, new IssuedBy($jwtConfigEntity->getIssuer()));
-            $validation->assert($token, new PermittedFor($jwtConfigEntity->getIssuer()));
-            $validation->assert($token, new LooseValidAt(new FrozenClock(new \DateTimeImmutable())));
-            $validation->assert($token, new IdentifiedBy($token->claims()->get("jti")));
-            $validation->assert($token, new SignedWith($config->signer(), $config->signingKey()));
+            $config->validator()->assert(
+                $token,
+                new IssuedBy($issuer),
+                new PermittedFor($issuer),
+                new LooseValidAt(new FrozenClock(new \DateTimeImmutable())),
+                new IdentifiedBy($token->claims()->get("jti")),
+                new SignedWith($config->signer(), $config->verificationKey())
+            );
             // if ($token instanceof UnencryptedToken) {
             //     $constraints = $config->validationConstraints();
             //     if ($config->validator()->validate($token, ...$constraints)) {
@@ -253,7 +257,8 @@ class JWTIssuer
     {
         try {
             $config = $this->config->getConfiguration();
-            $jwtConfigEntity = $this->config->getJwtConfigEntity();
+            $jwtConfig = $this->systemConfig['jwt'] ?? [];
+            $issuer = $jwtConfig['issuer'] ?? '';
 
             if (! isset($jwt)) {
                 throw new \Exception("No token provided");
@@ -267,12 +272,13 @@ class JWTIssuer
 
             assert($token instanceof UnencryptedToken);
 
-            $validation = new Validator();
-            $validation->assert($token, new IssuedBy($jwtConfigEntity->getIssuer()));
-            $validation->assert($token, new PermittedFor($jwtConfigEntity->getIssuer()));
-            // $validation->assert($token, new LooseValidAt(new FrozenClock(new \DateTimeImmutable())));
-            $validation->assert($token, new IdentifiedBy($token->claims()->get("jti")));
-            $validation->assert($token, new SignedWith($config->signer(), $config->signingKey()));
+            $config->validator()->assert(
+                $token,
+                new IssuedBy($issuer),
+                new PermittedFor($issuer),
+                new IdentifiedBy($token->claims()->get("jti")),
+                new SignedWith($config->signer(), $config->verificationKey())
+            );
 
             return $token;
         } catch (RequiredConstraintsViolated $e) {

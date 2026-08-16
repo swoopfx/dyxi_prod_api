@@ -40,6 +40,7 @@ return [
         'routes' => [
             'authentication' => [
                 'type'    => Segment::class,
+                'priority' => -1000,
                 'options' => [
                     'route'    => '/[:action[/:id]]',
                     'constraints' => [
