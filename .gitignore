@@ -3,6 +3,8 @@
 /.psalm-cache
 vendor/
 config/development.config.php
+config/autoload/*.local.php
 data/cache/*
+data/keys/*
 !data/cache/.gitkeep
 phpunit.xml

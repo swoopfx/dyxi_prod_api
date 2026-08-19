@@ -34,4 +34,8 @@ return [
     'Wallet',
     'Resources',
     'Evaluation',
+    'Ward',
+    'Dyslexia',
+    'Adhd',
+    'Dyscalculia',
 ];
