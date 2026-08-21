@@ -3,24 +3,24 @@
 namespace Authentication\Controller;
 
 use Authentication\Entity\User;
-use Authentication\Service\AuthMailtrapService;
 use Authentication\Entity\UserRefreshToken;
-use Laminas\Mvc\Controller\AbstractActionController;
-use Laminas\View\Model\JsonModel;
-use Authentication\Form\InputFilter\RegisterInputfilter;
 use Authentication\Form\InputFilter\LoginInputFilter;
+use Authentication\Form\InputFilter\RegisterInputfilter;
 use Authentication\Service\ApiAuthenticateService;
 use Authentication\Service\AuthenticationService;
-use General\Service\GeneralService;
+use Authentication\Service\AuthMailtrapService;
+use Authentication\Service\JWTIssuer;
 use Authentication\Service\RegisterService;
 use Doctrine\ORM\EntityManager;
-use Laminas\InputFilter\InputFilter;
 use General\Service\Mailtrap\MailtrapService;
-use Authentication\Service\JWTIssuer;
+use General\Service\Postmark\AuthenticationEmailService;
+use General\Service\GeneralService;
+use Laminas\InputFilter\InputFilter;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\Session\Container;
 use Laminas\Validator\Identical;
 use Laminas\Validator\StringLength;
-use General\Service\Postmark\AuthenticationEmailService;
-use Laminas\Session\Container;
+use Laminas\View\Model\JsonModel;
 
 /**
  * @OA\Info(
@@ -69,7 +69,6 @@ class ApiauthenticateController extends AbstractActionController
      */
     private $registerService;
 
-
     /**
      * Undocumented variable
      *
@@ -91,7 +90,6 @@ class ApiauthenticateController extends AbstractActionController
      */
     private $jwtIssuer;
 
-
     /**
      * Undocumented variable
      *
@@ -99,6 +97,17 @@ class ApiauthenticateController extends AbstractActionController
      */
     private $authPostmarkService;
 
+    /**
+     * Undocumented variable
+     *
+     * @var GoogleOAuthService
+     */
+    private $googleAuthService;
+
+    /**
+     * @var array
+     */
+    private $config;
 
     /**
      * This API is used to authenticate the user and retrieve a JWT bearer token.
@@ -190,9 +199,9 @@ class ApiauthenticateController extends AbstractActionController
         if (!$request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
             ]);
             return $jsonModel;
         }
@@ -203,37 +212,35 @@ class ApiauthenticateController extends AbstractActionController
         $postData = json_decode($json, true);
         // $postData = (array) $postData;
         // $this->loginInputFilter->setData($postData);
-        $errorMessageContainer = new Container("error_code");
+        $errorMessageContainer = new Container('error_code');
         try {
             // Authenticate here
-            /**
-             * @var ApiAuthenticateService
-             */
+            /** @var ApiAuthenticateService */
             $authResponse = $this->apiAuthService->setPost($postData)->authenticate();
-            $response->getHeaders()->addHeader($authResponse["cookie"]);
+            $response->getHeaders()->addHeader($authResponse['cookie']);
             $response->setStatusCode(200);
             $jsonModel->setVariables([
-                "success"       => true,
-                "schema"        => "Bearer",
-                "expires_in"    => $authResponse["expire"],
-                "token"         => $authResponse["token"],
-                "refresh_token" => $authResponse["refresh_token"],  // opaque refresh token (also in HttpOnly cookie)
-                "luhn_token"    => $authResponse["token_id"],
-                "user" => [
-                    "fullname" => $authResponse["fullname"],
-                    "email"    => $authResponse["email"],
-                    "role"     => $authResponse["role"],
-                    "username" => $authResponse["username"],
-                    "uuid"     => $authResponse["uuid"],
-                    "wallet"   => intval($authResponse["wallet"]),
-                    "profile_pic" => $authResponse["profile_pic"] ?? null
+                'success' => true,
+                'schema' => 'Bearer',
+                'expires_in' => $authResponse['expire'],
+                'token' => $authResponse['token'],
+                'refresh_token' => $authResponse['refresh_token'],  // opaque refresh token (also in HttpOnly cookie)
+                'luhn_token' => $authResponse['token_id'],
+                'user' => [
+                    'fullname' => $authResponse['fullname'],
+                    'email' => $authResponse['email'],
+                    'role' => $authResponse['role'],
+                    'username' => $authResponse['username'],
+                    'uuid' => $authResponse['uuid'],
+                    'wallet' => intval($authResponse['wallet']),
+                    'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
             ]);
         } catch (\Throwable $th) {
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "AuthenticationError",
-                "description" => $th->getMessage()
+                'success' => false,
+                'error' => 'AuthenticationError',
+                'description' => $th->getMessage()
             ]);
 
             $response->setStatusCode($errorMessageContainer->code ?: 400);
@@ -313,16 +320,16 @@ class ApiauthenticateController extends AbstractActionController
      */
     public function refreshAction()
     {
-        $request   = $this->getRequest();
-        $response  = $this->getResponse();
+        $request = $this->getRequest();
+        $response = $this->getResponse();
         $jsonModel = new JsonModel();
 
         if (!$request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
             ]);
             return $jsonModel;
         }
@@ -362,27 +369,26 @@ class ApiauthenticateController extends AbstractActionController
             $response->getHeaders()->addHeader($authResponse['cookie']);
             $response->setStatusCode(200);
             $jsonModel->setVariables([
-                'success'       => true,
-                'schema'        => 'Bearer',
-                'expires_in'    => $authResponse['expire'],
-                'token'         => $authResponse['token'],
+                'success' => true,
+                'schema' => 'Bearer',
+                'expires_in' => $authResponse['expire'],
+                'token' => $authResponse['token'],
                 'refresh_token' => $authResponse['refresh_token'],
-                'luhn_token'    => $authResponse['token_id'],
+                'luhn_token' => $authResponse['token_id'],
                 'user' => [
                     'fullname' => $authResponse['fullname'],
-                    'email'    => $authResponse['email'],
-                    'role'     => $authResponse['role'],
+                    'email' => $authResponse['email'],
+                    'role' => $authResponse['role'],
                     'username' => $authResponse['username'],
-                    'uuid'     => $authResponse['uuid'],
-                    'wallet'   => intval($authResponse['wallet']),
+                    'uuid' => $authResponse['uuid'],
+                    'wallet' => intval($authResponse['wallet']),
                     'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(401);
             $jsonModel->setVariables([
-                'success'     => false,
+                'success' => false,
                 'description' => $th->getMessage()
             ]);
         }
@@ -458,16 +464,16 @@ class ApiauthenticateController extends AbstractActionController
      */
     public function logoutAction()
     {
-        $request   = $this->getRequest();
-        $response  = $this->getResponse();
+        $request = $this->getRequest();
+        $response = $this->getResponse();
         $jsonModel = new JsonModel();
 
         if (!$request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
             ]);
             return $jsonModel;
         }
@@ -508,7 +514,6 @@ class ApiauthenticateController extends AbstractActionController
             $response->getHeaders()->addHeader($clearCookie);
             $response->setStatusCode(200);
             $jsonModel->setVariables(['success' => true, 'description' => 'Logged out successfully']);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables(['success' => false, 'description' => $th->getMessage()]);
@@ -516,7 +521,6 @@ class ApiauthenticateController extends AbstractActionController
 
         return $jsonModel;
     }
-
 
     /**
      * Registers a Customer
@@ -597,8 +601,6 @@ class ApiauthenticateController extends AbstractActionController
      *     )
      * )
      */
-
-
     public function registerAction()
     {
         $jsonModel = new JsonModel();
@@ -608,9 +610,9 @@ class ApiauthenticateController extends AbstractActionController
         if (!$request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
             ]);
             return $jsonModel;
         }
@@ -624,19 +626,19 @@ class ApiauthenticateController extends AbstractActionController
             if (!is_null($responseData)) {
                 $response->setStatusCode(201);
                 $jsonModel->setVariables([
-                    "success" => true,
-                    "data" => [
-                        "fullname" => $responseData["fullname"],
-                        "email" => $responseData["email"],
+                    'success' => true,
+                    'data' => [
+                        'fullname' => $responseData['fullname'],
+                        'email' => $responseData['email'],
                     ],
-                    "description" => "Successfully Created {$responseData['fullname']}, profile, please visit Email to confirm email"
+                    'description' => "Successfully Created {$responseData['fullname']}, profile, please visit Email to confirm email"
                 ]);
             }
         } catch (\Throwable $th) {
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "RegistrationError",
-                "description" => $th->getMessage()
+                'success' => false,
+                'error' => 'RegistrationError',
+                'description' => $th->getMessage()
             ]);
             $response->setStatusCode(400);
         }
@@ -716,9 +718,9 @@ class ApiauthenticateController extends AbstractActionController
         if (!$request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
             ]);
             return $jsonModel;
         }
@@ -781,27 +783,26 @@ class ApiauthenticateController extends AbstractActionController
                 $this->registerService->confirmEmailMobile($data);
 
                 $jsonModel->setVariables([
-                    "success" => true
+                    'success' => true
                 ]);
             } catch (\Throwable $th) {
                 $response->setStatusCode(400);
                 $jsonModel->setVariables([
-                    "success" => false,
-                    "error" => "VerificationError",
-                    "description" => $th->getMessage()
+                    'success' => false,
+                    'error' => 'VerificationError',
+                    'description' => $th->getMessage()
                 ]);
             }
         } else {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "ValidationError",
-                "description" => $inputFilter->getMessages()
+                'success' => false,
+                'error' => 'ValidationError',
+                'description' => $inputFilter->getMessages()
             ]);
         }
         return $jsonModel;
     }
-
 
     /**
      * Request another confirmation code.
@@ -875,9 +876,9 @@ class ApiauthenticateController extends AbstractActionController
         if (!$request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
             ]);
             return $jsonModel;
         }
@@ -912,49 +913,42 @@ class ApiauthenticateController extends AbstractActionController
         if ($inputFilter->isValid()) {
             try {
                 $data = $inputFilter->getValues();
-                $mailData["email"] = $data["email"];
-                $mailData["code"] = RegisterService::generateMobileCode();
-                /**
-                 * @var User
-                 *
-                 */
+                $mailData['email'] = $data['email'];
+                $mailData['code'] = RegisterService::generateMobileCode();
+                /** @var User */
                 $userEntity = $em->getRepository(User::class)->findOneBy([
-                    "email" => $data["email"]
+                    'email' => $data['email']
                 ]);
                 if (!$userEntity) {
-                    throw new \Exception("User does not exist");
+                    throw new \Exception('User does not exist');
                 }
-                $userEntity->setUpdatedOn(new \Datetime())->setMobileActivateCode($mailData["code"]);
+                $userEntity->setUpdatedOn(new \Datetime())->setMobileActivateCode($mailData['code']);
                 $em->persist($userEntity);
                 $em->flush();
                 $this->mailtrapService->confirmEmail($mailData);
                 $jsonModel->setVariables([
-                    "success" => true
+                    'success' => true
                 ]);
             } catch (\Throwable $th) {
                 $response->setStatusCode(400);
                 $jsonModel->setVariables([
-                    "success" => false,
-                    "error" => "ProcessError",
-                    "description" => $th->getMessage()
+                    'success' => false,
+                    'error' => 'ProcessError',
+                    'description' => $th->getMessage()
                 ]);
             }
         } else {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "ValidationError",
-                "description" => $inputFilter->getMessages()
+                'success' => false,
+                'error' => 'ValidationError',
+                'description' => $inputFilter->getMessages()
             ]);
         }
         return $jsonModel;
     }
 
-
-
-
     /**
-     *
      * Reteieves a refresh token based on the validity of the old one
      * @OA\GET( path="/auth/ipa/refresh-token", tags={"Authentication"},
      * security={{"bearerAuth":{}}},
@@ -1046,34 +1040,31 @@ class ApiauthenticateController extends AbstractActionController
         try {
             $api_auth = $this->apiAuthService;
             $refreshData = $api_auth->refreshTokenIdentity();
-            $token_id = $refreshData["token_id"];
-            $user_uuid = $refreshData["uuid"];
-            /**
-             * @var UserRefreshToken
-             *
-             */
+            $token_id = $refreshData['token_id'];
+            $user_uuid = $refreshData['uuid'];
+            /** @var UserRefreshToken */
             $refreshTokenEntity = $this->entityManager->getRepository(UserRefreshToken::class)->findOneBy([
-                "tokenId" => $token_id
+                'tokenId' => $token_id
             ]);
             $userEntity = $this->entityManager->getRepository(User::class)->findOneBy([
-                "uuid" => $user_uuid
+                'uuid' => $user_uuid
             ]);
-            $authResponse = "";
+            $authResponse = '';
             if ($refreshTokenEntity != null) {
                 $authResponse = $api_auth->generateRefreshToken($refreshTokenEntity, $userEntity);
                 $response->setStatusCode(201);
                 $jsonModel->setVariables([
-                    "success" => true,
-                    "schema" => "Bearer",
-                    "expires_in" => $authResponse["expire"],
-                    "token" => $authResponse["token"],
-                    "luhn_token" => $authResponse["token_id"], // luhn algorithm value
+                    'success' => true,
+                    'schema' => 'Bearer',
+                    'expires_in' => $authResponse['expire'],
+                    'token' => $authResponse['token'],
+                    'luhn_token' => $authResponse['token_id'],  // luhn algorithm value
                 ]);
             }
         } catch (\Throwable $th) {
             $jsonModel->setVariables([
-                "success" => false,
-                "description" => $th->getMessage(),
+                'success' => false,
+                'description' => $th->getMessage(),
                 // "data" => $th->getTrace()
             ]);
 
@@ -1083,7 +1074,6 @@ class ApiauthenticateController extends AbstractActionController
         }
         return $jsonModel;
     }
-
 
     /**
      * Initiate password reset flow.
@@ -1156,9 +1146,9 @@ class ApiauthenticateController extends AbstractActionController
         if (!$request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
             ]);
             return $jsonModel;
         }
@@ -1195,14 +1185,12 @@ class ApiauthenticateController extends AbstractActionController
         if ($inputFilter->isValid()) {
             $values = $inputFilter->getValues();
             try {
-                /**
-                 * @var User
-                 */
+                /** @var User */
                 $userEntity = $em->getRepository(User::class)->findOneBy([
-                    "email" => $values["email"]
+                    'email' => $values['email']
                 ]);
                 if ($userEntity == null) {
-                    throw new \Exception("User does not exist");
+                    throw new \Exception('User does not exist');
                 }
 
                 $resetCode = RegisterService::generateMobileCode();
@@ -1211,38 +1199,37 @@ class ApiauthenticateController extends AbstractActionController
                 $em->flush();
 
                 $mailData = [
-                    "to"       => $userEntity->getEmail(),
-                    "code"     => $resetCode,
-                    "subject"  => "Recyclepoint Reset Password",
-                    "toName"   => $userEntity->getFullname(),
-                    "fulllink" => $resetCode
+                    'to' => $userEntity->getEmail(),
+                    'code' => $resetCode,
+                    'subject' => 'Recyclepoint Reset Password',
+                    'toName' => $userEntity->getFullname(),
+                    'fulllink' => $resetCode
                 ];
-               
+
                 $this->authPostmarkService->resetpassword($mailData);
 
                 $jsonModel->setVariables([
-                    "success" => true
+                    'success' => true
                 ]);
                 $response->setStatusCode(200);
             } catch (\Throwable $th) {
                 $jsonModel->setVariables([
-                    "success" => false,
-                    "error" => "ResetError",
-                    "description" => $th->getMessage()
+                    'success' => false,
+                    'error' => 'ResetError',
+                    'description' => $th->getMessage()
                 ]);
                 $response->setStatusCode(400);
             }
         } else {
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "ValidationError",
-                "description" => $inputFilter->getMessages()
+                'success' => false,
+                'error' => 'ValidationError',
+                'description' => $inputFilter->getMessages()
             ]);
             $response->setStatusCode(400);
         }
         return $jsonModel;
     }
-
 
     /**
      * Confirm password reset code.
@@ -1318,15 +1305,15 @@ class ApiauthenticateController extends AbstractActionController
         if (!$request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
             ]);
             return $jsonModel;
         }
 
         $json = $request->getContent();
-        $postData  = json_decode($json, true);
+        $postData = json_decode($json, true);
         $inputFilter = new InputFilter();
         $inputFilter->add([
             'name' => 'code',
@@ -1379,50 +1366,46 @@ class ApiauthenticateController extends AbstractActionController
             try {
                 $values = $inputFilter->getValues();
                 $newCode = RegisterService::generateMobileCode();
-                /**
-                 * @var User
-                 */
+                /** @var User */
                 $userEntity = $em->getRepository(User::class)->findOneBy([
-                    "email" => $values["email"]
+                    'email' => $values['email']
                 ]);
                 if ($userEntity == null) {
-                    throw new \Exception("User does not exist");
+                    throw new \Exception('User does not exist');
                 }
-                if ($values["code"] == $userEntity->getMobileActivateCode()) {
+                if ($values['code'] == $userEntity->getMobileActivateCode()) {
                     $userEntity->setMobileActivateCode($newCode)->setUpdatedOn(new \Datetime());
 
                     $em->persist($userEntity);
                     $em->flush();
                     $response->setStatusCode(201);
                     $jsonModel->setVariables([
-                        "success" => true,
-                        "reset_code" => $userEntity->getMobileActivateCode(),
-                        "description" => "Code Confirmed"
+                        'success' => true,
+                        'reset_code' => $userEntity->getMobileActivateCode(),
+                        'description' => 'Code Confirmed'
                     ]);
                     return $jsonModel;
                 } else {
-                    throw new \Exception("Invalid Code");
+                    throw new \Exception('Invalid Code');
                 }
             } catch (\Throwable $th) {
                 $jsonModel->setVariables([
-                    "success" => false,
-                    "error" => "ConfirmCodeError",
-                    "description" => $th->getMessage()
+                    'success' => false,
+                    'error' => 'ConfirmCodeError',
+                    'description' => $th->getMessage()
                 ]);
                 $response->setStatusCode(400);
             }
         } else {
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "ValidationError",
-                "description" => $inputFilter->getMessages()
+                'success' => false,
+                'error' => 'ValidationError',
+                'description' => $inputFilter->getMessages()
             ]);
             $response->setStatusCode(400);
         }
         return $jsonModel;
     }
-
-
 
     /**
      * Updates user password.
@@ -1498,9 +1481,9 @@ class ApiauthenticateController extends AbstractActionController
         if (!$request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
             ]);
             return $jsonModel;
         }
@@ -1509,10 +1492,10 @@ class ApiauthenticateController extends AbstractActionController
         $postData = json_decode($json, true);
         $inputFilter = new InputFilter();
         $inputFilter->add([
-            "name" => "password",
-            "required" => true,
-            "allow_empty" => false,
-            "filters" => [
+            'name' => 'password',
+            'required' => true,
+            'allow_empty' => false,
+            'filters' => [
                 [
                     'name' => 'StripTags'
                 ],
@@ -1520,25 +1503,25 @@ class ApiauthenticateController extends AbstractActionController
                     'name' => 'StringTrim'
                 ]
             ],
-            "validators" => [
+            'validators' => [
                 [
                     'name' => 'StringLength',
                     'options' => [
                         'encoding' => 'UTF-8',
                         'min' => 6,
-                        "messages" => [
-                            StringLength::TOO_SHORT => "The password must be more than 6 characters",
-                            StringLength::TOO_LONG => "This password is too long to memorize"
+                        'messages' => [
+                            StringLength::TOO_SHORT => 'The password must be more than 6 characters',
+                            StringLength::TOO_LONG => 'This password is too long to memorize'
                         ]
                     ]
                 ]
             ]
         ]);
         $inputFilter->add([
-            "name" => "email",
-            "required" => true,
-            "allow_empty" => false,
-            "filters" => [
+            'name' => 'email',
+            'required' => true,
+            'allow_empty' => false,
+            'filters' => [
                 [
                     'name' => 'StripTags'
                 ],
@@ -1546,25 +1529,25 @@ class ApiauthenticateController extends AbstractActionController
                     'name' => 'StringTrim'
                 ]
             ],
-            "validators" => [
+            'validators' => [
                 [
                     'name' => 'StringLength',
                     'options' => [
                         'encoding' => 'UTF-8',
                         'min' => 6,
-                        "messages" => [
-                            StringLength::TOO_SHORT => "Email is too short",
-                            StringLength::TOO_LONG => "This Email is too long to memorize"
+                        'messages' => [
+                            StringLength::TOO_SHORT => 'Email is too short',
+                            StringLength::TOO_LONG => 'This Email is too long to memorize'
                         ]
                     ]
                 ]
             ]
         ]);
         $inputFilter->add([
-            "name" => "reset_code",
-            "required" => true,
-            "allow_empty" => false,
-            "filters" => [
+            'name' => 'reset_code',
+            'required' => true,
+            'allow_empty' => false,
+            'filters' => [
                 [
                     'name' => 'StripTags'
                 ],
@@ -1572,7 +1555,7 @@ class ApiauthenticateController extends AbstractActionController
                     'name' => 'StringTrim'
                 ]
             ],
-            "validators" => [
+            'validators' => [
                 [
                     'name' => 'NotEmpty',
                     'options' => [
@@ -1584,18 +1567,18 @@ class ApiauthenticateController extends AbstractActionController
             ]
         ]);
         $inputFilter->add([
-            "name" => "confirm_password",
-            "required" => true,
-            "allow_empty" => false,
-            "validators" => [
+            'name' => 'confirm_password',
+            'required' => true,
+            'allow_empty' => false,
+            'validators' => [
                 [
                     'name' => 'StringLength',
                     'options' => [
                         'encoding' => 'UTF-8',
                         'min' => 6,
-                        "messages" => [
-                            StringLength::TOO_SHORT => "The password must be more than 6 characters",
-                            StringLength::TOO_LONG => "This password is too long to memorize"
+                        'messages' => [
+                            StringLength::TOO_SHORT => 'The password must be more than 6 characters',
+                            StringLength::TOO_LONG => 'This password is too long to memorize'
                         ]
                     ]
                 ],
@@ -1603,8 +1586,8 @@ class ApiauthenticateController extends AbstractActionController
                     'name' => 'Identical',
                     'options' => [
                         'token' => 'password',
-                        "messages" => [
-                            Identical::NOT_SAME => "The passwords are not identical"
+                        'messages' => [
+                            Identical::NOT_SAME => 'The passwords are not identical'
                         ]
                     ]
                 ]
@@ -1616,48 +1599,47 @@ class ApiauthenticateController extends AbstractActionController
             $values = $inputFilter->getValues();
 
             try {
-                /**
-                 * @var User
-                 */
+                /** @var User */
                 $userEntity = $em->getRepository(User::class)->findOneBy([
-                    "email" => $values["email"]
+                    'email' => $values['email']
                 ]);
 
                 if ($userEntity == null) {
-                    throw new \Exception("User does not exist");
+                    throw new \Exception('User does not exist');
                 }
 
-                if ($values["reset_code"] != $userEntity->getMobileActivateCode()) {
-                    throw new \Exception("Wrong access code");
+                if ($values['reset_code'] != $userEntity->getMobileActivateCode()) {
+                    throw new \Exception('Wrong access code');
                 }
 
-                $userEntity->setPassword(AuthenticationService::encryptPassword($values["password"]))->setUpdatedOn(new \Datetime());
+                $userEntity->setPassword(AuthenticationService::encryptPassword($values['password']))->setUpdatedOn(new \Datetime());
 
                 $em->persist($userEntity);
                 $em->flush();
 
                 $jsonModel->setVariables([
-                    "success" => true
+                    'success' => true
                 ]);
                 $response->setStatusCode(201);
             } catch (\Throwable $th) {
                 $jsonModel->setVariables([
-                    "success" => false,
-                    "error" => "PasswordUpdateError",
-                    "description" => $th->getMessage()
+                    'success' => false,
+                    'error' => 'PasswordUpdateError',
+                    'description' => $th->getMessage()
                 ]);
                 $response->setStatusCode(400);
             }
         } else {
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "ValidationError",
-                "description" => $inputFilter->getMessages()
+                'success' => false,
+                'error' => 'ValidationError',
+                'description' => $inputFilter->getMessages()
             ]);
             $response->setStatusCode(400);
         }
         return $jsonModel;
     }
+
     // /**
     //  * Verifies Email of the User
     //  *
@@ -1668,7 +1650,6 @@ class ApiauthenticateController extends AbstractActionController
     //     $jsonModel = new JsonModel();
     //     return $jsonModel;
     // }
-
 
     // /**
     //  * @OA\Post(
@@ -1733,8 +1714,6 @@ class ApiauthenticateController extends AbstractActionController
     //  *   @OA\Response(response="401",description="Unauthorized"),
     //  * )
     //  */
-
-
 
     /**
      * Get doctrine ORM EntityManager
@@ -2005,7 +1984,7 @@ class ApiauthenticateController extends AbstractActionController
 
             try {
                 if (empty($provider) || empty($idToken)) {
-                    throw new \Exception("Provider and token are required");
+                    throw new \Exception('Provider and token are required');
                 }
 
                 $email = '';
@@ -2013,72 +1992,68 @@ class ApiauthenticateController extends AbstractActionController
                 $providerId = '';
                 $profilePic = null;
 
+                $sm = $this->getEvent()->getApplication()->getServiceManager();
+                $config = $sm->get('config');
+
                 if ($provider === 'google') {
-                    $client = new \Laminas\Http\Client();
-                    $client->setUri('https://oauth2.googleapis.com/tokeninfo');
-                    $client->setParameterGet(['id_token' => $idToken]);
-                    $res = $client->send();
-
-                    if (!$res->isSuccess()) {
-                        throw new \Exception("Failed to verify Google Token");
+                    $googleConfig = $config['google_oauth'] ?? [];
+                    $clientId = $googleConfig['client_id'] ?? '';
+                    if (empty($clientId)) {
+                        throw new \Exception('Google OAuth configuration is missing on the server');
                     }
 
-                    $payload = json_decode($res->getBody(), true);
-                    if (empty($payload['email'])) {
-                        throw new \Exception("Google token does not contain email");
-                    }
+                    $payload = $this->verifyGoogleIdToken($idToken, $clientId);
                     $email = $payload['email'];
                     $name = $payload['name'] ?? '';
                     $providerId = $payload['sub'] ?? '';
                     $profilePic = $payload['picture'] ?? null;
                 } elseif ($provider === 'apple') {
-                    $parser = new \Lcobucci\JWT\Token\Parser(new \Lcobucci\JWT\Encoding\JoseEncoder());
-                    $token = $parser->parse($idToken);
-                    assert($token instanceof \Lcobucci\JWT\UnencryptedToken);
-                    
-                    $claims = $token->claims();
-                    $email = $claims->get('email');
-                    if (empty($email)) {
-                        throw new \Exception("Apple token does not contain email");
+                    $appleConfig = $config['apple_oauth'] ?? [];
+                    $clientId = $appleConfig['client_id'] ?? '';
+                    if (empty($clientId)) {
+                        throw new \Exception('Apple OAuth configuration is missing on the server');
                     }
-                    $providerId = $claims->get('sub');
-                    $name = ''; // Apple name is only sent once via client SDK OAuth flow
+
+                    $payload = $this->verifyAppleIdToken($idToken, $clientId);
+                    $email = $payload['email'];
+                    $providerId = $payload['sub'];
+                    $name = '';  // Apple name is only sent once via client SDK OAuth flow
                 } else {
-                    throw new \Exception("Unsupported provider: " . $provider);
+                    throw new \Exception('Unsupported provider: ' . $provider);
                 }
 
                 $authResponse = $this->apiAuthService->authenticateSocial($email, $name, $provider, $providerId, $userIp, $userAgent, $profilePic);
-                $response->getHeaders()->addHeader($authResponse["cookie"]);
+                $response->getHeaders()->addHeader($authResponse['cookie']);
                 $response->setStatusCode(200);
 
                 $jsonModel->setVariables([
-                    "success" => true,
-                    "schema" => "Bearer",
-                    "expires_in" => $authResponse["expire"],
-                    "token" => $authResponse["token"],
-                    "luhn_token" => $authResponse["token_id"],
-                    "user" => [
-                        "fullname" => $authResponse["fullname"],
-                        "email" => $authResponse["email"],
-                        "role" => $authResponse["role"],
-                        "username" => $authResponse["username"],
-                        "uuid" => $authResponse["uuid"],
-                        "wallet" => intval($authResponse["wallet"])
+                    'success' => true,
+                    'schema' => 'Bearer',
+                    'expires_in' => $authResponse['expire'],
+                    'token' => $authResponse['token'],
+                    'luhn_token' => $authResponse['token_id'],
+                    'user' => [
+                        'fullname' => $authResponse['fullname'],
+                        'email' => $authResponse['email'],
+                        'role' => $authResponse['role'],
+                        'username' => $authResponse['username'],
+                        'uuid' => $authResponse['uuid'],
+                        'wallet' => intval($authResponse['wallet'])
                     ]
                 ]);
             } catch (\Throwable $th) {
                 $response->setStatusCode(400);
                 $jsonModel->setVariables([
-                    "success" => false,
-                    "error" => "SocialLoginError",
-                    "description" => $th->getMessage()
+                    'success' => false,
+                    'error' => 'SocialLoginError',
+                    'description' => $th->getMessage()
                 ]);
             }
         } else {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success" => false,
-                "description" => "Method Not Allowed"
+                'success' => false,
+                'description' => 'Method Not Allowed'
             ]);
         }
 
@@ -2125,6 +2100,7 @@ class ApiauthenticateController extends AbstractActionController
      *     @OA\Response(response="500", description="Server configuration error")
      * )
      */
+
     /**
      * Google OAuth Initiate
      * @OA\GET(
@@ -2160,7 +2136,7 @@ class ApiauthenticateController extends AbstractActionController
             // Check if the critical client ID and redirect URI configurations exist
             if (empty($clientId) || empty($redirectUri)) {
                 // Throw an exception if the required configuration is missing
-                throw new \Exception("Google OAuth configuration is missing on the server");
+                throw new \Exception('Google OAuth configuration is missing on the server');
             }
 
             // Generate a stateless HMAC-signed state token for anti-forgery verification
@@ -2168,12 +2144,12 @@ class ApiauthenticateController extends AbstractActionController
 
             // Build the Google OAuth authorization redirect URL with query params
             $authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
-                'response_type'  => 'code',
-                'client_id'      => $clientId,
-                'redirect_uri'   => $redirectUri,
-                'scope'          => $scope,
-                'state'          => $state,
-                'access_type'    => 'online',
+                'response_type' => 'code',
+                'client_id' => $clientId,
+                'redirect_uri' => $redirectUri,
+                'scope' => $scope,
+                'state' => $state,
+                'access_type' => 'online',
             ]);
 
             // Add the Location header to redirect to Google's sign-in page
@@ -2182,32 +2158,36 @@ class ApiauthenticateController extends AbstractActionController
             $response->setStatusCode(302);
             // Return the response object to perform the redirect
             return $response;
-
         } catch (\Throwable $th) {
             // Set HTTP response code to 500
             $response->setStatusCode(500);
             // Populate JsonModel with the error details
             $jsonModel->setVariables([
-                "success" => false,
-                "description" => $th->getMessage()
+                'success' => false,
+                'description' => $th->getMessage()
             ]);
             // Return the JsonModel
             return $jsonModel;
         }
     }
+
     /**
-     * Google Sign-In via ID Token (Verify & Login)
+     * Google Sign-In via Authorization Code
      * @OA\POST(
-     *     path="/auth/ipa/google-oauth",
+     *     path="/auth/google",
      *     tags={"Authentication"},
-     *     description="Authenticates a user via a Google ID Token. Verifies the signature, issuer, audience, finds/creates local user, and returns access & refresh tokens.",
+     *     description="Authenticates a user via Google OAuth2. Exchanges the authorization code, verifies the ID Token signature/claims/nonce, finds or creates the local user, and returns access & refresh tokens.",
      *     @OA\RequestBody(
      *         required=true,
      *         content={
      *             @OA\MediaType(
-     *                 mediaType="application/x-www-form-urlencoded",
+     *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(property="id_token", type="string", description="Google ID Token (JWT)")
+     *                     required={"code", "redirect_uri", "code_verifier", "nonce"},
+     *                     @OA\Property(property="code", type="string", description="Authorization code from Google"),
+     *                     @OA\Property(property="redirect_uri", type="string", description="Redirect URI passed in Google authorize request"),
+     *                     @OA\Property(property="code_verifier", type="string", description="PKCE code verifier matching the code challenge"),
+     *                     @OA\Property(property="nonce", type="string", description="Replay prevention nonce matching the initial authorize request")
      *                 )
      *             )
      *         }
@@ -2223,11 +2203,14 @@ class ApiauthenticateController extends AbstractActionController
      *                     @OA\Property(property="schema", type="string", example="Bearer"),
      *                     @OA\Property(property="expires_in", type="integer", example=1800),
      *                     @OA\Property(property="token", type="string", example="eyJhbGci..."),
+     *                     @OA\Property(property="access_token", type="string", example="eyJhbGci..."),
      *                     @OA\Property(property="luhn_token", type="string", example="rt_abc123"),
      *                     @OA\Property(
      *                         property="user",
      *                         type="object",
+     *                         @OA\Property(property="id", type="string", example="1"),
      *                         @OA\Property(property="fullname", type="string", example="John Doe"),
+     *                         @OA\Property(property="display_name", type="string", example="John Doe"),
      *                         @OA\Property(property="email", type="string", example="john.doe@gmail.com"),
      *                         @OA\Property(property="role", type="string", example="Customer"),
      *                         @OA\Property(property="username", type="string", example="john.doe@gmail.com"),
@@ -2242,181 +2225,230 @@ class ApiauthenticateController extends AbstractActionController
      *     @OA\Response(response="400", description="Bad Request"),
      *     @OA\Response(response="500", description="Server configuration error")
      * )
-     * @OA\GET(
-     *     path="/auth/ipa/google-oauth",
-     *     tags={"Authentication"},
-     *     description="Authenticates a user via Google ID Token passed in query string",
-     *     @OA\Parameter(name="id_token", in="query", required=true, description="Google ID Token (JWT)", @OA\Schema(type="string")),
-     *     @OA\Response(response="200", description="Success"),
-     *     @OA\Response(response="400", description="Error")
-     * )
      */
     public function googleOauthAction()
     {
-        // Fetch the request object representing the HTTP request
         $request = $this->getRequest();
-        // Fetch the response object that will contain the response headers and body
         $response = $this->getResponse();
-        // Initialize a new JsonModel for structured JSON responses
         $jsonModel = new JsonModel();
 
-        // Get ID token from POST body or query parameter
-        $idToken = $request->getPost('id_token') ?? $request->getQuery('id_token');
-        // Get the user agent string from request environment, fallback to empty string
+        if (!$request->isPost()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use POST.'
+            ]);
+            return $jsonModel;
+        }
+
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        // Get the remote user IP address from request environment, fallback to localhost
-        $userIp    = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $userIp = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
         try {
-            // Check if the ID token is missing
+            $json = $request->getContent();
+            $postData = json_decode($json, true);
+            if (!is_array($postData)) {
+                throw new \Exception('Invalid JSON body');
+            }
+
+            $code = trim((string) ($postData['code'] ?? ''));
+            $redirectUri = trim((string) ($postData['redirect_uri'] ?? ''));
+            $codeVerifier = trim((string) ($postData['code_verifier'] ?? ''));
+            $nonce = trim((string) ($postData['nonce'] ?? ''));
+
+            if (empty($code) || empty($redirectUri) || empty($codeVerifier) || empty($nonce)) {
+                throw new \Exception('code, redirect_uri, code_verifier, and nonce are required');
+            }
+
+            // 1. Exchange Google authorization code for tokens
+            $googleTokens = $this->googleAuthService->exchangeAuthorizationCode($code, $redirectUri, $codeVerifier);
+            $idToken = $googleTokens['id_token'] ?? null;
             if (empty($idToken)) {
-                throw new \Exception("ID Token is required");
+                throw new \Exception('Google did not return an ID token');
             }
 
-            // Retrieve the application Service Manager and configuration
-            $sm = $this->getEvent()->getApplication()->getServiceManager();
-            $config = $sm->get('config');
-            $googleConfig = $config['google_oauth'] ?? [];
-
-            // Get the Google Client ID from configuration
-            $clientId = $googleConfig['client_id'] ?? '';
-
-            // Check if Google configurations exist
-            if (empty($clientId)) {
-                throw new \Exception("Google OAuth configuration is missing on the server");
-            }
-
-            // Verify Google ID Token via Google tokeninfo endpoint (performs signature verification)
-            $client = new \Laminas\Http\Client();
-            // Configure HTTP client options (disable SSL verification to prevent issues on local dev environments)
-            $client->setOptions([
-                'sslverifypeer' => false,
-                'sslverifyhost' => false,
-            ]);
-            $client->setUri('https://oauth2.googleapis.com/tokeninfo');
-            $client->setMethod('GET');
-            $client->setParameterGet(['id_token' => $idToken]);
-            $res = $client->send();
-
-            // Check if verification failed
-            if (!$res->isSuccess()) {
-                throw new \Exception("Failed to verify Google Token signature or expired token");
-            }
-
-            // Parse verification payload from Google
-            $tokenPayload = json_decode($res->getBody(), true);
-
-            // Verify Issuer claim
-            $issuer = $tokenPayload['iss'] ?? '';
-            if ($issuer !== 'accounts.google.com' && $issuer !== 'https://accounts.google.com') {
-                throw new \Exception("Invalid Google token issuer: " . $issuer);
-            }
-
-            // Verify Audience claim (matches our client ID)
-            $audience = $tokenPayload['aud'] ?? '';
-            if ($audience !== $clientId) {
-                throw new \Exception("Invalid Google token audience");
-            }
-
-            // Check if email exists in token claims
-            if (empty($tokenPayload['email'])) {
-                throw new \Exception("Google token does not contain email address");
-            }
+            // 2. Verify Google ID Token
+            $tokenPayload = $this->googleAuthService->validateIdToken($idToken, $nonce);
 
             $email = $tokenPayload['email'];
             $name = $tokenPayload['name'] ?? '';
             $providerId = $tokenPayload['sub'] ?? '';
             $profilePic = $tokenPayload['picture'] ?? null;
 
-            // Fetch Entity Manager from the Service Manager to query the database
-            $em = $sm->get(EntityManager::class);
-            
-            // Search if the user exists in the database by googleId (sub) or email
-            $user = $em->getRepository(User::class)->findOneBy(['googleId' => $providerId]);
-            if (!$user && !empty($email)) {
-                $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
-            }
-
-            // If the user does not exist, persist google_id, email, fullname, and profile_pic
-            if (!$user) {
-                // Construct a new User entity
-                $user = new User();
-                $user->setUsername($email)
-                    ->setEmail($email)
-                    ->setFullname($name ?: strstr($email, '@', true))
-                    // Generate random password
-                    ->setPassword(AuthenticationService::encryptPassword(bin2hex(random_bytes(16))))
-                    ->setRole($em->find(\Authentication\Entity\Roles::class, AuthenticationService::USER_ROLE_CUSTOMER))
-                    ->setState($em->find(\Authentication\Entity\UserState::class, AuthenticationService::USER_STATE_ENABLED))
-                    ->setCreatedOn(new \DateTime())
-                    ->setRegistrationDate(new \DateTime())
-                    ->setEmailConfirmed(true)
-                    ->setIsProfiled(false)
-                    ->setUid(uniqid("resu"))
-                    ->setUuid($this->generateUuid())
-                    ->setGoogleId($providerId);
-                
-                // Set profile picture if present
-                if ($profilePic !== null && $profilePic !== '') {
-                    $user->setProfilePic($profilePic);
-                }
-
-                $em->persist($user);
-                $em->flush();
-            } else {
-                // If they exist, verify/link googleId and update profile picture if needed
-                $modified = false;
-                if (empty($user->getGoogleId())) {
-                    $user->setGoogleId($providerId);
-                    $modified = true;
-                }
-                if ($profilePic !== null && $profilePic !== '' && $user->getProfilePic() !== $profilePic) {
-                    $user->setProfilePic($profilePic);
-                    $modified = true;
-                }
-                if ($modified) {
-                    $em->persist($user);
-                    $em->flush();
-                }
-            }
-
-            // Issue access JWT and refresh token using social authentication service
+            // 3. Issue access JWT and refresh token using social authentication service
             $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'google', $providerId, $userIp, $userAgent, $profilePic);
-            
+
             // Set the HttpOnly refresh token cookie on the response headers
-            $response->getHeaders()->addHeader($authResponse["cookie"]);
+            $response->getHeaders()->addHeader($authResponse['cookie']);
 
             // Set the response status code to 200 OK
             $response->setStatusCode(200);
-            // Populate the JsonModel with final user profile and tokens
+
+            // Populate the JsonModel with final user profile and tokens (standard and compatibility fields)
             $jsonModel->setVariables([
-                "success" => true,
-                "schema" => "Bearer",
-                "expires_in" => $authResponse["expire"],
-                "token" => $authResponse["token"],
-                "luhn_token" => $authResponse["token_id"],
-                "user" => [
-                    "fullname" => $authResponse["fullname"],
-                    "email" => $authResponse["email"],
-                    "role" => $authResponse["role"],
-                    "username" => $authResponse["username"],
-                    "uuid" => $authResponse["uuid"],
-                    "wallet" => intval($authResponse["wallet"]),
-                    "profile_pic" => $authResponse["profile_pic"] ?? null
+                'success' => true,
+                'schema' => 'Bearer',
+                'expires_in' => $authResponse['expire'],
+                'token' => $authResponse['token'],
+                'access_token' => $authResponse['token'],
+                'luhn_token' => $authResponse['token_id'],
+                'user' => [
+                    'id' => (string) $authResponse['userid'],
+                    'fullname' => $authResponse['fullname'],
+                    'display_name' => $authResponse['fullname'],
+                    'email' => $authResponse['email'],
+                    'role' => $authResponse['role'],
+                    'username' => $authResponse['username'],
+                    'uuid' => $authResponse['uuid'],
+                    'wallet' => intval($authResponse['wallet']),
+                    'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
             ]);
         } catch (\Throwable $th) {
-            // Set HTTP response code to 400
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "success" => false,
-                "description" => $th->getMessage()
+                'success' => false,
+                'description' => $th->getMessage()
             ]);
         }
 
         return $jsonModel;
-    }    
-    
+    }
+
+    /**
+     * Google OAuth Callback Action (Handles redirect callback)
+     * @OA\GET(
+     *     path="/auth/ipa/google-callback",
+     *     tags={"Authentication"},
+     *     description="Handles Google OAuth callback. Exchanges redirect code for an ID Token, validates it, logs in/registers user, and redirects to frontend.",
+     *     @OA\Parameter(name="code", in="query", required=true, description="Authorization code from Google", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="state", in="query", required=true, description="CSRF state token", @OA\Schema(type="string")),
+     *     @OA\Response(response="302", description="Redirect to frontend redirect URL with tokens in query params"),
+     *     @OA\Response(response="400", description="Bad Request")
+     * )
+     */
+    public function googleCallbackAction()
+    {
+        $request = $this->getRequest();
+        $response = $this->getResponse();
+        $jsonModel = new JsonModel();
+
+        $code = $request->getQuery('code');
+        $state = $request->getQuery('state');
+        $error = $request->getQuery('error');
+
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $userIp = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+        try {
+            if ($error) {
+                throw new \Exception('Google authentication error: ' . $request->getQuery('error_description', $error));
+            }
+
+            if (empty($code) || empty($state)) {
+                throw new \Exception('Code and state are required');
+            }
+
+            $sm = $this->getEvent()->getApplication()->getServiceManager();
+            $config = $sm->get('config');
+            $googleConfig = $config['google_oauth'] ?? [];
+
+            $clientId = $googleConfig['client_id'] ?? '';
+            $clientSecret = $googleConfig['client_secret'] ?? '';
+            $redirectUri = $googleConfig['redirect_uri'] ?? '';
+
+            if (empty($clientId) || empty($clientSecret) || empty($redirectUri)) {
+                throw new \Exception('Google OAuth configuration is incomplete on the server');
+            }
+
+            // CSRF protection: verify state
+            $this->verifyOAuthState($state, $sm);
+
+            // Exchange Authorization Code for ID Token
+            $client = new \Laminas\Http\Client();
+            $client->setOptions([
+                'sslverifypeer' => false,
+                'sslverifyhost' => false,
+            ]);
+            $client->setUri('https://oauth2.googleapis.com/token');
+            $client->setMethod('POST');
+            $client->setParameterPost([
+                'code' => $code,
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'redirect_uri' => $redirectUri,
+                'grant_type' => 'authorization_code',
+            ]);
+
+            $res = $client->send();
+            if (!$res->isSuccess()) {
+                throw new \Exception('Failed to exchange Google authorization code: ' . $res->getBody());
+            }
+
+            $tokenData = json_decode($res->getBody(), true);
+            $idToken = $tokenData['id_token'] ?? '';
+            if (empty($idToken)) {
+                throw new \Exception('Google did not return an ID token');
+            }
+
+            // Verify Google ID Token
+            $payload = $this->verifyGoogleIdToken($idToken, $clientId);
+
+            $email = $payload['email'];
+            $name = $payload['name'] ?? '';
+            $providerId = $payload['sub'] ?? '';
+            $profilePic = $payload['picture'] ?? null;
+
+            // Authenticate and issue application tokens
+            $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'google', $providerId, $userIp, $userAgent, $profilePic);
+
+            // Set the HttpOnly cookie
+            $response->getHeaders()->addHeader($authResponse['cookie']);
+
+            // Redirect to frontend
+            $frontendRedirect = $googleConfig['frontend_redirect_url'] ?? '';
+            if (!empty($frontendRedirect)) {
+                $redirectUrl = $frontendRedirect . '?' . http_build_query([
+                    'token' => $authResponse['token'],
+                    'refresh_token' => $authResponse['token_id'],
+                    'fullname' => $authResponse['fullname']
+                ]);
+                $response->getHeaders()->addHeaderLine('Location', $redirectUrl);
+                $response->setStatusCode(302);
+                return $response;
+            }
+
+            // Fallback to JSON
+            $response->setStatusCode(200);
+            $jsonModel->setVariables([
+                'success' => true,
+                'schema' => 'Bearer',
+                'expires_in' => $authResponse['expire'],
+                'token' => $authResponse['token'],
+                'luhn_token' => $authResponse['token_id'],
+                'user' => [
+                    'fullname' => $authResponse['fullname'],
+                    'email' => $authResponse['email'],
+                    'role' => $authResponse['role'],
+                    'username' => $authResponse['username'],
+                    'uuid' => $authResponse['uuid'],
+                    'wallet' => intval($authResponse['wallet']),
+                    'profile_pic' => $authResponse['profile_pic'] ?? null
+                ]
+            ]);
+        } catch (\Throwable $th) {
+            $response->setStatusCode(400);
+            $jsonModel->setVariables([
+                'success' => false,
+                'error' => 'GoogleCallbackError',
+                'description' => $th->getMessage()
+            ]);
+        }
+
+        return $jsonModel;
+    }
+
     /**
      * Apple Sign-In (Initiate or Callback)
      * @OA\POST(
@@ -2490,7 +2522,7 @@ class ApiauthenticateController extends AbstractActionController
         $idToken = $request->getPost('id_token') ?? $request->getQuery('id_token');
         $userParam = $request->getPost('user') ?? $request->getQuery('user');
         $state = $request->getPost('state') ?? $request->getQuery('state');
-        
+
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $userIp = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
@@ -2499,9 +2531,9 @@ class ApiauthenticateController extends AbstractActionController
             $config = $sm->get('config');
             $appleConfig = $config['apple_oauth'] ?? [];
 
-            $clientId     = $appleConfig['client_id'] ?? '';
-            $redirectUri  = $appleConfig['redirect_uri'] ?? '';
-            $scope        = $appleConfig['scope'] ?? 'name email';
+            $clientId = $appleConfig['client_id'] ?? '';
+            $redirectUri = $appleConfig['redirect_uri'] ?? '';
+            $scope = $appleConfig['scope'] ?? 'name email';
             $responseMode = $appleConfig['response_mode'] ?? 'form_post';
 
             if (empty($clientId) || empty($redirectUri)) {
@@ -2515,10 +2547,10 @@ class ApiauthenticateController extends AbstractActionController
                 $authUrl = 'https://appleid.apple.com/auth/authorize?' . http_build_query([
                     'response_type' => 'code id_token',
                     'response_mode' => $responseMode,
-                    'client_id'     => $clientId,
-                    'redirect_uri'  => $redirectUri,
-                    'state'         => $state,
-                    'scope'         => $scope,
+                    'client_id' => $clientId,
+                    'redirect_uri' => $redirectUri,
+                    'state' => $state,
+                    'scope' => $scope,
                 ]);
 
                 $response->getHeaders()->addHeaderLine('Location', $authUrl);
@@ -2530,15 +2562,11 @@ class ApiauthenticateController extends AbstractActionController
             // Stateless CSRF validation — verify HMAC-signed state token
             $this->verifyOAuthState($state, $sm);
 
-            // Parse JWT token from Apple
-            $parser = new \Lcobucci\JWT\Token\Parser(new \Lcobucci\JWT\Encoding\JoseEncoder());
-            $token = $parser->parse($idToken);
-            assert($token instanceof \Lcobucci\JWT\UnencryptedToken);
-            $claims = $token->claims();
-            
-            $email = $claims->get('email');
-            $providerId = $claims->get('sub');
-            
+            // Verify Apple ID Token securely
+            $payload = $this->verifyAppleIdToken($idToken, $clientId);
+            $email = $payload['email'];
+            $providerId = $payload['sub'];
+
             $name = '';
             if (!empty($userParam)) {
                 $userData = json_decode($userParam, true);
@@ -2546,15 +2574,11 @@ class ApiauthenticateController extends AbstractActionController
                     $name = trim(($userData['name']['firstName'] ?? '') . ' ' . ($userData['name']['lastName'] ?? ''));
                 }
             }
-            
-            if (empty($email)) {
-                throw new \Exception("Apple token does not contain email");
-            }
 
             $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'apple', $providerId, $userIp, $userAgent);
-            
+
             // Set Cookie
-            $response->getHeaders()->addHeader($authResponse["cookie"]);
+            $response->getHeaders()->addHeader($authResponse['cookie']);
 
             // Get Apple configuration for frontend redirect
             $frontendRedirect = $appleConfig['frontend_redirect_url'] ?? '';
@@ -2571,27 +2595,27 @@ class ApiauthenticateController extends AbstractActionController
 
             $response->setStatusCode(200);
             $jsonModel->setVariables([
-                "success" => true,
-                "schema" => "Bearer",
-                "expires_in" => $authResponse["expire"],
-                "token" => $authResponse["token"],
-                "luhn_token" => $authResponse["token_id"],
-                "user" => [
-                    "fullname" => $authResponse["fullname"],
-                    "email" => $authResponse["email"],
-                    "role" => $authResponse["role"],
-                    "username" => $authResponse["username"],
-                    "uuid" => $authResponse["uuid"],
-                    "wallet" => intval($authResponse["wallet"]),
-                    "profile_pic" => $authResponse["profile_pic"] ?? null
+                'success' => true,
+                'schema' => 'Bearer',
+                'expires_in' => $authResponse['expire'],
+                'token' => $authResponse['token'],
+                'luhn_token' => $authResponse['token_id'],
+                'user' => [
+                    'fullname' => $authResponse['fullname'],
+                    'email' => $authResponse['email'],
+                    'role' => $authResponse['role'],
+                    'username' => $authResponse['username'],
+                    'uuid' => $authResponse['uuid'],
+                    'wallet' => intval($authResponse['wallet']),
+                    'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(empty($idToken) ? 500 : 400);
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "AppleCallbackError",
-                "description" => $th->getMessage()
+                'success' => false,
+                'error' => 'AppleCallbackError',
+                'description' => $th->getMessage()
             ]);
         }
 
@@ -2667,9 +2691,9 @@ class ApiauthenticateController extends AbstractActionController
         if (!$request->isPost() && !$request->isDelete()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
-                "success"     => false,
-                "error"       => "MethodNotAllowed",
-                "description" => "Method Not Allowed. Use DELETE or POST."
+                'success' => false,
+                'error' => 'MethodNotAllowed',
+                'description' => 'Method Not Allowed. Use DELETE or POST.'
             ]);
             return $jsonModel;
         }
@@ -2678,7 +2702,7 @@ class ApiauthenticateController extends AbstractActionController
             // 1. Authenticate the user via the bearer token
             $identity = $this->apiAuthService->getIdentity();
             if (empty($identity['uuid'])) {
-                throw new \Exception("Invalid token payload: missing uuid");
+                throw new \Exception('Invalid token payload: missing uuid');
             }
 
             $em = $this->entityManager;
@@ -2686,22 +2710,22 @@ class ApiauthenticateController extends AbstractActionController
             // 2. Retrieve user entity
             /** @var User $userEntity */
             $userEntity = $em->getRepository(User::class)->findOneBy([
-                "uuid" => $identity['uuid']
+                'uuid' => $identity['uuid']
             ]);
 
             if ($userEntity === null) {
-                throw new \Exception("User does not exist");
+                throw new \Exception('User does not exist');
             }
 
             if ($userEntity->getState()->getId() === AuthenticationService::USER_STATE_DISABLED) {
-                throw new \Exception("User account is already deleted/disabled");
+                throw new \Exception('User account is already deleted/disabled');
             }
 
             // 3. Anonymize/scrub personal data & nullify social IDs to comply with GDPR & App Store rules
             $timestamp = time();
-            $userEntity->setFullname("Deleted User " . $timestamp);
-            $userEntity->setEmail("deleted_" . $timestamp . "_" . $userEntity->getEmail());
-            $userEntity->setUsername("deleted_" . $timestamp . "_" . $userEntity->getUsername());
+            $userEntity->setFullname('Deleted User ' . $timestamp);
+            $userEntity->setEmail('deleted_' . $timestamp . '_' . $userEntity->getEmail());
+            $userEntity->setUsername('deleted_' . $timestamp . '_' . $userEntity->getUsername());
             $userEntity->setGoogleId(null);
             $userEntity->setAppleId(null);
             $userEntity->setPassword(AuthenticationService::encryptPassword(bin2hex(random_bytes(16))));
@@ -2716,7 +2740,7 @@ class ApiauthenticateController extends AbstractActionController
 
             // 5. Invalidate and delete all active refresh tokens of this user
             $tokens = $em->getRepository(UserRefreshToken::class)->findBy([
-                "userId" => $userEntity->getId()
+                'userId' => $userEntity->getId()
             ]);
             foreach ($tokens as $token) {
                 $em->remove($token);
@@ -2726,37 +2750,36 @@ class ApiauthenticateController extends AbstractActionController
 
             $response->setStatusCode(200);
             $jsonModel->setVariables([
-                "success" => true,
-                "description" => "Account successfully deleted"
+                'success' => true,
+                'description' => 'Account successfully deleted'
             ]);
-
         } catch (\Authentication\Exceptions\ExpiredAuthDateException $e) {
             $response->setStatusCode(401);
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "Unauthorized",
-                "description" => "token expired"
+                'success' => false,
+                'error' => 'Unauthorized',
+                'description' => 'token expired'
             ]);
         } catch (\Authentication\Exceptions\InvalidTokenException $e) {
             $response->setStatusCode(401);
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "Unauthorized",
-                "description" => "invalid_token"
+                'success' => false,
+                'error' => 'Unauthorized',
+                'description' => 'invalid_token'
             ]);
         } catch (\Authentication\Exceptions\EmptyTokenException $e) {
             $response->setStatusCode(401);
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "Unauthorized",
-                "description" => "empty_token"
+                'success' => false,
+                'error' => 'Unauthorized',
+                'description' => 'empty_token'
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "success" => false,
-                "error" => "DeleteUserError",
-                "description" => $th->getMessage()
+                'success' => false,
+                'error' => 'DeleteUserError',
+                'description' => $th->getMessage()
             ]);
         }
 
@@ -2780,20 +2803,26 @@ class ApiauthenticateController extends AbstractActionController
      */
     private function generateOAuthState($sm): string
     {
-        $signingKey = $this->getOAuthSigningKey($sm);
+        $baseDir = realpath(__DIR__ . '/../../../../');
+        $privateKeyPath = $baseDir . '/data/keys/private.pem';
+        if (!file_exists($privateKeyPath)) {
+            throw new \Exception('Private key file not found');
+        }
+        $privateKey = file_get_contents($privateKeyPath);
 
         $payload = base64_encode(json_encode([
             'nonce' => bin2hex(random_bytes(16)),
-            'iat'   => time(),
+            'iat' => time(),
         ]));
 
-        $mac = base64_encode(hash_hmac('sha256', $payload, $signingKey, true));
+        openssl_sign($payload, $signature, $privateKey, OPENSSL_ALGO_SHA256);
+        $mac = base64_encode($signature);
 
         return $payload . '.' . $mac;
     }
 
     /**
-     * Verify a stateless HMAC-SHA256 state token.
+     * Verify a stateless RSA-SHA256 state token.
      *
      * Throws an exception if the token is missing, structurally invalid,
      * the signature does not match, or the token has expired (TTL: 10 minutes).
@@ -2815,11 +2844,17 @@ class ApiauthenticateController extends AbstractActionController
 
         [$payload, $receivedMac] = $parts;
 
-        $signingKey  = $this->getOAuthSigningKey($sm);
-        $expectedMac = base64_encode(hash_hmac('sha256', $payload, $signingKey, true));
+        $baseDir = realpath(__DIR__ . '/../../../../');
+        $publicKeyPath = $baseDir . '/data/keys/public.pem';
+        if (!file_exists($publicKeyPath)) {
+            throw new \Exception('Public key file not found');
+        }
+        $publicKey = file_get_contents($publicKeyPath);
 
-        // Constant-time comparison to prevent timing attacks
-        if (!hash_equals($expectedMac, $receivedMac)) {
+        $signature = base64_decode($receivedMac);
+        $result = openssl_verify($payload, $signature, $publicKey, OPENSSL_ALGO_SHA256);
+
+        if ($result !== 1) {
             throw new \Exception('CSRF validation failed: invalid state signature');
         }
 
@@ -2835,23 +2870,6 @@ class ApiauthenticateController extends AbstractActionController
     }
 
     /**
-     * Derive the HMAC signing key from the application's JWT sign key.
-     *
-     * @param  \Psr\Container\ContainerInterface  $sm
-     * @return string
-     */
-    private function getOAuthSigningKey($sm): string
-    {
-        $config = $sm->get('config');
-        $jwtConfig = $config['jwt'] ?? [];
-        $signKey = $jwtConfig['sign_key'] ?? '';
-
-        // The stored key may be base64-encoded; decode and use raw bytes
-        $raw = base64_decode($signKey, true);
-        return ($raw !== false && strlen($raw) >= 16) ? $raw : $signKey;
-    }
-
-    /**
      * Generate a UUID v4.
      *
      * @return string
@@ -2859,11 +2877,223 @@ class ApiauthenticateController extends AbstractActionController
     private function generateUuid(): string
     {
         return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
+            mt_rand(0, 0xFFFF), mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFF) | 0x4000,
+            mt_rand(0, 0x3FFF) | 0x8000,
+            mt_rand(0, 0xFFFF), mt_rand(0, 0xFFFF), mt_rand(0, 0xFFFF));
+    }
+
+    /**
+     * Verify Google ID Token
+     *
+     * @param string $idToken
+     * @param string $clientId
+     * @return array
+     * @throws \Exception
+     */
+    private function verifyGoogleIdToken(string $idToken, string $clientId): array
+    {
+        $client = new \Laminas\Http\Client();
+        $client->setOptions([
+            'sslverifypeer' => false,
+            'sslverifyhost' => false,
+        ]);
+        $client->setUri('https://oauth2.googleapis.com/tokeninfo');
+        $client->setMethod('GET');
+        $client->setParameterGet(['id_token' => $idToken]);
+        $res = $client->send();
+
+        if (!$res->isSuccess()) {
+            throw new \Exception('Failed to verify Google Token signature or expired token');
+        }
+
+        $tokenPayload = json_decode($res->getBody(), true);
+
+        $issuer = $tokenPayload['iss'] ?? '';
+        if ($issuer !== 'accounts.google.com' && $issuer !== 'https://accounts.google.com') {
+            throw new \Exception('Invalid Google token issuer: ' . $issuer);
+        }
+
+        $audience = $tokenPayload['aud'] ?? '';
+        if ($audience !== $clientId) {
+            throw new \Exception('Invalid Google token audience');
+        }
+
+        if (empty($tokenPayload['email'])) {
+            throw new \Exception('Google token does not contain email address');
+        }
+
+        return $tokenPayload;
+    }
+
+    /**
+     * Verify Apple ID Token securely
+     *
+     * @param string $idToken
+     * @param string $clientId
+     * @return array
+     * @throws \Exception
+     */
+    private function verifyAppleIdToken(string $idToken, string $clientId): array
+    {
+        $parser = new \Lcobucci\JWT\Token\Parser(new \Lcobucci\JWT\Encoding\JoseEncoder());
+        $token = $parser->parse($idToken);
+        assert($token instanceof \Lcobucci\JWT\UnencryptedToken);
+
+        $kid = $token->headers()->get('kid');
+        if (empty($kid)) {
+            throw new \Exception("Apple token missing 'kid' header");
+        }
+
+        // Fetch Apple JWKS keys
+        $client = new \Laminas\Http\Client();
+        $client->setOptions([
+            'sslverifypeer' => false,
+            'sslverifyhost' => false,
+        ]);
+        $client->setUri('https://appleid.apple.com/auth/keys');
+        $client->setMethod('GET');
+        $res = $client->send();
+        if (!$res->isSuccess()) {
+            throw new \Exception('Failed to fetch Apple public keys');
+        }
+
+        $jwks = json_decode($res->getBody(), true);
+        if (empty($jwks['keys'])) {
+            throw new \Exception('Apple JWKS keys are empty');
+        }
+
+        $matchingKey = null;
+        foreach ($jwks['keys'] as $key) {
+            if ($key['kid'] === $kid) {
+                $matchingKey = $key;
+                break;
+            }
+        }
+        if (!$matchingKey) {
+            throw new \Exception('Apple public key not found for kid: ' . $kid);
+        }
+
+        // Convert JWK to PEM
+        $pem = $this->jwkToPem($matchingKey);
+
+        // Verify Signature
+        $signer = new \Lcobucci\JWT\Signer\Rsa\Sha256();
+        $key = \Lcobucci\JWT\Signer\Key\InMemory::plainText($pem);
+        $validator = new \Lcobucci\JWT\Validation\Validator();
+        try {
+            $validator->assert($token, new \Lcobucci\JWT\Validation\Constraint\SignedWith($signer, $key));
+        } catch (\Throwable $th) {
+            throw new \Exception('Apple token signature verification failed: ' . $th->getMessage());
+        }
+
+        // Verify Issuer
+        $claims = $token->claims();
+        $issuer = $claims->get('iss');
+        if ($issuer !== 'https://appleid.apple.com') {
+            throw new \Exception('Invalid Apple token issuer: ' . $issuer);
+        }
+
+        // Verify Audience (client ID)
+        $audience = $claims->get('aud');
+        if ($audience !== $clientId) {
+            throw new \Exception('Invalid Apple token audience: expected ' . $clientId . ', got ' . $audience);
+        }
+
+        // Verify Expiry
+        $clock = new \Lcobucci\Clock\SystemClock(new \DateTimeZone('UTC'));
+        try {
+            $validator->assert($token, new \Lcobucci\JWT\Validation\Constraint\LooseValidAt($clock));
+        } catch (\Throwable $th) {
+            throw new \Exception('Apple token has expired: ' . $th->getMessage());
+        }
+
+        $email = $claims->get('email');
+        if (empty($email)) {
+            throw new \Exception('Apple token does not contain email');
+        }
+
+        return [
+            'email' => $email,
+            'sub' => $claims->get('sub'),
+        ];
+    }
+
+    /**
+     * Convert JWK public key to PEM format
+     *
+     * @param array $jwk
+     * @return string
+     * @throws \Exception
+     */
+    private function jwkToPem(array $jwk): string
+    {
+        if (!isset($jwk['n']) || !isset($jwk['e'])) {
+            throw new \Exception('Invalid JWK: missing n or e components');
+        }
+
+        $base64url_decode = function (string $data): string {
+            $remainder = strlen($data) % 4;
+            if ($remainder) {
+                $padlen = 4 - $remainder;
+                $data .= str_repeat('=', $padlen);
+            }
+            return base64_decode(strtr($data, '-_', '+/'));
+        };
+
+        $modulus = $base64url_decode($jwk['n']);
+        $exponent = $base64url_decode($jwk['e']);
+
+        $encodeLength = function ($length) {
+            if ($length <= 0x7F) {
+                return chr($length);
+            }
+            $temp = ltrim(pack('N', $length), chr(0));
+            return chr(0x80 | strlen($temp)) . $temp;
+        };
+
+        $encodeInteger = function ($data) use ($encodeLength) {
+            if (ord($data[0]) & 0x80) {
+                $data = chr(0x0) . $data;
+            }
+            return chr(0x2) . $encodeLength(strlen($data)) . $data;
+        };
+
+        $rsaSequence = chr(0x30) . $encodeLength(
+            strlen($encodeInteger($modulus))
+            + strlen($encodeInteger($exponent))
+        ) . $encodeInteger($modulus) . $encodeInteger($exponent);
+
+        $oidRsa = chr(0x6) . chr(0x9) . chr(0x2A) . chr(0x86) . chr(0x48) . chr(0x86) . chr(0xF7) . chr(0xD) . chr(0x1) . chr(0x1) . chr(0x1);
+        $algorithmIdentifier = chr(0x30) . $encodeLength(strlen($oidRsa) + 2) . $oidRsa . chr(0x5) . chr(0x0);
+
+        $subjectPublicKey = chr(0x3) . $encodeLength(strlen($rsaSequence) + 1) . chr(0x0) . $rsaSequence;
+
+        $der = chr(0x30) . $encodeLength(strlen($algorithmIdentifier) + strlen($subjectPublicKey)) . $algorithmIdentifier . $subjectPublicKey;
+
+        return "-----BEGIN PUBLIC KEY-----\n" . chunk_split(base64_encode($der), 64, "\n") . "-----END PUBLIC KEY-----\n";
+    }
+
+    public function setGoogleAuthService($googleAuthService)
+    {
+        $this->googleAuthService = $googleAuthService;
+        return $this;
+    }
+
+    public function getGoogleAuthService()
+    {
+        return $this->googleAuthService;
+    }
+
+    public function setConfig($config)
+    {
+        $this->config = $config;
+        return $this;
+    }
+
+    public function getConfig()
+    {
+        return $this->config;
     }
 }

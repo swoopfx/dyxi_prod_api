@@ -3,21 +3,21 @@
 namespace General\Controller;
 
 use Authentication\Entity\User;
-use Laminas\Mvc\Controller\AbstractActionController;
-use Laminas\View\Model\JsonModel;
+use Authentication\Service\ApiAuthenticateService;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query;
+use General\Entity\Banks;
+use General\Entity\EstimatedWeight;
 use General\Entity\Gender;
+use General\Entity\PostWasteStatus;
 use General\Entity\Settings;
+use General\Entity\WasteCollectionType;
 use General\Entity\WasteRequestType;
 use General\Entity\WasteType;
 use General\Service\GeneralService;
-use Authentication\Service\ApiAuthenticateService;
-use General\Entity\EstimatedWeight;
-use General\Entity\PostWasteStatus;
-use General\Entity\WasteCollectionType;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\JsonModel;
 use Shop\Entity\OrderStatus;
-use General\Entity\Banks;
 
 class GeneralController extends AbstractActionController
 {
@@ -43,6 +43,11 @@ class GeneralController extends AbstractActionController
     private $apiAuth;
 
     /**
+     * @var array
+     */
+    private $config = [];
+
+    /**
      * Used to retrieve list of gender
      * @OA\GET( path="/general/api/get-gender", tags={"General"},
      * security={{"bearerAuth":{}}},
@@ -59,26 +64,26 @@ class GeneralController extends AbstractActionController
         $response = $this->getResponse();
 
         try {
-            $data = $this->entityManager
+            $data = $this
+                ->entityManager
                 ->getRepository(Gender::class)
-                ->createQueryBuilder("g")
-                ->select("g")
+                ->createQueryBuilder('g')
+                ->select('g')
                 ->getQuery()
                 ->getResult(Query::HYDRATE_ARRAY);
             $jsonModel->setVariables([
-                "data" => $data
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try agai later"
+                'message' => 'Something went wrong , please try agai later'
             ]);
         }
 
         // var_dump($this->apiAuth->getContainerIdentity());
         return $jsonModel;
     }
-
 
     /**
      * Used to retrieve The Users Profile
@@ -107,29 +112,31 @@ class GeneralController extends AbstractActionController
             //     "uuid" => $identity["uuid"]
             // ]);
             // var_dump($userEntity->getId());
-            $data = $this->entityManager
+            $data = $this
+                ->entityManager
                 ->getRepository(User::class)
-                ->createQueryBuilder("u")
+                ->createQueryBuilder('u')
                 ->select([
-                    "partial u.{id, email, fullname, username, registrationDate, uid, uuid}",
-                    "partial w.{id, walletUid, walletUuid, balance}",
-                    "partial r.{id, name}"
-                ])->leftJoin("u.role", "r")
-                ->leftJoin("u.wallet", "w")
-                ->where("u.uuid = :uuid")
+                    'partial u.{id, email, fullname, username, registrationDate, uid, uuid}',
+                    'partial w.{id, walletUid, walletUuid, balance}',
+                    'partial r.{id, name}'
+                ])
+                ->leftJoin('u.role', 'r')
+                ->leftJoin('u.wallet', 'w')
+                ->where('u.uuid = :uuid')
                 ->setParameters([
-                    "uuid" => $identity["uuid"]
+                    'uuid' => $identity['uuid']
                 ])
                 ->getQuery()
                 ->getResult(Query::HYDRATE_ARRAY);
             $jsonModel->setVariables([
-                "data" => $data
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try agai later",
-                "dec" => $th->getMessage()
+                'message' => 'Something went wrong , please try agai later',
+                'dec' => $th->getMessage()
             ]);
         }
 
@@ -154,25 +161,25 @@ class GeneralController extends AbstractActionController
         $response = $this->getResponse();
 
         try {
-            $data = $this->entityManager
+            $data = $this
+                ->entityManager
                 ->getRepository(WasteType::class)
-                ->createQueryBuilder("g")
-                ->select("g")
+                ->createQueryBuilder('g')
+                ->select('g')
                 ->getQuery()
                 ->getResult(Query::HYDRATE_ARRAY);
             $jsonModel->setVariables([
-                "data" => $data
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try agai later"
+                'message' => 'Something went wrong , please try agai later'
             ]);
         }
 
         return $jsonModel;
     }
-
 
     /**
      * Used to retirve a list of waste Type
@@ -191,19 +198,20 @@ class GeneralController extends AbstractActionController
         $response = $this->getResponse();
 
         try {
-            $data = $this->entityManager
+            $data = $this
+                ->entityManager
                 ->getRepository(WasteCollectionType::class)
-                ->createQueryBuilder("g")
-                ->select("g")
+                ->createQueryBuilder('g')
+                ->select('g')
                 ->getQuery()
                 ->getResult(Query::HYDRATE_ARRAY);
             $jsonModel->setVariables([
-                "data" => $data
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try agai later"
+                'message' => 'Something went wrong , please try agai later'
             ]);
         }
 
@@ -228,25 +236,25 @@ class GeneralController extends AbstractActionController
         $response = $this->getResponse();
 
         try {
-            $data = $this->entityManager
+            $data = $this
+                ->entityManager
                 ->getRepository(WasteRequestType::class)
-                ->createQueryBuilder("g")
-                ->select("g")
+                ->createQueryBuilder('g')
+                ->select('g')
                 ->getQuery()
                 ->getResult(Query::HYDRATE_ARRAY);
             $jsonModel->setVariables([
-                "data" => $data
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try agai later"
+                'message' => 'Something went wrong , please try agai later'
             ]);
         }
 
         return $jsonModel;
     }
-
 
     /**
      * @OA\GET( path="/general/api/get-estimated-weight", tags={"General"}, description="get Estimted weight parameters",
@@ -266,25 +274,25 @@ class GeneralController extends AbstractActionController
         $response = $this->getResponse();
 
         try {
-            $data = $this->entityManager
+            $data = $this
+                ->entityManager
                 ->getRepository(EstimatedWeight::class)
-                ->createQueryBuilder("g")
-                ->select("g")
+                ->createQueryBuilder('g')
+                ->select('g')
                 ->getQuery()
                 ->getResult(Query::HYDRATE_ARRAY);
             $jsonModel->setVariables([
-                "data" => $data
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try agai later"
+                'message' => 'Something went wrong , please try agai later'
             ]);
         }
 
         return $jsonModel;
     }
-
 
     /**
      * @OA\GET( path="/general/api/get-post-waste-status", tags={"General"},
@@ -304,25 +312,25 @@ class GeneralController extends AbstractActionController
         $response = $this->getResponse();
 
         try {
-            $data = $this->entityManager
+            $data = $this
+                ->entityManager
                 ->getRepository(PostWasteStatus::class)
-                ->createQueryBuilder("p")
-                ->select("p")
+                ->createQueryBuilder('p')
+                ->select('p')
                 ->getQuery()
                 ->getResult(Query::HYDRATE_ARRAY);
             $jsonModel->setVariables([
-                "data" => $data
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try agai later"
+                'message' => 'Something went wrong , please try agai later'
             ]);
         }
 
         return $jsonModel;
     }
-
 
     /**
      * Used to retirve pusher real time configuration parameter
@@ -345,18 +353,17 @@ class GeneralController extends AbstractActionController
         try {
             $data = $this->generalService->getPusherConfig();
             $jsonModel->setVariables([
-                "data" => $data[0]
+                'data' => $data[0]
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try again later"
+                'message' => 'Something went wrong , please try again later'
             ]);
         }
 
         return $jsonModel;
     }
-
 
     /**
      * Reteieves all events registered for real time communication
@@ -379,18 +386,17 @@ class GeneralController extends AbstractActionController
         try {
             $data = $this->generalService->getPusherEvents();
             $jsonModel->setVariables([
-                "data" => $data
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try again later"
+                'message' => 'Something went wrong , please try again later'
             ]);
         }
 
         return $jsonModel;
     }
-
 
     /**
      * Reteieves all AWS credentials
@@ -411,48 +417,49 @@ class GeneralController extends AbstractActionController
         $response = $this->getResponse();
 
         try {
-            $data = $this->entityManager
+            $data = $this
+                ->entityManager
                 ->getRepository(Settings::class)
-                ->createQueryBuilder("p")
-                ->select(["p.awsAccessKey as access_key", "p.awsSecretKey as secret_key"])
+                ->createQueryBuilder('p')
+                ->select(['p.awsAccessKey as access_key', 'p.awsSecretKey as secret_key'])
                 ->getQuery()
                 ->getResult(Query::HYDRATE_ARRAY);
             $jsonModel->setVariables([
-                "data" => $data[0]
+                'data' => $data[0]
             ]);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
-                "message" => "Something went wrong , please try again later"
+                'message' => 'Something went wrong , please try again later'
             ]);
         }
 
         return $jsonModel;
     }
 
-
     public function getSettingsAction()
     {
         $em = $this->entityManager;
-        $data = $em->getRepository(Settings::class)
-            ->createQueryBuilder("s")
-            ->select("s")->getQuery()
+        $data = $em
+            ->getRepository(Settings::class)
+            ->createQueryBuilder('s')
+            ->select('s')
+            ->getQuery()
             ->getArrayResult();
 
-        $jsonModel = new JsonModel(["data" => $data]);
+        $jsonModel = new JsonModel(['data' => $data]);
 
         return $jsonModel;
     }
-
 
     public function getOrderStatusAction()
     {
         $jsonModel = new JsonModel();
         $em = $this->entityManager;
 
-        $data = $em->getRepository(OrderStatus::class)->createQueryBuilder("o")->select("o")->getQuery()->getArrayResult();
+        $data = $em->getRepository(OrderStatus::class)->createQueryBuilder('o')->select('o')->getQuery()->getArrayResult();
         $jsonModel->setVariables([
-            "data" => $data
+            'data' => $data
         ]);
         return $jsonModel;
     }
@@ -465,7 +472,7 @@ class GeneralController extends AbstractActionController
      * @OA\Response(response="400", description="Bad Request"),
      * @OA\Response(response="401", description="Not Authorized"),
      * @OA\Response(response="403", description="Error"),
-     * 
+     *
      * )
      *
      * @return \Laminas\View\Model\JsonModel
@@ -473,22 +480,70 @@ class GeneralController extends AbstractActionController
     public function getBanksAction()
     {
         $em = $this->entityManager;
-        $data = $em->getRepository(Banks::class)
-            ->createQueryBuilder("s")
-            ->select("s")->getQuery()
+        $data = $em
+            ->getRepository(Banks::class)
+            ->createQueryBuilder('s')
+            ->select('s')
+            ->getQuery()
             ->getArrayResult();
 
-        $jsonModel = new JsonModel(["data" => $data]);
+        $jsonModel = new JsonModel(['data' => $data]);
 
         return $jsonModel;
     }
 
-    
+    /**
+     * Get Legal Information (Privacy Policy and Terms & Conditions)
+     * @OA\GET(
+     *     path="/general/api/legal-info",
+     *     tags={"General"},
+     *     description="Returns the Privacy Policy and Terms & Conditions for Dyxi educational app, compliant with Google and Apple Store deployment guidelines.",
+     *     @OA\Response(
+     *         response="200",
+     *         description="Success",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(
+     *                         property="privacy_policy",
+     *                         type="object",
+     *                         @OA\Property(property="title", type="string"),
+     *                         @OA\Property(property="last_updated", type="string"),
+     *                         @OA\Property(property="sections", type="array", @OA\Items(
+     *                             @OA\Property(property="title", type="string"),
+     *                             @OA\Property(property="content", type="string")
+     *                         ))
+     *                     ),
+     *                     @OA\Property(
+     *                         property="terms_and_conditions",
+     *                         type="object",
+     *                         @OA\Property(property="title", type="string"),
+     *                         @OA\Property(property="last_updated", type="string"),
+     *                         @OA\Property(property="sections", type="array", @OA\Items(
+     *                             @OA\Property(property="title", type="string"),
+     *                             @OA\Property(property="content", type="string")
+     *                         ))
+     *                     )
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     */
+    public function legalInfoAction()
+    {
+        $response = $this->getResponse();
+        $response->setStatusCode(200);
+        $jsonModel = new JsonModel();
 
+        $termsConfig = $this->config['terms'] ?? [];
+        $variables = array_merge(['success' => true], $termsConfig);
+        $jsonModel->setVariables($variables);
 
-
-
-
+        return $jsonModel;
+    }
 
     /**
      * Get the value of entityManager
@@ -550,6 +605,29 @@ class GeneralController extends AbstractActionController
     public function setApiAuth(ApiAuthenticateService $apiAuth)
     {
         $this->apiAuth = $apiAuth;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of config
+     *
+     * @return array
+     */
+    public function getConfig(): array
+    {
+        return $this->config;
+    }
+
+    /**
+     * Set the value of config
+     *
+     * @param array $config
+     * @return self
+     */
+    public function setConfig(array $config): self
+    {
+        $this->config = $config;
 
         return $this;
     }

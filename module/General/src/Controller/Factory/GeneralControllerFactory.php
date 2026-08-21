@@ -17,10 +17,10 @@ class GeneralControllerFactory implements FactoryInterface
             throw new \Exception("General Controller cannot retrieve General Service");
         }
         $generalService = $container->get("general_service");
-        // $apiAuth = $container->get(ApiAuthenticateService::class);
         $ctr->setEntityManager($generalService->getEm())
             ->setGeneralService($generalService)
-            ->setApiAuth($container->get(ApiAuthenticateService::class));
+            ->setApiAuth($container->get(ApiAuthenticateService::class))
+            ->setConfig($container->get('config'));
         return $ctr;
     }
 }

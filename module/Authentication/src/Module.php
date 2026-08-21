@@ -44,6 +44,9 @@ class Module
         $response = $e->getResponse();
         $request = $e->getRequest();
         if ($interface == "api") {
+            if ($controller === \General\Controller\GeneralController::class && $action === 'legal-info') {
+                return;
+            }
             try {
                 // get apiAuthService
                 /**

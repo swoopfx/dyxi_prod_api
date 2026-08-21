@@ -11,7 +11,7 @@ class GoogleAuthService
     public function __construct(array $config)
     {
         $this->config =
-            $config['auth']['google'];
+            $config['google_oauth'];
     }
 
     public function exchangeAuthorizationCode(

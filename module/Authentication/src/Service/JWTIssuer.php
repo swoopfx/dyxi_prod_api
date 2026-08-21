@@ -138,14 +138,19 @@ class JWTIssuer
             $datetime = new \Datetime();
             $userRefreshTokenEntity = new UserRefreshToken();
             $userRefreshTokenEntity->setCreatedOn(new \DateTime())
-                // ->setUserAgent($data["user_agent"])
                 ->setTokenId($data["data"]["token_id"])
                 ->setExpiresOn(\Datetime::createFromImmutable($expiresOn))
                 ->setUserId($this->entityManager->find(User::class, $data["user_id"]))
                 ->setUuid($data["data"]["aud"])
                 ->setRefreshUid(AuthenticationService::encryptPassword($data["refresh_uid"]))
                 ->setRefreshToken($refreshToken->toString());
-                // ->setUserIp($data["ip"]);
+
+            if (isset($data["user_agent"])) {
+                $userRefreshTokenEntity->setUserAgent($data["user_agent"]);
+            }
+            if (isset($data["ip"])) {
+                $userRefreshTokenEntity->setUserIp($data["ip"]);
+            }
 
             $this->entityManager->persist($userRefreshTokenEntity);
             $this->entityManager->flush();

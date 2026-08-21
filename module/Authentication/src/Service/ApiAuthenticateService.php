@@ -7,21 +7,21 @@ use Authentication\Entity\UserRefreshToken;
 use Authentication\Exceptions\EmptyTokenException;
 use Authentication\Exceptions\ExpiredAuthDateException;
 use Authentication\Exceptions\InvalidTokenException;
-use Laminas\InputFilter\InputFilter;
-use Laminas\Json\Json;
-use Authentication\Service\JWTIssuer;
-use Laminas\Http\Request;
-use Laminas\Http\Response;
-use Authentication\Form\InputFilter\RegisterInputfilter;
 use Authentication\Form\InputFilter\LoginInputFilter;
+use Authentication\Form\InputFilter\RegisterInputfilter;
+use Authentication\Service\JWTIssuer;
 use Doctrine\ORM\EntityManager;
-use Exception;
+use General\Service\Postmark\AuthenticationEmailService as AuthPostMarkService;
 use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Http\Header\SetCookie;
+use Laminas\Http\Request;
+use Laminas\Http\Response;
+use Laminas\InputFilter\InputFilter;
+use Laminas\Json\Json;
 use Laminas\Session\Container;
 use Ramsey\Uuid\Uuid;
 use Wallet\Service\WalletApiService;
-use General\Service\Postmark\AuthenticationEmailService as AuthPostMarkService;
+use Exception;
 use RuntimeException;
 
 class ApiAuthenticateService implements AuthenticationServiceInterface
@@ -50,18 +50,15 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
     private $loginInputFilter;
 
     /**
-     *
-     *
      * @var EntityManager
      */
     private $entityManager;
 
     private $systemConfig;
 
-    const COOKIE_NAME = "auth";
+    const COOKIE_NAME = 'auth';
 
     private $post;
-
 
     /**
      * Http Request Object
@@ -98,13 +95,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
      */
     private $walletService;
 
-
     public function getBearerToken()
     {
         $requestObject = $this->requestObject;
 
         if (!$requestObject->getHeader('Authorization')) {
-            throw new EmptyTokenException("Token absent");
+            throw new EmptyTokenException('Token absent');
         } else {
             $authorizationHeader = $requestObject->getHeader('Authorization')->getFieldValue();
 
@@ -113,12 +109,11 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 if (preg_match('/Bearer\s(\S+)/', $authorizationHeader, $matches)) {
                     return $matches[1];
                 } else {
-                    throw new InvalidTokenException("Improper Bearer format");
+                    throw new InvalidTokenException('Improper Bearer format');
                 }
             }
         }
     }
-
 
     /**
      * Authenticate against username and password
@@ -129,15 +124,15 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
     {
         $post = $this->post;
         if ($post == null) {
-            throw new Exception("Set Post function needs to be initiated");
+            throw new Exception('Set Post function needs to be initiated');
         }
         $inputFilter = $this->loginInputFilter;
 
         $inputFilter->setValidationGroup([
-            "user_agent",
-            "user_ip",
-            "username",
-            "password"
+            'user_agent',
+            'user_ip',
+            'username',
+            'password'
         ]);
         $inputFilter->setData($post);
 
@@ -145,39 +140,35 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             $data = $inputFilter->getValues();
             $authService = $this->authenticationService;
             $adapter = $authService->getAdapter();
-            $phoneOrEmail = $data["username"];
+            $phoneOrEmail = $data['username'];
 
-            $errorMessageContainer = new Container("error_code");
+            $errorMessageContainer = new Container('error_code');
             $errorMessageContainer->code = 400;
 
             $em = $this->entityManager;
-            $user = $em->createQuery("SELECT u FROM Authentication\Entity\User u WHERE u.email = :phoneOrEmail OR u.username = :phoneOrEmail")
+            $user = $em
+                ->createQuery('SELECT u FROM Authentication\Entity\User u WHERE u.email = :phoneOrEmail OR u.username = :phoneOrEmail')
                 ->setParameter('phoneOrEmail', $phoneOrEmail)
                 ->getResult(\Doctrine\ORM\Query::HYDRATE_OBJECT);
 
             if (count($user) == 0) {
-                throw new \Exception("Invalid Credentials");
+                throw new \Exception('Invalid Credentials');
             }
 
-            /**
-             * @var User
-             */
+            /** @var User */
             $user = $user[0];
 
             if (!$user->getEmailConfirmed() == 1) {
                 $errorMessageContainer->code = 437;
-                throw new \Exception("You are yet to confirm your email! please go to the registered email to confirm your account");
-               
+                throw new \Exception('You are yet to confirm your email! please go to the registered email to confirm your account');
             }
             if ($user->getState()->getId() != 1) {
                 $errorMessageContainer->code = 419;
-                throw new \Exception("Your account is disabled");
-               
+                throw new \Exception('Your account is disabled');
             }
 
-
             $adapter->setIdentity($user->getEmail());
-            $adapter->setCredential($data["password"]);
+            $adapter->setCredential($data['password']);
             // $adapter->setIdentityValue($user->getEmail());
             // $adapter->setCredentialValue($data['password']);
 
@@ -188,65 +179,64 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 $authService->getStorage()->write($identity);
                 $uuid = Uuid::uuid4();
                 // generate jwt token
-                $refresh_uid = uniqid("rt", true); // token to refresh the access token
+                $refresh_uid = uniqid('rt', true);  // token to refresh the access token
 
                 $data_r = [
-                    "uuid" => $user->getUuid(),
-                    "uid" => $user->getUid(),
-                    "aud" => $uuid,
-                    "email" => $phoneOrEmail,
-                    "role" => $user->getRole()->getId(),
-                    "token_id" => self::generateTokenId(),
+                    'uuid' => $user->getUuid(),
+                    'uid' => $user->getUid(),
+                    'aud' => $uuid,
+                    'email' => $phoneOrEmail,
+                    'role' => $user->getRole()->getId(),
+                    'token_id' => self::generateTokenId(),
                 ];
 
-                $data_r["token"] = $this->jwtIssuer->issueToken($data_r)->toString();
-                $data_r["userid"] = $user->getId();
-                $data_r["expire"] = 1800; // fix expiry date
-                $data_r["u_uid"] = $user->getUid();
-                $data_r["refresh_uid"] = $refresh_uid;
+                $data_r['token'] = $this->jwtIssuer->issueToken($data_r)->toString();
+                $data_r['userid'] = $user->getId();
+                $data_r['expire'] = 1800;  // fix expiry date
+                $data_r['u_uid'] = $user->getUid();
+                $data_r['refresh_uid'] = $refresh_uid;
 
                 $data['fullname'] = $user->getFullname();
-                $data["email"] = $user->getEmail();
-                $data["uuid"] = $user->getUuid();
-                $data["username"] = $user->getUsername();
-                $data["role"] = $user->getRole()->getName();
-                $data["role_id"] = $user->getRole()->getId();
-                $data["wallet"] = $user->getWallet() == null ? 0 : $user->getWallet()->getBalance();
-                $data["profile_pic"] = $user->getProfilePic();
-
+                $data['email'] = $user->getEmail();
+                $data['uuid'] = $user->getUuid();
+                $data['username'] = $user->getUsername();
+                $data['role'] = $user->getRole()->getName();
+                $data['role_id'] = $user->getRole()->getId();
+                $data['wallet'] = $user->getWallet() == null ? 0 : $user->getWallet()->getBalance();
+                $data['profile_pic'] = $user->getProfilePic();
 
                 // var_dump($data["user_agent"]);
                 // Generate refresh token
                 // Store in database
                 // store in header cookie httponly settings
                 $refreshData = [];
-                $refreshData["ip"] = $data["user_ip"];
-                $refreshData["data"] = $data_r;
-                $refreshData["user_agent"] = $data["user_agent"];
-                $refreshData["refresh_uid"] = $refresh_uid;
-                $refreshData["uid"] = $data_r["uid"];
-                $refreshData["user_id"] = $user->getId();
+                $refreshData['ip'] = $data['user_ip'];
+                $refreshData['data'] = $data_r;
+                $refreshData['user_agent'] = $data['user_agent'];
+                $refreshData['refresh_uid'] = $refresh_uid;
+                $refreshData['uid'] = $data_r['uid'];
+                $refreshData['user_id'] = $user->getId();
 
-                $longLived = isset($post['remember_me']) && (bool)$post['remember_me'];
+                $longLived = isset($post['remember_me']) && (bool) $post['remember_me'];
                 $refreshToken = $this->jwtIssuer->generateRefreshToken($refreshData, $longLived);
                 $cookie = new SetCookie(self::COOKIE_NAME);
 
                 $cookie->setValue($refreshToken);
                 $cookie->setExpires($longLived ? (60 * 60 * 24 * 90) : (60 * 60 * 24 * 30));
-                $cookie->setPath("/");
+                $cookie->setPath('/');
                 $cookie->setSecure(true);
                 $cookie->setHttponly(true);
                 $config = $this->jwtIssuer->getSystemConfig();
-                $cookie->setDomain($config["jwt"]["url"]);
+                $cookie->setDomain($config['jwt']['url']);
 
-                $data["cookie"] = $cookie;
+                $data['cookie'] = $cookie;
 
                 $result = array_merge($data, $data_r);
-                $result["refresh_token"] = $refreshToken; // also returned in JSON body for API clients
+                $result['refresh_token'] = $refreshToken;  // also returned in JSON body for API clients
 
                 return $result;
             } else {
-                throw new \Exception(Json::encode("Invalid Credentials"));
+                throw new \Exception(Json::encode('Invalid Credentials'));
             }
         } else {
             throw new \Exception(Json::encode($inputFilter->getMessages()));
@@ -263,30 +253,29 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         // Generate a new access token and refersh token;
         // $access_token = $jwtIssuer->
         $uuid = Uuid::uuid4();
-        $refresh_uid = uniqid("rt", true);
+        $refresh_uid = uniqid('rt', true);
         $data_r = [
-            "uuid" => $user->getUuid(),
-            "uid" => $user->getUid(),
-            "aud" => $uuid,
-            "email" => $user->getEmail(),
-            "role" => $user->getRole()->getId(),
-            "token_id" => self::generateTokenId(),
+            'uuid' => $user->getUuid(),
+            'uid' => $user->getUid(),
+            'aud' => $uuid,
+            'email' => $user->getEmail(),
+            'role' => $user->getRole()->getId(),
+            'token_id' => self::generateTokenId(),
         ];
 
-        $data_r["token"] = $this->jwtIssuer->issueToken($data_r)->toString();
-        $data_r["userid"] = $user->getId();
-        $data_r["expire"] = 1800; // fix expiry date
-        $data_r["u_uid"] = $user->getUid();
-        $data_r["refresh_uid"] = $refresh_uid;
-
+        $data_r['token'] = $this->jwtIssuer->issueToken($data_r)->toString();
+        $data_r['userid'] = $user->getId();
+        $data_r['expire'] = 1800;  // fix expiry date
+        $data_r['u_uid'] = $user->getUid();
+        $data_r['refresh_uid'] = $refresh_uid;
 
         $refreshData = [];
         // $refreshData["ip"] = $data["user_ip"];
-        $refreshData["data"] = $data_r;
+        $refreshData['data'] = $data_r;
         // $refreshData["user_agent"] = $data["user_agent"];
-        $refreshData["refresh_uid"] = $refresh_uid;
-        $refreshData["uid"] = $data_r["uid"];
-        $refreshData["user_id"] = $user->getId();
+        $refreshData['refresh_uid'] = $refresh_uid;
+        $refreshData['uid'] = $data_r['uid'];
+        $refreshData['user_id'] = $user->getId();
 
         $refreshToken = $this->jwtIssuer->generateRefreshToken($refreshData);
         $this->invalidateRefreshToken($refreshEntity);
@@ -298,8 +287,9 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
     public function invalidateRefreshToken(UserRefreshToken $entity)
     {
         $em = $this->entityManager;
-        $entity->setTokenId(self::generateTokenId() . "-invalid")
-            ->setRefreshToken("revoked");
+        $entity
+            ->setTokenId(self::generateTokenId() . '-invalid')
+            ->setRefreshToken('revoked');
 
         $em->persist($entity);
         $em->flush();
@@ -315,12 +305,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
     public function exchangeRefreshToken(string $refreshToken): array
     {
         $jwtIssuer = $this->jwtIssuer;
-        $em        = $this->entityManager;
+        $em = $this->entityManager;
 
         // 1. Verify the refresh token signature and expiry
-        $token  = $jwtIssuer->validateRefreshToken($refreshToken);
+        $token = $jwtIssuer->validateRefreshToken($refreshToken);
         $claims = $token->claims();
-        $tokenId = $claims->get('jti'); // token_id stored as jti
+        $tokenId = $claims->get('jti');  // token_id stored as jti
 
         // 2. Look up the matching DB record to ensure it has not already been rotated/revoked
         $refreshEntity = $em->getRepository(UserRefreshToken::class)->findOneBy(['tokenId' => $tokenId]);
@@ -341,28 +331,28 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         }
 
         // 5. Build new access token
-        $uuid        = \Ramsey\Uuid\Uuid::uuid4();
+        $uuid = \Ramsey\Uuid\Uuid::uuid4();
         $refresh_uid = uniqid('rt', true);
         $data_r = [
-            'uuid'     => $user->getUuid(),
-            'uid'      => $user->getUid(),
-            'aud'      => $uuid,
-            'email'    => $user->getEmail(),
-            'role'     => $user->getRole()->getId(),
+            'uuid' => $user->getUuid(),
+            'uid' => $user->getUid(),
+            'aud' => $uuid,
+            'email' => $user->getEmail(),
+            'role' => $user->getRole()->getId(),
             'token_id' => self::generateTokenId(),
         ];
-        $data_r['token']       = $jwtIssuer->issueToken($data_r)->toString();
-        $data_r['userid']      = $user->getId();
-        $data_r['expire']      = 1800;
-        $data_r['u_uid']       = $user->getUid();
+        $data_r['token'] = $jwtIssuer->issueToken($data_r)->toString();
+        $data_r['userid'] = $user->getId();
+        $data_r['expire'] = 1800;
+        $data_r['u_uid'] = $user->getUid();
         $data_r['refresh_uid'] = $refresh_uid;
 
         // 6. Issue new refresh token (rotation)
         $refreshData = [
-            'data'        => $data_r,
+            'data' => $data_r,
             'refresh_uid' => $refresh_uid,
-            'uid'         => $data_r['uid'],
-            'user_id'     => $user->getId(),
+            'uid' => $data_r['uid'],
+            'user_id' => $user->getId(),
         ];
         $newRefreshToken = $jwtIssuer->generateRefreshToken($refreshData);
 
@@ -372,12 +362,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         // 8. Build response
         $data = [
             'fullname' => $user->getFullname(),
-            'email'    => $user->getEmail(),
-            'uuid'     => $user->getUuid(),
+            'email' => $user->getEmail(),
+            'uuid' => $user->getUuid(),
             'username' => $user->getUsername(),
-            'role'     => $user->getRole()->getName(),
-            'role_id'  => $user->getRole()->getId(),
-            'wallet'   => $user->getWallet() == null ? 0 : $user->getWallet()->getBalance(),
+            'role' => $user->getRole()->getName(),
+            'role_id' => $user->getRole()->getId(),
+            'wallet' => $user->getWallet() == null ? 0 : $user->getWallet()->getBalance(),
             'profile_pic' => $user->getProfilePic(),
         ];
 
@@ -390,7 +380,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $config = $jwtIssuer->getSystemConfig();
         $cookie->setDomain($config['jwt']['url']);
 
-        $data['cookie']        = $cookie;
+        $data['cookie'] = $cookie;
         $data['refresh_token'] = $newRefreshToken;
 
         return array_merge($data, $data_r);
@@ -404,10 +394,10 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
     public function revokeRefreshToken(string $refreshToken): void
     {
         $jwtIssuer = $this->jwtIssuer;
-        $em        = $this->entityManager;
+        $em = $this->entityManager;
 
         // Parse without strict expiry check so even an expired token can be revoked
-        $token   = $jwtIssuer->validateRefreshToken($refreshToken);
+        $token = $jwtIssuer->validateRefreshToken($refreshToken);
         $tokenId = $token->claims()->get('jti');
 
         $refreshEntity = $em->getRepository(UserRefreshToken::class)->findOneBy(['tokenId' => $tokenId]);
@@ -416,7 +406,6 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         }
         // If already revoked / not found, treat logout as a no-op (idempotent)
     }
-
 
     /**
      * Generates a token IDentity
@@ -444,7 +433,6 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
     public function isTokenValid()
     {
-
         $token = $this->getBearerToken();
         if ($this->jwtIssuer->validateToken($token) instanceof \Exception) {
             return false;
@@ -453,10 +441,8 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         }
     }
 
-
     public function getIdentity()
     {
-
         $jwt = null;
         // try {
 
@@ -468,7 +454,6 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
         // parse token
 
-
         // try {
         $expiredData = $jwtServe->retreiveTokenData($jwt);
         $date = new \Datetime();
@@ -477,22 +462,20 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         // var_dump($expiredData["expDate"]);
         //  var_dump($expiredData["issDate"]);
         // var_dump($nowDate);
-        if ($date > $expiredData["expDate"]) {
-            throw new ExpiredAuthDateException("token expired");
+        if ($date > $expiredData['expDate']) {
+            throw new ExpiredAuthDateException('token expired');
         }
 
         $token = $jwtServe->validateToken($jwt);
         // } catch (\Throwable $th) {
 
-
-
         // }
 
         if ($token == null) {
-            throw new EmptyTokenException("This token is Empty");
+            throw new EmptyTokenException('This token is Empty');
         } else {
-            $data = $token->claims()->get("coded");
-            $container = new Container("identity");
+            $data = $token->claims()->get('coded');
+            $container = new Container('identity');
             // $container->identify = $data[""];
             return $data;
         }
@@ -511,9 +494,9 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $token = $jwtServe->expiredValidateToken($jwt);
         // $expiredData = $jwtServe->retreiveTokenData($jwt);
         if ($token == null) {
-            throw new EmptyTokenException("This token is Empty");
+            throw new EmptyTokenException('This token is Empty');
         } else {
-            $data = $token->claims()->get("coded");
+            $data = $token->claims()->get('coded');
             // $container = new Container("identity");
             // $container->identify = $data[""];
             return $data;
@@ -522,25 +505,21 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
     public function setContainerIdentity($claims)
     {
-        $identityContainer = new Container("api_identity");
+        $identityContainer = new Container('api_identity');
         $identityContainer->ide = $claims;
         return $this;
     }
 
     public function getContainerIdentity()
     {
-        $identityContainer = new Container("api_identity");
+        $identityContainer = new Container('api_identity');
         return $identityContainer->ide;
     }
 
-
-
     public function clearIdentity()
     {
-        return "";
+        return '';
     }
-
-
 
     public function register($post)
     {
@@ -567,14 +546,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $cookie = $this->readCookie();
 
         // Search for token  in UserRefresh Token table by  user device and IP
+
         /*
          * Just to make sure the same device is refreshing the token
          * if it exist, check if it is still valid
-         *
-         *
          */
     }
-
 
     private function hasCookie()
     {
@@ -593,8 +570,6 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
         return $this->requestObject->getCookie()->offsetGet(self::COOKIE_NAME);
     }
-
-
 
     public function generate($claim)
     {
@@ -857,7 +832,8 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
         if (!$user) {
             $user = new User();
-            $user->setUsername($email)
+            $user
+                ->setUsername($email)
                 ->setEmail($email)
                 ->setFullname($name ?: strstr($email, '@', true))
                 ->setPassword(\Authentication\Service\AuthenticationService::encryptPassword(bin2hex(random_bytes(16))))
@@ -867,7 +843,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 ->setRegistrationDate(new \DateTime())
                 ->setEmailConfirmed(true)
                 ->setIsProfiled(false)
-                ->setUid(uniqid("resu"))
+                ->setUid(uniqid('resu'))
                 ->setUuid(Uuid::uuid4()->toString());
 
             if ($provider === 'google' && !empty($providerId)) {
@@ -883,7 +859,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             $em->flush();
         } else {
             if ($user->getState()->getId() != 1) {
-                throw new \Exception("Your account is disabled");
+                throw new \Exception('Your account is disabled');
             }
 
             // Link OAuth ID to existing account if not yet set
@@ -908,54 +884,54 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         }
 
         $uuid = Uuid::uuid4();
-        $refresh_uid = uniqid("rt", true);
+        $refresh_uid = uniqid('rt', true);
 
         $data_r = [
-            "uuid" => $user->getUuid(),
-            "uid" => $user->getUid(),
-            "aud" => $uuid,
-            "email" => $user->getEmail(),
-            "role" => $user->getRole()->getId(),
-            "token_id" => self::generateTokenId(),
+            'uuid' => $user->getUuid(),
+            'uid' => $user->getUid(),
+            'aud' => $uuid,
+            'email' => $user->getEmail(),
+            'role' => $user->getRole()->getId(),
+            'token_id' => self::generateTokenId(),
         ];
 
-        $data_r["token"] = $this->jwtIssuer->issueToken($data_r)->toString();
-        $data_r["userid"] = $user->getId();
-        $data_r["expire"] = 1800; // fix expiry date
-        $data_r["u_uid"] = $user->getUid();
-        $data_r["refresh_uid"] = $refresh_uid;
+        $data_r['token'] = $this->jwtIssuer->issueToken($data_r)->toString();
+        $data_r['userid'] = $user->getId();
+        $data_r['expire'] = 1800;  // fix expiry date
+        $data_r['u_uid'] = $user->getUid();
+        $data_r['refresh_uid'] = $refresh_uid;
 
         $data = [];
         $data['fullname'] = $user->getFullname();
-        $data["email"] = $user->getEmail();
-        $data["uuid"] = $user->getUuid();
-        $data["username"] = $user->getUsername();
-        $data["role"] = $user->getRole()->getName();
-        $data["role_id"] = $user->getRole()->getId();
-        $data["wallet"] = $user->getWallet() == null ? 0 : $user->getWallet()->getBalance();
-        $data["profile_pic"] = $user->getProfilePic();
+        $data['email'] = $user->getEmail();
+        $data['uuid'] = $user->getUuid();
+        $data['username'] = $user->getUsername();
+        $data['role'] = $user->getRole()->getName();
+        $data['role_id'] = $user->getRole()->getId();
+        $data['wallet'] = $user->getWallet() == null ? 0 : $user->getWallet()->getBalance();
+        $data['profile_pic'] = $user->getProfilePic();
 
         // Generate refresh token
         $refreshData = [];
-        $refreshData["ip"] = $ip;
-        $refreshData["data"] = $data_r;
-        $refreshData["user_agent"] = $userAgent;
-        $refreshData["refresh_uid"] = $refresh_uid;
-        $refreshData["uid"] = $data_r["uid"];
-        $refreshData["user_id"] = $user->getId();
+        $refreshData['ip'] = $ip;
+        $refreshData['data'] = $data_r;
+        $refreshData['user_agent'] = $userAgent;
+        $refreshData['refresh_uid'] = $refresh_uid;
+        $refreshData['uid'] = $data_r['uid'];
+        $refreshData['user_id'] = $user->getId();
 
         $refreshToken = $this->jwtIssuer->generateRefreshToken($refreshData);
         $cookie = new SetCookie(self::COOKIE_NAME);
         $cookie->setValue($refreshToken);
-        $cookie->setExpires(60 * 60 * 24 * 30);
-        $cookie->setPath("/");
+        $cookie->setExpires(60 * 60 * 24 * 30 * 12);
+        $cookie->setPath('/');
         $cookie->setSecure(true);
         $cookie->setHttponly(true);
-        
-        $config = $this->jwtIssuer->getSystemConfig();
-        $cookie->setDomain($config["jwt"]["url"]);
 
-        $data["cookie"] = $cookie;
+        $config = $this->jwtIssuer->getSystemConfig();
+        $cookie->setDomain($config['jwt']['url']);
+
+        $data['cookie'] = $cookie;
 
         return array_merge($data, $data_r);
     }
