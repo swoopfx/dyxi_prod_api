@@ -1,15 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace Auth\Controller;
+namespace Authentication\Controller;
 
-use Auth\Service\GoogleOAuthService;
-use Auth\Service\JwtService;
+use Authentication\Service\GoogleOAuthService;
+use Authentication\Service\JWTIssuer as JwtService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use RuntimeException;
 use Throwable;
 
-final class AuthController extends AbstractActionController
+final class JController extends AbstractActionController
 {
     private GoogleOAuthService $google;
     private JwtService $jwt;

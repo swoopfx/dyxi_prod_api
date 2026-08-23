@@ -13,7 +13,7 @@ class MailtrapServiceFactory implements FactoryInterface
     {
         $xserv = new MailtrapService();
         $config = $container->get("config");
-        $mailtrapConfig = $config["mailtrap"];
+        $mailtrapConfig = $config["mailtrap"] ?? [];
         if (! $container->has("general_service")) {
             throw new \Exception("Mailtrap Factory could not retrieve general service");
         }

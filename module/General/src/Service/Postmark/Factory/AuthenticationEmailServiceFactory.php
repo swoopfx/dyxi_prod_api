@@ -17,9 +17,12 @@ class AuthenticationEmailServiceFactory implements FactoryInterface
         // if (! $container->has("config")["postmark"]) {
         //     throw new \Exception(" General\Service\Postmark\Factory\AuthenticationEmailServiceFactory could not get postmark config");
         // }
-        $postmarkConfig = $container->get("config")["postmark"];
+        $config = $container->get("config");
+        $postmarkConfig = $config["postmark"] ?? [];
+        $apikey = $postmarkConfig["live"]["authentication_service"]["apikey"] ?? '';
+        $sender = $postmarkConfig["live"]["sender_email"] ?? '';
         $xserv->setPostmarkConfig($postmarkConfig)
-        ->setApiToken($postmarkConfig["live"]["authentication_service"]["apikey"])->setSender($postmarkConfig["live"]["sender_email"]);
+        ->setApiToken($apikey)->setSender($sender);
         return $xserv;
     }
 }

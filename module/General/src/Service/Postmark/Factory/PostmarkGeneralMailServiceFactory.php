@@ -11,9 +11,12 @@ class PostmarkGeneralMailServiceFactory implements FactoryInterface
     public function __invoke(ContainerInterface $container, $requestedName, ?array $options = null)
     {
         $xserv = new PostmarkGeneralMailService();
-        $postmarkConfig = $container->get("config")["postmark"];
+        $config = $container->get("config");
+        $postmarkConfig = $config["postmark"] ?? [];
+        $apikey = $postmarkConfig["live"]["authentication_service"]["apikey"] ?? '';
+        $sender = $postmarkConfig["live"]["sender_email"] ?? '';
         $xserv->setPostmarkConfig($postmarkConfig)
-            ->setApiToken($postmarkConfig["live"]["authentication_service"]["apikey"])->setSender($postmarkConfig["live"]["sender_email"]);
+            ->setApiToken($apikey)->setSender($sender);
         return $xserv;
     }
 }

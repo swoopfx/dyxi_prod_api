@@ -23,6 +23,7 @@ class IndexController extends AbstractActionController
 
     public function swaggerJsonAction()
     {
+        ini_set('display_errors', '0');
         $openapi = (new \OpenApi\Generator())->generate([
             __DIR__ . '/../../../Application/src/Controller',
             __DIR__ . '/../../../Authentication/src/Controller',

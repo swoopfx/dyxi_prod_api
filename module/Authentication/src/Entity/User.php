@@ -654,7 +654,7 @@ class User
      *
      * @return  self
      */
-    public function setCustomer(Customer $customer)
+    public function setCustomer($customer)
     {
         $this->customer = $customer;
 
