@@ -2174,7 +2174,7 @@ class ApiauthenticateController extends AbstractActionController
     /**
      * Google Sign-In via Authorization Code
      * @OA\POST(
-     *     path="/auth/google",
+     *     path="/auth/ipa/google-oauth",
      *     tags={"Authentication"},
      *     description="Authenticates a user via Google OAuth2. Exchanges the authorization code, verifies the ID Token signature/claims/nonce, finds or creates the local user, and returns access & refresh tokens.",
      *     @OA\RequestBody(

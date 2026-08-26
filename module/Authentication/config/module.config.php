@@ -142,7 +142,7 @@ return [
     ],
     'view_manager' => [
         'template_map' => [
-            'login-layout' => __DIR__ . '/../view/layout/login_layout.phtml',
+            // 'login-layout' => __DIR__ . '/../view/layout/login_layout.phtml',
             'others-layout' => __DIR__ . '/../view/layout/others_layout.phtml'
         ],
         'template_path_stack' => [

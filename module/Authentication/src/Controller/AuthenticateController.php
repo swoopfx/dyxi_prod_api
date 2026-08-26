@@ -81,7 +81,7 @@ class AuthenticateController extends AbstractActionController
 
     public function trainingAction()
     {
-        $this->layout()->setTemplate("login-layout");
+        // $this->layout()->setTemplate("login-layout");
         $this->getEventManager()->trigger("dump");
         $viewModel = new ViewModel();
         $em = $this->em;
@@ -243,7 +243,7 @@ class AuthenticateController extends AbstractActionController
             return $jsonModel;
         }
 
-        $this->layout()->setTemplate("login-layout");
+        // $this->layout()->setTemplate("login-layout");
 
         return  $viewModel;
     }
@@ -251,7 +251,7 @@ class AuthenticateController extends AbstractActionController
     public function registerAction()
     {
         $response = $this->getResponse();
-        $this->layout()->setTemplate("login-layout");
+        // $this->layout()->setTemplate("login-layout");
         $viewModel = new ViewModel();
         $request = $this->getRequest();
 
@@ -639,7 +639,7 @@ class AuthenticateController extends AbstractActionController
 
     public function forgotPasswordAction()
     {
-        $this->layout()->setTemplate("login-layout");
+        // $this->layout()->setTemplate("login-layout");
 
         $viewmodel = new ViewModel();
         return $viewmodel;
@@ -715,7 +715,7 @@ class AuthenticateController extends AbstractActionController
 
     public function confirmEmailAction()
     {
-        $this->layout()->setTemplate("login-layout");
+        // $this->layout()->setTemplate("login-layout");
         $token = $this->params()->fromRoute('id');
         $viewModel = new ViewModel();
         try {
