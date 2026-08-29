@@ -55,7 +55,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
     private $systemConfig;
 
-    const COOKIE_NAME = 'auth';
+    const COOKIE_NAME = 'refresh_token';
 
     private $post;
 
@@ -219,20 +219,21 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
                 $longLived = isset($post['remember_me']) && (bool) $post['remember_me'];
                 $refreshToken = $this->jwtIssuer->generateRefreshToken($refreshData, $longLived);
-                $cookie = new SetCookie(self::COOKIE_NAME);
-
-                $cookie->setValue($refreshToken);
-                $cookie->setExpires($refreshExpireSeconds);
-                $cookie->setPath('/');
-                $cookie->setSecure(true);
-                $cookie->setHttponly(true);
-                $config = $this->jwtIssuer->getSystemConfig();
-                $cookie->setDomain($config['jwt']['url']);
-
-                $data['cookie'] = $cookie;
+                
+                $client = $post['client'] ?? 'web';
+                if ($client === 'web') {
+                    $cookie = new SetCookie(self::COOKIE_NAME);
+                    $cookie->setValue($refreshToken);
+                    $cookie->setMaxAge(2592000);
+                    $cookie->setPath('/auth/ipa/refresh');
+                    $cookie->setSecure(true);
+                    $cookie->setHttponly(true);
+                    $cookie->setSameSite('Lax');
+                    $data['cookie'] = $cookie;
+                }
+                $data['refresh_token'] = $refreshToken;
 
                 $result = array_merge($data, $data_r);
-                $result['refresh_token'] = $refreshToken;  // also returned in JSON body for API clients
 
                 return $result;
             } else {
@@ -306,7 +307,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
      * @param  string  $refreshToken  JWT refresh token string
      * @return array
      */
-    public function exchangeRefreshToken(string $refreshToken): array
+    public function exchangeRefreshToken(string $refreshToken, string $client = 'web'): array
     {
         $jwtIssuer = $this->jwtIssuer;
         $em = $this->entityManager;
@@ -381,16 +382,16 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             'profile_pic' => $user->getProfilePic(),
         ];
 
-        $cookie = new SetCookie(self::COOKIE_NAME);
-        $cookie->setValue($newRefreshToken);
-        $cookie->setExpires($refreshExpireSeconds);
-        $cookie->setPath('/');
-        $cookie->setSecure(true);
-        $cookie->setHttponly(true);
-        $config = $jwtIssuer->getSystemConfig();
-        $cookie->setDomain($config['jwt']['url']);
-
-        $data['cookie'] = $cookie;
+        if ($client === 'web') {
+            $cookie = new SetCookie(self::COOKIE_NAME);
+            $cookie->setValue($newRefreshToken);
+            $cookie->setMaxAge(2592000);
+            $cookie->setPath('/auth/ipa/refresh');
+            $cookie->setSecure(true);
+            $cookie->setHttponly(true);
+            $cookie->setSameSite('Lax');
+            $data['cookie'] = $cookie;
+        }
         $data['refresh_token'] = $newRefreshToken;
 
         return array_merge($data, $data_r);
@@ -801,7 +802,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
 
 
-    public function authenticateSocial($email, $name, $provider, $providerId, $ip, $userAgent, ?string $profilePic = null)
+    public function authenticateSocial($email, $name, $provider, $providerId, $ip, $userAgent, ?string $profilePic = null, string $client = 'web')
     {
         $em = $this->entityManager;
         $user = null;
@@ -915,17 +916,16 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $refreshData['user_id'] = $user->getId();
 
         $refreshToken = $this->jwtIssuer->generateRefreshToken($refreshData);
-        $cookie = new SetCookie(self::COOKIE_NAME);
-        $cookie->setValue($refreshToken);
-        $cookie->setExpires($refreshExpireSeconds);
-        $cookie->setPath('/');
-        $cookie->setSecure(true);
-        $cookie->setHttponly(true);
-
-        $config = $this->jwtIssuer->getSystemConfig();
-        $cookie->setDomain($config['jwt']['url']);
-
-        $data['cookie'] = $cookie;
+        if ($client === 'web') {
+            $cookie = new SetCookie(self::COOKIE_NAME);
+            $cookie->setValue($refreshToken);
+            $cookie->setMaxAge(2592000);
+            $cookie->setPath('/auth/ipa/refresh');
+            $cookie->setSecure(true);
+            $cookie->setHttponly(true);
+            $cookie->setSameSite('Lax');
+            $data['cookie'] = $cookie;
+        }
         $data['refresh_token'] = $refreshToken;
 
         return array_merge($data, $data_r);

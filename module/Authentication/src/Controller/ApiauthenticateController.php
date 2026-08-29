@@ -114,7 +114,7 @@ class ApiauthenticateController extends AbstractActionController
      * @OA\Post(
      *     path="/auth/ipa/login",
      *     tags={"Authentication"},
-     *     description="Authenticates client credentials (email or username, and password). On success, returns a JWT access token, user profile, and sets an HttpOnly cookie with the rotated refresh token.",
+     *     description="Authenticates client credentials (email or username, and password). On success, returns a JWT access token and user profile. If client is 'web', sets an HttpOnly cookie with the rotated refresh token; if client is 'mobile', returns the refresh token directly in the response body.",
      *     @OA\RequestBody(
      *         required=true,
      *         content={
@@ -126,7 +126,8 @@ class ApiauthenticateController extends AbstractActionController
      *                     @OA\Property(property="password", type="string", example="Oluwaseun1", description="User's plain text password"),
      *                     @OA\Property(property="user_agent", type="string", example="Mozilla/5.0...", description="User agent string of the client device"),
      *                     @OA\Property(property="user_ip", type="string", example="127.0.0.1", description="IP address of the client device"),
-     *                     @OA\Property(property="remember_me", type="boolean", example=true, description="Optional. If true, extends refresh token and session cookie lifetime to 90 days.")
+     *                     @OA\Property(property="remember_me", type="boolean", example=true, description="Optional. If true, extends refresh token and session cookie lifetime to 90 days."),
+     *                     @OA\Property(property="client", type="string", enum={"web", "mobile"}, default="web", description="Client type: 'web' returns HttpOnly cookie; 'mobile' returns refresh_token in response JSON body.")
      *                 )
      *             )
      *         }
@@ -134,9 +135,7 @@ class ApiauthenticateController extends AbstractActionController
      *     @OA\Response(
      *         response="200",
      *         description="Successful login, tokens and profile returned",
-     *         @OA\Header(header="X-Refresh-Token", description="Rotate refresh token for subsequent auth requests", @OA\Schema(type="string", example="rt_64b...")),
-     *         @OA\Header(header="Refresh-Token", description="Alternate refresh token header for compatibility", @OA\Schema(type="string", example="rt_64b...")),
-     *         @OA\Header(header="Set-Cookie", description="Session cookie containing the refresh token", @OA\Schema(type="string", example="rt_cookie=...")),
+     *         @OA\Header(header="Set-Cookie", description="Session cookie containing the refresh token (only returned when client is web)", @OA\Schema(type="string", example="refresh_token=...")),
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
@@ -247,16 +246,21 @@ class ApiauthenticateController extends AbstractActionController
         }
 
         $validatedData = $inputFilter->getValues();
+        $validatedData['client'] = $postData['client'] ?? 'web';
         $errorMessageContainer = new Container('error_code');
         try {
             // Authenticate here
             /** @var ApiAuthenticateService */
             $authResponse = $this->apiAuthService->setPost($validatedData)->authenticate();
-            $response->getHeaders()->addHeader($authResponse['cookie']);
-            $response->getHeaders()->addHeaderLine('X-Refresh-Token', $authResponse['refresh_token']);
-            $response->getHeaders()->addHeaderLine('Refresh-Token', $authResponse['refresh_token']);
+            $client = $validatedData['client'] ?? 'web';
+            if ($client === 'web') {
+                $response->getHeaders()->addHeaderLine('Set-Cookie', 'refresh_token=' . $authResponse['refresh_token'] . '; Max-Age=2592000; Path=/auth/ipa/refresh; HttpOnly; Secure; SameSite=Lax');
+            }
+            $response->getHeaders()->addHeaderLine('Cache-Control', 'no-store');
+            $response->getHeaders()->addHeaderLine('Pragma', 'no-cache');
             $response->setStatusCode(200);
-            $jsonModel->setVariables([
+            
+            $responseData = [
                 'success' => true,
                 'schema' => 'Bearer',
                 'expires_in' => $authResponse['expire'],
@@ -271,7 +275,11 @@ class ApiauthenticateController extends AbstractActionController
                     'wallet' => intval($authResponse['wallet']),
                     'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
-            ]);
+            ];
+            if ($client === 'mobile' && isset($authResponse['refresh_token'])) {
+                $responseData['refresh_token'] = $authResponse['refresh_token'];
+            }
+            $jsonModel->setVariables($responseData);
         } catch (\Throwable $th) {
             $jsonModel->setVariables([
                 'success' => false,
@@ -302,7 +310,8 @@ class ApiauthenticateController extends AbstractActionController
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(property="refresh_token", type="string", description="Refresh token issued at login. Can also be sent via Authorization: Bearer header.")
+     *                     @OA\Property(property="refresh_token", type="string", description="Refresh token issued at login. Can also be sent via Authorization: Bearer header."),
+     *                     @OA\Property(property="client", type="string", enum={"web", "mobile"}, default="web", description="Client type: 'web' returns HttpOnly cookie; 'mobile' returns refresh_token in response JSON body.")
      *                 )
      *             )
      *         }
@@ -380,10 +389,10 @@ class ApiauthenticateController extends AbstractActionController
                 if (str_starts_with($headerValue, 'Bearer ')) {
                     $refreshToken = trim(substr($headerValue, 7));
                 }
-            }
+            }            $body = json_decode($request->getContent(), true) ?: [];
+            $client = $body['client'] ?? 'web';
 
             if (empty($refreshToken)) {
-                $body = json_decode($request->getContent(), true);
                 $refreshToken = $body['refresh_token'] ?? null;
             }
 
@@ -399,14 +408,17 @@ class ApiauthenticateController extends AbstractActionController
                 throw new \Exception('Refresh token is missing');
             }
 
-            $authResponse = $this->apiAuthService->exchangeRefreshToken($refreshToken);
+            $authResponse = $this->apiAuthService->exchangeRefreshToken($refreshToken, $client);
 
-            // Set the new rotated refresh token as HttpOnly cookie
-            $response->getHeaders()->addHeader($authResponse['cookie']);
-            $response->getHeaders()->addHeaderLine('X-Refresh-Token', $authResponse['refresh_token']);
-            $response->getHeaders()->addHeaderLine('Refresh-Token', $authResponse['refresh_token']);
+            // Set the new rotated refresh token as HttpOnly cookie if client is web
+            if ($client === 'web') {
+                $response->getHeaders()->addHeaderLine('Set-Cookie', 'refresh_token=' . $authResponse['refresh_token'] . '; Max-Age=2592000; Path=/auth/ipa/refresh; HttpOnly; Secure; SameSite=Lax');
+            }
+            $response->getHeaders()->addHeaderLine('Cache-Control', 'no-store');
+            $response->getHeaders()->addHeaderLine('Pragma', 'no-cache');
             $response->setStatusCode(200);
-            $jsonModel->setVariables([
+            
+            $responseData = [
                 'success' => true,
                 'schema' => 'Bearer',
                 'expires_in' => $authResponse['expire'],
@@ -421,7 +433,11 @@ class ApiauthenticateController extends AbstractActionController
                     'wallet' => intval($authResponse['wallet']),
                     'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
-            ]);
+            ];
+            if ($client === 'mobile' && isset($authResponse['refresh_token'])) {
+                $responseData['refresh_token'] = $authResponse['refresh_token'];
+            }
+            $jsonModel->setVariables($responseData);
         } catch (\Throwable $th) {
             $response->setStatusCode(401);
             $jsonModel->setVariables([
@@ -545,10 +561,7 @@ class ApiauthenticateController extends AbstractActionController
             $this->apiAuthService->revokeRefreshToken($refreshToken);
 
             // Clear the cookie
-            $clearCookie = new \Laminas\Http\Header\SetCookie(
-                ApiAuthenticateService::COOKIE_NAME, '', time() - 3600, '/', null, true, true
-            );
-            $response->getHeaders()->addHeader($clearCookie);
+            $response->getHeaders()->addHeaderLine('Set-Cookie', 'refresh_token=; Max-Age=0; Path=/auth/ipa/refresh; HttpOnly; Secure; SameSite=Lax');
             $response->setStatusCode(200);
             $jsonModel->setVariables(['success' => true, 'description' => 'Logged out successfully']);
         } catch (\Throwable $th) {
@@ -1932,7 +1945,7 @@ class ApiauthenticateController extends AbstractActionController
      * @OA\POST(
      *     path="/auth/ipa/social-login",
      *     tags={"Authentication"},
-     *     description="Authenticate user with social provider (Google or Apple). Validates the ID token directly with the provider, logs in or auto-registers the user, and sets the HttpOnly cookie with the rotated refresh token.",
+     *     description="Authenticate user with social provider (Google or Apple). Validates the ID token directly with the provider, logs in or auto-registers the user. If client is 'web', sets an HttpOnly cookie with the rotated refresh token; if client is 'mobile', returns the refresh token directly in the response body.",
      *     @OA\RequestBody(
      *         required=true,
      *         content={
@@ -1943,7 +1956,8 @@ class ApiauthenticateController extends AbstractActionController
      *                     @OA\Property(property="provider", type="string", example="google", description="The social identity provider (google or apple)"),
      *                     @OA\Property(property="token", type="string", example="eyJhbGci...", description="The ID Token from Google or Apple SDK"),
      *                     @OA\Property(property="user_agent", type="string", example="AppleWebKit/535.19"),
-     *                     @OA\Property(property="user_ip", type="string", example="127.0.0.1")
+     *                     @OA\Property(property="user_ip", type="string", example="127.0.0.1"),
+     *                     @OA\Property(property="client", type="string", enum={"web", "mobile"}, default="web", description="Client type: 'web' returns HttpOnly cookie; 'mobile' returns refresh_token in response JSON body.")
      *                 )
      *             )
      *         }
@@ -2059,11 +2073,14 @@ class ApiauthenticateController extends AbstractActionController
                     throw new \Exception('Unsupported provider: ' . $provider);
                 }
 
-                $authResponse = $this->apiAuthService->authenticateSocial($email, $name, $provider, $providerId, $userIp, $userAgent, $profilePic);
-                $response->getHeaders()->addHeader($authResponse['cookie']);
+                $client = $postData['client'] ?? 'web';
+                $authResponse = $this->apiAuthService->authenticateSocial($email, $name, $provider, $providerId, $userIp, $userAgent, $profilePic, $client);
+                if ($client === 'web') {
+                    $response->getHeaders()->addHeaderLine('Set-Cookie', 'refresh_token=' . $authResponse['refresh_token'] . '; Max-Age=2592000; Path=/auth/ipa/refresh; HttpOnly; Secure; SameSite=Lax');
+                }
                 $response->setStatusCode(200);
 
-                $jsonModel->setVariables([
+                $responseData = [
                     'success' => true,
                     'schema' => 'Bearer',
                     'expires_in' => $authResponse['expire'],
@@ -2077,7 +2094,11 @@ class ApiauthenticateController extends AbstractActionController
                         'uuid' => $authResponse['uuid'],
                         'wallet' => intval($authResponse['wallet'])
                     ]
-                ]);
+                ];
+                if ($client === 'mobile' && isset($authResponse['refresh_token'])) {
+                    $responseData['refresh_token'] = $authResponse['refresh_token'];
+                }
+                $jsonModel->setVariables($responseData);
             } catch (\Throwable $th) {
                 $response->setStatusCode(400);
                 $jsonModel->setVariables([
@@ -2213,7 +2234,7 @@ class ApiauthenticateController extends AbstractActionController
      * @OA\POST(
      *     path="/auth/ipa/google-oauth",
      *     tags={"Authentication"},
-     *     description="Authenticates a user via Google OAuth2. Exchanges the authorization code, verifies the ID Token signature/claims/nonce, finds or creates the local user, and returns access & refresh tokens.",
+     *     description="Authenticates a user via Google OAuth2. Exchanges the authorization code, verifies the ID Token signature/claims/nonce, finds or creates the local user. If client is 'web', sets an HttpOnly cookie with the rotated refresh token; if client is 'mobile', returns the refresh token directly in the response body.",
      *     @OA\RequestBody(
      *         required=true,
      *         content={
@@ -2224,7 +2245,8 @@ class ApiauthenticateController extends AbstractActionController
      *                     @OA\Property(property="code", type="string", description="Authorization code from Google"),
      *                     @OA\Property(property="redirect_uri", type="string", description="Redirect URI passed in Google authorize request"),
      *                     @OA\Property(property="code_verifier", type="string", description="PKCE code verifier matching the code challenge"),
-     *                     @OA\Property(property="nonce", type="string", description="Replay prevention nonce matching the initial authorize request")
+     *                     @OA\Property(property="nonce", type="string", description="Replay prevention nonce matching the initial authorize request"),
+     *                     @OA\Property(property="client", type="string", enum={"web", "mobile"}, default="web", description="Client type: 'web' returns HttpOnly cookie; 'mobile' returns refresh_token in response JSON body.")
      *                 )
      *             )
      *         }
@@ -2314,16 +2336,19 @@ class ApiauthenticateController extends AbstractActionController
             $profilePic = $tokenPayload['picture'] ?? null;
 
             // 3. Issue access JWT and refresh token using social authentication service
-            $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'google', $providerId, $userIp, $userAgent, $profilePic);
+            $client = $postData['client'] ?? 'web';
+            $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'google', $providerId, $userIp, $userAgent, $profilePic, $client);
 
-            // Set the HttpOnly refresh token cookie on the response headers
-            $response->getHeaders()->addHeader($authResponse['cookie']);
+            // Set the HttpOnly refresh token cookie on the response headers if client is web
+            if ($client === 'web') {
+                $response->getHeaders()->addHeaderLine('Set-Cookie', 'refresh_token=' . $authResponse['refresh_token'] . '; Max-Age=2592000; Path=/auth/ipa/refresh; HttpOnly; Secure; SameSite=Lax');
+            }
 
             // Set the response status code to 200 OK
             $response->setStatusCode(200);
 
             // Populate the JsonModel with final user profile and tokens (standard and compatibility fields)
-            $jsonModel->setVariables([
+            $responseData = [
                 'success' => true,
                 'schema' => 'Bearer',
                 'expires_in' => $authResponse['expire'],
@@ -2341,7 +2366,11 @@ class ApiauthenticateController extends AbstractActionController
                     'wallet' => intval($authResponse['wallet']),
                     'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
-            ]);
+            ];
+            if ($client === 'mobile' && isset($authResponse['refresh_token'])) {
+                $responseData['refresh_token'] = $authResponse['refresh_token'];
+            }
+            $jsonModel->setVariables($responseData);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -2358,9 +2387,10 @@ class ApiauthenticateController extends AbstractActionController
      * @OA\GET(
      *     path="/auth/ipa/google-callback",
      *     tags={"Authentication"},
-     *     description="Handles Google OAuth callback. Exchanges redirect code for an ID Token, validates it, logs in/registers user, and redirects to frontend.",
+     *     description="Handles Google OAuth callback. Exchanges redirect code for an ID Token, validates it, logs in/registers user, and redirects to frontend. Supports client='web' (sets HttpOnly cookie) and client='mobile' (passes refresh_token in redirect query params or JSON body).",
      *     @OA\Parameter(name="code", in="query", required=true, description="Authorization code from Google", @OA\Schema(type="string")),
      *     @OA\Parameter(name="state", in="query", required=true, description="CSRF state token", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="client", in="query", required=false, description="Client type ('web' or 'mobile')", @OA\Schema(type="string")),
      *     @OA\Response(response="302", description="Redirect to frontend redirect URL with tokens in query params"),
      *     @OA\Response(response="400", description="Bad Request")
      * )
@@ -2438,21 +2468,33 @@ class ApiauthenticateController extends AbstractActionController
             $profilePic = $payload['picture'] ?? null;
 
             // Authenticate and issue application tokens
-            $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'google', $providerId, $userIp, $userAgent, $profilePic);
+            $clientParam = $request->getQuery('client') ?? 'web';
+            if (empty($clientParam) && !empty($state)) {
+                $stateData = json_decode($state, true);
+                if (isset($stateData['client'])) {
+                    $clientParam = $stateData['client'];
+                }
+            }
+            $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'google', $providerId, $userIp, $userAgent, $profilePic, $clientParam);
 
-            // Set the HttpOnly cookie
-            $response->getHeaders()->addHeader($authResponse['cookie']);
-            $response->getHeaders()->addHeaderLine('X-Refresh-Token', $authResponse['refresh_token']);
-            $response->getHeaders()->addHeaderLine('Refresh-Token', $authResponse['refresh_token']);
+            // Set the HttpOnly cookie if client is web
+            if ($clientParam === 'web') {
+                $response->getHeaders()->addHeaderLine('Set-Cookie', 'refresh_token=' . $authResponse['refresh_token'] . '; Max-Age=2592000; Path=/auth/ipa/refresh; HttpOnly; Secure; SameSite=Lax');
+            }
 
             // Redirect to frontend
             $frontendRedirect = $googleConfig['frontend_redirect_url'] ?? '';
             if (!empty($frontendRedirect)) {
-                $redirectUrl = $frontendRedirect . '?' . http_build_query([
+                $redirectParams = [
                     'token' => $authResponse['token'],
-                    'refresh_token' => $authResponse['token_id'],
                     'fullname' => $authResponse['fullname']
-                ]);
+                ];
+                if (isset($authResponse['refresh_token'])) {
+                    $redirectParams['refresh_token'] = $authResponse['refresh_token'];
+                } else {
+                    $redirectParams['refresh_token'] = $authResponse['token_id'];
+                }
+                $redirectUrl = $frontendRedirect . '?' . http_build_query($redirectParams);
                 $response->getHeaders()->addHeaderLine('Location', $redirectUrl);
                 $response->setStatusCode(302);
                 return $response;
@@ -2460,7 +2502,7 @@ class ApiauthenticateController extends AbstractActionController
 
             // Fallback to JSON
             $response->setStatusCode(200);
-            $jsonModel->setVariables([
+            $responseData = [
                 'success' => true,
                 'schema' => 'Bearer',
                 'expires_in' => $authResponse['expire'],
@@ -2475,7 +2517,11 @@ class ApiauthenticateController extends AbstractActionController
                     'wallet' => intval($authResponse['wallet']),
                     'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
-            ]);
+            ];
+            if (isset($authResponse['refresh_token'])) {
+                $responseData['refresh_token'] = $authResponse['refresh_token'];
+            }
+            $jsonModel->setVariables($responseData);
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -2493,7 +2539,7 @@ class ApiauthenticateController extends AbstractActionController
      * @OA\POST(
      *     path="/auth/ipa/apple-initiate",
      *     tags={"Authentication"},
-     *     description="Handles Apple OAuth. If parameters (code or id_token) are absent, redirects to Apple's authorization page. If present, processes the callback to authenticate the user.",
+     *     description="Handles Apple OAuth. If parameters (code or id_token) are absent, redirects to Apple's authorization page. If present, processes the callback to authenticate the user. Supports client='web' (sets HttpOnly cookie) and client='mobile' (passes refresh_token in response JSON body).",
      *     @OA\RequestBody(
      *         required=false,
      *         content={
@@ -2503,7 +2549,8 @@ class ApiauthenticateController extends AbstractActionController
      *                     @OA\Property(property="code", type="string", description="Authorization code from Apple"),
      *                     @OA\Property(property="id_token", type="string", description="Identity Token (JWT) from Apple"),
      *                     @OA\Property(property="state", type="string", description="State parameter passed in request"),
-     *                     @OA\Property(property="user", type="string", description="JSON string with user name/email (first-time login)")
+     *                     @OA\Property(property="user", type="string", description="JSON string with user name/email (first-time login)"),
+     *                     @OA\Property(property="client", type="string", enum={"web", "mobile"}, default="web", description="Client type: 'web' returns HttpOnly cookie; 'mobile' returns refresh_token in response JSON body.")
      *                 )
      *             )
      *         }
@@ -2545,6 +2592,7 @@ class ApiauthenticateController extends AbstractActionController
      *     description="Apple OAuth redirect callback endpoint (GET backup/initiate)",
      *     @OA\Parameter(name="code", in="query", required=false, description="Authorization code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="id_token", in="query", required=false, description="Identity Token (JWT)", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="client", in="query", required=false, description="Client type ('web' or 'mobile')", @OA\Schema(type="string")),
      *     @OA\Response(response="200", description="Success"),
      *     @OA\Response(response="302", description="Redirect to Apple authorization page (when id_token is missing)"),
      *     @OA\Response(response="400", description="Error")
@@ -2614,28 +2662,40 @@ class ApiauthenticateController extends AbstractActionController
                 }
             }
 
-            $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'apple', $providerId, $userIp, $userAgent);
+            $clientParam = $request->getPost('client') ?? $request->getQuery('client') ?? 'web';
+            if (empty($clientParam) && !empty($state)) {
+                $stateData = json_decode($state, true);
+                if (isset($stateData['client'])) {
+                    $clientParam = $stateData['client'];
+                }
+            }
+            $authResponse = $this->apiAuthService->authenticateSocial($email, $name, 'apple', $providerId, $userIp, $userAgent, null, $clientParam);
 
-            // Set Cookie
-            $response->getHeaders()->addHeader($authResponse['cookie']);
-            $response->getHeaders()->addHeaderLine('X-Refresh-Token', $authResponse['refresh_token']);
-            $response->getHeaders()->addHeaderLine('Refresh-Token', $authResponse['refresh_token']);
+            // Set Cookie if client is web
+            if ($clientParam === 'web') {
+                $response->getHeaders()->addHeaderLine('Set-Cookie', 'refresh_token=' . $authResponse['refresh_token'] . '; Max-Age=2592000; Path=/auth/ipa/refresh; HttpOnly; Secure; SameSite=Lax');
+            }
 
             // Get Apple configuration for frontend redirect
             $frontendRedirect = $appleConfig['frontend_redirect_url'] ?? '';
             if (!empty($frontendRedirect)) {
-                $redirectUrl = $frontendRedirect . '?' . http_build_query([
+                $redirectParams = [
                     'token' => $authResponse['token'],
-                    'refresh_token' => $authResponse['token_id'],
                     'fullname' => $authResponse['fullname']
-                ]);
+                ];
+                if (isset($authResponse['refresh_token'])) {
+                    $redirectParams['refresh_token'] = $authResponse['refresh_token'];
+                } else {
+                    $redirectParams['refresh_token'] = $authResponse['token_id'];
+                }
+                $redirectUrl = $frontendRedirect . '?' . http_build_query($redirectParams);
                 $response->getHeaders()->addHeaderLine('Location', $redirectUrl);
                 $response->setStatusCode(302);
                 return $response;
             }
 
             $response->setStatusCode(200);
-            $jsonModel->setVariables([
+            $responseData = [
                 'success' => true,
                 'schema' => 'Bearer',
                 'expires_in' => $authResponse['expire'],
@@ -2650,7 +2710,11 @@ class ApiauthenticateController extends AbstractActionController
                     'wallet' => intval($authResponse['wallet']),
                     'profile_pic' => $authResponse['profile_pic'] ?? null
                 ]
-            ]);
+            ];
+            if (isset($authResponse['refresh_token'])) {
+                $responseData['refresh_token'] = $authResponse['refresh_token'];
+            }
+            $jsonModel->setVariables($responseData);
         } catch (\Throwable $th) {
             $response->setStatusCode(empty($idToken) ? 500 : 400);
             $jsonModel->setVariables([

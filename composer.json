@@ -50,7 +50,9 @@
             "Ward\\": "module/Ward/src/",
             "Dyslexia\\": "module/Dyslexia/src/",
             "Adhd\\": "module/Adhd/src/",
-            "Dyscalculia\\": "module/Dyscalculia/src/"
+            "Dyscalculia\\": "module/Dyscalculia/src/",
+            "Game\\": "module/Game/src/",
+            "Consultant\\": "module/Consultant/src/"
         }
     },
     "autoload-dev": {

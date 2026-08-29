@@ -38,4 +38,7 @@ return [
     'Dyslexia',
     'Adhd',
     'Dyscalculia',
+    'Game',
+    'Consultant',
 ];
+
