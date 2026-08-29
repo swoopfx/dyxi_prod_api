@@ -5,8 +5,6 @@ namespace Authentication\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Authentication\Entity\UserState;
 use Authentication\Entity\Roles;
-use Customer\Entity\Customer;
-use Wallet\Entity\Wallet;
 
 /**
  * @ORM\Entity
@@ -144,13 +142,6 @@ class User
      * @var string
      */
     private $mobileActivateCode;
-
-    // /**
-    //  * Undocumented variable
-    //  * @ORM\OneToOne(targetEntity="Wallet\Entity\Wallet", mappedBy="user")
-    //  * @var Wallet
-    //  */
-    // private $wallet;
 
     // /**
     //  * Undocumented variable
@@ -613,53 +604,9 @@ class User
         return $this;
     }
 
-    /**
-     * Get undocumented variable
-     *
-     * @return  Wallet
-     */
-    public function getWallet()
-    {
-        return $this->wallet;
-    }
 
-    /**
-     * Set undocumented variable
-     *
-     * @param  Wallet  $wallet  Undocumented variable
-     *
-     * @return  self
-     */
-    public function setWallet(Wallet $wallet)
-    {
-        $this->wallet = $wallet;
 
-        return $this;
-    }
 
-    /**
-     * Get undocumented variable
-     *
-     * @return  Customer
-     */
-    public function getCustomer()
-    {
-        return $this->customer;
-    }
-
-    /**
-     * Set undocumented variable
-     *
-     * @param  Customer  $customer  Undocumented variable
-     *
-     * @return  self
-     */
-    public function setCustomer($customer)
-    {
-        $this->customer = $customer;
-
-        return $this;
-    }
 
     /**
      * Get undocumented variable

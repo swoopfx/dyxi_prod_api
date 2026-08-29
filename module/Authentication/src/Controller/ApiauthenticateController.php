@@ -111,7 +111,7 @@ class ApiauthenticateController extends AbstractActionController
 
     /**
      * This API is used to authenticate the user and retrieve a JWT bearer token.
-     * @OA\POST(
+     * @OA\Post(
      *     path="/auth/ipa/login",
      *     tags={"Authentication"},
      *     description="Authenticates client credentials (email or username, and password). On success, returns a JWT access token, user profile, and sets an HttpOnly cookie with the rotated refresh token.",
@@ -134,25 +134,28 @@ class ApiauthenticateController extends AbstractActionController
      *     @OA\Response(
      *         response="200",
      *         description="Successful login, tokens and profile returned",
+     *         @OA\Header(header="X-Refresh-Token", description="Rotate refresh token for subsequent auth requests", @OA\Schema(type="string", example="rt_64b...")),
+     *         @OA\Header(header="Refresh-Token", description="Alternate refresh token header for compatibility", @OA\Schema(type="string", example="rt_64b...")),
+     *         @OA\Header(header="Set-Cookie", description="Session cookie containing the refresh token", @OA\Schema(type="string", example="rt_cookie=...")),
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
      *                     @OA\Property(property="success", type="boolean", example=true),
      *                     @OA\Property(property="schema", type="string", example="Bearer"),
-     *                     @OA\Property(property="expires_in", type="integer", example=1800, description="Access token lifetime in seconds"),
+     *                     @OA\Property(property="expires_in", type="integer", example=2592000, description="Access token lifetime in seconds"),
      *                     @OA\Property(property="token", type="string", example="eyJ0eXAi..."),
-     *                     @OA\Property(property="refresh_token", type="string", example="rt_64b...", description="Opaque refresh token value"),
      *                     @OA\Property(property="luhn_token", type="string", example="26a14737...", description="Unique token ID value"),
      *                     @OA\Property(
      *                         property="user",
      *                         type="object",
      *                         @OA\Property(property="fullname", type="string", example="John Doe"),
      *                         @OA\Property(property="email", type="string", example="john@doe.com"),
-     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="role", type="string", example="IRecycler"),
      *                         @OA\Property(property="username", type="string", example="john_doe"),
      *                         @OA\Property(property="uuid", type="string", example="d3b07384..."),
-     *                         @OA\Property(property="wallet", type="integer", example=120)
+     *                         @OA\Property(property="wallet", type="integer", example=0),
+     *                         @OA\Property(property="profile_pic", type="string", nullable=true, example="https://example.com/pic.jpg", description="URL to the user's profile picture")
      *                     )
      *                 )
      *             )
@@ -206,25 +209,58 @@ class ApiauthenticateController extends AbstractActionController
             return $jsonModel;
         }
 
-        // $json = file_get_contents('php://input');
         $json = $request->getContent();
         // Converts it into a PHP object
-        $postData = json_decode($json, true);
-        // $postData = (array) $postData;
-        // $this->loginInputFilter->setData($postData);
+        $postData = json_decode($json, true) ?: [];
+
+        // Automatically supply user_agent and user_ip if not provided
+        if (empty($postData['user_agent'])) {
+            $userAgentHeader = $request->getHeader('User-Agent');
+            $postData['user_agent'] = $userAgentHeader ? $userAgentHeader->getFieldValue() : 'Unknown';
+        }
+        if (empty($postData['user_ip'])) {
+            $xForwardedFor = $request->getHeader('X-Forwarded-For');
+            if ($xForwardedFor) {
+                $postData['user_ip'] = explode(',', $xForwardedFor->getFieldValue())[0];
+            } else {
+                $postData['user_ip'] = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            }
+        }
+
+        $inputFilter = $this->apiAuthService->getLoginInputFilter();
+        $inputFilter->setValidationGroup([
+            'username',
+            'password',
+            'user_agent',
+            'user_ip'
+        ]);
+        $inputFilter->setData($postData);
+
+        if (!$inputFilter->isValid()) {
+            $response->setStatusCode(400);
+            $jsonModel->setVariables([
+                'success' => false,
+                'error' => 'ValidationError',
+                'description' => $inputFilter->getMessages()
+            ]);
+            return $jsonModel;
+        }
+
+        $validatedData = $inputFilter->getValues();
         $errorMessageContainer = new Container('error_code');
         try {
             // Authenticate here
             /** @var ApiAuthenticateService */
-            $authResponse = $this->apiAuthService->setPost($postData)->authenticate();
+            $authResponse = $this->apiAuthService->setPost($validatedData)->authenticate();
             $response->getHeaders()->addHeader($authResponse['cookie']);
+            $response->getHeaders()->addHeaderLine('X-Refresh-Token', $authResponse['refresh_token']);
+            $response->getHeaders()->addHeaderLine('Refresh-Token', $authResponse['refresh_token']);
             $response->setStatusCode(200);
             $jsonModel->setVariables([
                 'success' => true,
                 'schema' => 'Bearer',
                 'expires_in' => $authResponse['expire'],
                 'token' => $authResponse['token'],
-                'refresh_token' => $authResponse['refresh_token'],  // opaque refresh token (also in HttpOnly cookie)
                 'luhn_token' => $authResponse['token_id'],
                 'user' => [
                     'fullname' => $authResponse['fullname'],
@@ -256,7 +292,7 @@ class ApiauthenticateController extends AbstractActionController
     /**
      * Exchange a valid refresh token for a new access token + rotated refresh token.
      *
-     * @OA\POST(
+     * @OA\Post(
      *     path="/auth/ipa/refresh",
      *     tags={"Authentication"},
      *     description="Exchange a valid refresh token for a new access token and a rotated refresh token. The old refresh token is immediately invalidated (token rotation). Send the refresh token in the Authorization header as `Bearer <refresh_token>`, or pass it in the JSON body.",
@@ -367,13 +403,14 @@ class ApiauthenticateController extends AbstractActionController
 
             // Set the new rotated refresh token as HttpOnly cookie
             $response->getHeaders()->addHeader($authResponse['cookie']);
+            $response->getHeaders()->addHeaderLine('X-Refresh-Token', $authResponse['refresh_token']);
+            $response->getHeaders()->addHeaderLine('Refresh-Token', $authResponse['refresh_token']);
             $response->setStatusCode(200);
             $jsonModel->setVariables([
                 'success' => true,
                 'schema' => 'Bearer',
                 'expires_in' => $authResponse['expire'],
                 'token' => $authResponse['token'],
-                'refresh_token' => $authResponse['refresh_token'],
                 'luhn_token' => $authResponse['token_id'],
                 'user' => [
                     'fullname' => $authResponse['fullname'],
@@ -1079,7 +1116,7 @@ class ApiauthenticateController extends AbstractActionController
      * Initiate password reset flow.
      *
      * @OA\POST(
-     *     path="/auth/ipa/intitiate-change-pasword",
+     *     path="/auth/ipa/initiate-change-password",
      *     tags={"Authentication"},
      *     description="Initiates a password reset flow for the user with the given email address. A numeric reset code is generated, stored, and sent to the user's email.",
      *     @OA\RequestBody(
@@ -1137,7 +1174,7 @@ class ApiauthenticateController extends AbstractActionController
      *     )
      * )
      */
-    public function intitiateChangePaswordAction()
+    public function initiateChangePasswordAction()
     {
         $jsonModel = new JsonModel();
         $request = $this->getRequest();
@@ -1235,7 +1272,7 @@ class ApiauthenticateController extends AbstractActionController
      * Confirm password reset code.
      *
      * @OA\POST(
-     *     path="/auth/ipa/confirmnew-code",
+     *     path="/auth/ipa/confirm-reset-code",
      *     tags={"Authentication"},
      *     description="Validates the password reset code sent to the user's email. On successful validation, returns the confirmed code to be used in the password update step.",
      *     @OA\RequestBody(
@@ -1295,7 +1332,7 @@ class ApiauthenticateController extends AbstractActionController
      *     )
      * )
      */
-    public function confirmnewCodeAction()
+    public function confirmResetCodeAction()
     {
         $jsonModel = new JsonModel();
         $request = $this->getRequest();
@@ -2405,6 +2442,8 @@ class ApiauthenticateController extends AbstractActionController
 
             // Set the HttpOnly cookie
             $response->getHeaders()->addHeader($authResponse['cookie']);
+            $response->getHeaders()->addHeaderLine('X-Refresh-Token', $authResponse['refresh_token']);
+            $response->getHeaders()->addHeaderLine('Refresh-Token', $authResponse['refresh_token']);
 
             // Redirect to frontend
             $frontendRedirect = $googleConfig['frontend_redirect_url'] ?? '';
@@ -2579,6 +2618,8 @@ class ApiauthenticateController extends AbstractActionController
 
             // Set Cookie
             $response->getHeaders()->addHeader($authResponse['cookie']);
+            $response->getHeaders()->addHeaderLine('X-Refresh-Token', $authResponse['refresh_token']);
+            $response->getHeaders()->addHeaderLine('Refresh-Token', $authResponse['refresh_token']);
 
             // Get Apple configuration for frontend redirect
             $frontendRedirect = $appleConfig['frontend_redirect_url'] ?? '';

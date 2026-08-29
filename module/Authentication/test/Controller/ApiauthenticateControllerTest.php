@@ -109,5 +109,57 @@ class ApiauthenticateControllerTest extends AbstractHttpControllerTestCase
         $responseContent = json_decode($this->getResponse()->getContent(), true);
         $this->assertFalse($responseContent['success']);
     }
+
+    public function testLoginActionWithGetMethodReturns405(): void
+    {
+        $this->dispatch('/auth/ipa/login', 'GET');
+        $this->assertResponseStatusCode(405);
+
+        $responseContent = json_decode($this->getResponse()->getContent(), true);
+        $this->assertFalse($responseContent['success']);
+        $this->assertEquals('MethodNotAllowed', $responseContent['error']);
+    }
+
+    public function testLoginActionWithInvalidParamsReturns400ValidationError(): void
+    {
+        $this->dispatch('/auth/ipa/login', 'POST', []);
+        $this->assertResponseStatusCode(400);
+
+        $responseContent = json_decode($this->getResponse()->getContent(), true);
+        $this->assertFalse($responseContent['success']);
+        $this->assertEquals('ValidationError', $responseContent['error']);
+        $this->assertArrayHasKey('username', $responseContent['description']);
+        $this->assertArrayHasKey('password', $responseContent['description']);
+    }
+
+    public function testInitiateChangePasswordWithGetMethodReturns405(): void
+    {
+        $this->dispatch('/auth/ipa/initiate-change-password', 'GET');
+        $this->assertResponseStatusCode(405);
+
+        $responseContent = json_decode($this->getResponse()->getContent(), true);
+        $this->assertFalse($responseContent['success']);
+        $this->assertEquals('MethodNotAllowed', $responseContent['error']);
+    }
+
+    public function testConfirmResetCodeWithGetMethodReturns405(): void
+    {
+        $this->dispatch('/auth/ipa/confirm-reset-code', 'GET');
+        $this->assertResponseStatusCode(405);
+
+        $responseContent = json_decode($this->getResponse()->getContent(), true);
+        $this->assertFalse($responseContent['success']);
+        $this->assertEquals('MethodNotAllowed', $responseContent['error']);
+    }
+
+    public function testUpdatePasswordWithGetMethodReturns405(): void
+    {
+        $this->dispatch('/auth/ipa/update-password', 'GET');
+        $this->assertResponseStatusCode(405);
+
+        $responseContent = json_decode($this->getResponse()->getContent(), true);
+        $this->assertFalse($responseContent['success']);
+        $this->assertEquals('MethodNotAllowed', $responseContent['error']);
+    }
 }
 

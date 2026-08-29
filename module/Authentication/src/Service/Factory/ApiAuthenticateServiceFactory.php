@@ -12,7 +12,6 @@ use General\Service\Postmark\AuthenticationEmailService;
 use Laminas\InputFilter\InputFilterPluginManager;
 use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use Wallet\Service\WalletApiService;
 
 class ApiAuthenticateServiceFactory implements FactoryInterface
 {
@@ -29,9 +28,7 @@ class ApiAuthenticateServiceFactory implements FactoryInterface
         if (! $container->has("Laminas\Authentication\AuthenticationService")) {
             throw new \Exception("Api authentication service cannot retrieve auth service");
         }
-        if (! $container->has(WalletApiService::class)) {
-            throw new \Exception("Api authentication service cannot retrieve Wallet ApiService");
-        }
+
         /**
          * @var  InputFilterPluginManager
          */
@@ -56,7 +53,6 @@ class ApiAuthenticateServiceFactory implements FactoryInterface
         $responseObject = $container->get("Response");
         $authenticationService = $generalService->getAuthService();
         // $authEmailService = $container->get(AuthenticationEmailService::class)
-        // $walletService = $container->get(WalletApiService::class);
 
         $xserv->setEntityManager($generalService->getEm())
             ->setLoginInputFilter($logininputFiler)
@@ -64,7 +60,6 @@ class ApiAuthenticateServiceFactory implements FactoryInterface
             ->setRequestObject($requestObject)
             ->setResponseObject($responseObject)
             ->setAuthenticationService($authenticationService)
-            // ->setWalletService($walletService)
             ->setRegisterInputFilter($registerInputFilter);
         return $xserv;
     }

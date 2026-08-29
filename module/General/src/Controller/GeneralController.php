@@ -49,7 +49,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Used to retrieve list of gender
-     * @OA\GET( path="/general/api/get-gender", tags={"General"},
+     * @OA\Get(path="/general/api/get-gender", tags={"General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),
@@ -87,7 +87,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Used to retrieve The Users Profile
-     * @OA\GET( path="/general/api/get-user-profile", tags={"General"},
+     * @OA\Get( path="/general/api/get-user-profile", tags={"General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),

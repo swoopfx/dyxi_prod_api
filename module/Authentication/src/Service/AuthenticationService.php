@@ -30,10 +30,6 @@ class AuthenticationService implements AuthenticationServiceInterface
 
     const USER_ROLE_SETUP_AGENT = 2;
 
-    // RP user role
-
-    const USER_ROLE_CUSTOMER = 100;
-
     const USER_ROLE_SCAVENGER = 125;
 
     const USER_ROLE_IRECYCLER = 126;

@@ -20,7 +20,6 @@ use Laminas\InputFilter\InputFilter;
 use Laminas\Json\Json;
 use Laminas\Session\Container;
 use Ramsey\Uuid\Uuid;
-use Wallet\Service\WalletApiService;
 use Exception;
 use RuntimeException;
 
@@ -88,12 +87,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
      */
     private $authEmailService;
 
-    /**
-     * Undocumented variable
-     *
-     * @var WalletApiService
-     */
-    private $walletService;
+
 
     public function getBearerToken()
     {
@@ -181,6 +175,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 // generate jwt token
                 $refresh_uid = uniqid('rt', true);  // token to refresh the access token
 
+                $jwtConfig = $this->jwtIssuer->getSystemConfig()['jwt'] ?? [];
+                $secretKeyExpires = $jwtConfig['secret_key_expires'] ?? '+30 days';
+                $refreshKeyExpires = $jwtConfig['refresh_key_expires'] ?? '+365 days';
+                $expireSeconds = strtotime($secretKeyExpires) - time();
+                $refreshExpireSeconds = strtotime($refreshKeyExpires) - time();
+
                 $data_r = [
                     'uuid' => $user->getUuid(),
                     'uid' => $user->getUid(),
@@ -192,7 +192,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
                 $data_r['token'] = $this->jwtIssuer->issueToken($data_r)->toString();
                 $data_r['userid'] = $user->getId();
-                $data_r['expire'] = 1800;  // fix expiry date
+                $data_r['expire'] = $expireSeconds;
                 $data_r['u_uid'] = $user->getUid();
                 $data_r['refresh_uid'] = $refresh_uid;
 
@@ -202,7 +202,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 $data['username'] = $user->getUsername();
                 $data['role'] = $user->getRole()->getName();
                 $data['role_id'] = $user->getRole()->getId();
-                $data['wallet'] = $user->getWallet() == null ? 0 : $user->getWallet()->getBalance();
+                $data['wallet'] = 0;
                 $data['profile_pic'] = $user->getProfilePic();
 
                 // var_dump($data["user_agent"]);
@@ -222,7 +222,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 $cookie = new SetCookie(self::COOKIE_NAME);
 
                 $cookie->setValue($refreshToken);
-                $cookie->setExpires($longLived ? (60 * 60 * 24 * 90) : (60 * 60 * 24 * 30));
+                $cookie->setExpires($refreshExpireSeconds);
                 $cookie->setPath('/');
                 $cookie->setSecure(true);
                 $cookie->setHttponly(true);
@@ -254,6 +254,10 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         // $access_token = $jwtIssuer->
         $uuid = Uuid::uuid4();
         $refresh_uid = uniqid('rt', true);
+        $jwtConfig = $this->jwtIssuer->getSystemConfig()['jwt'] ?? [];
+        $secretKeyExpires = $jwtConfig['secret_key_expires'] ?? '+30 days';
+        $expireSeconds = strtotime($secretKeyExpires) - time();
+
         $data_r = [
             'uuid' => $user->getUuid(),
             'uid' => $user->getUid(),
@@ -265,7 +269,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
         $data_r['token'] = $this->jwtIssuer->issueToken($data_r)->toString();
         $data_r['userid'] = $user->getId();
-        $data_r['expire'] = 1800;  // fix expiry date
+        $data_r['expire'] = $expireSeconds;
         $data_r['u_uid'] = $user->getUid();
         $data_r['refresh_uid'] = $refresh_uid;
 
@@ -333,6 +337,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         // 5. Build new access token
         $uuid = \Ramsey\Uuid\Uuid::uuid4();
         $refresh_uid = uniqid('rt', true);
+        $jwtConfig = $jwtIssuer->getSystemConfig()['jwt'] ?? [];
+        $secretKeyExpires = $jwtConfig['secret_key_expires'] ?? '+30 days';
+        $refreshKeyExpires = $jwtConfig['refresh_key_expires'] ?? '+365 days';
+        $expireSeconds = strtotime($secretKeyExpires) - time();
+        $refreshExpireSeconds = strtotime($refreshKeyExpires) - time();
+
         $data_r = [
             'uuid' => $user->getUuid(),
             'uid' => $user->getUid(),
@@ -343,7 +353,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         ];
         $data_r['token'] = $jwtIssuer->issueToken($data_r)->toString();
         $data_r['userid'] = $user->getId();
-        $data_r['expire'] = 1800;
+        $data_r['expire'] = $expireSeconds;
         $data_r['u_uid'] = $user->getUid();
         $data_r['refresh_uid'] = $refresh_uid;
 
@@ -367,13 +377,13 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             'username' => $user->getUsername(),
             'role' => $user->getRole()->getName(),
             'role_id' => $user->getRole()->getId(),
-            'wallet' => $user->getWallet() == null ? 0 : $user->getWallet()->getBalance(),
+            'wallet' => 0,
             'profile_pic' => $user->getProfilePic(),
         ];
 
         $cookie = new SetCookie(self::COOKIE_NAME);
         $cookie->setValue($newRefreshToken);
-        $cookie->setExpires(60 * 60 * 24 * 30);
+        $cookie->setExpires($refreshExpireSeconds);
         $cookie->setPath('/');
         $cookie->setSecure(true);
         $cookie->setHttponly(true);
@@ -789,29 +799,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         return $this;
     }
 
-    /**
-     * Get undocumented variable
-     *
-     * @return  WalletApiService
-     */
-    public function getWalletService()
-    {
-        return $this->walletService;
-    }
 
-    /**
-     * Set undocumented variable
-     *
-     * @param  WalletApiService  $walletService  Undocumented variable
-     *
-     * @return  self
-     */
-    public function setWalletService(WalletApiService $walletService)
-    {
-        $this->walletService = $walletService;
-
-        return $this;
-    }
 
     public function authenticateSocial($email, $name, $provider, $providerId, $ip, $userAgent, ?string $profilePic = null)
     {
@@ -837,7 +825,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 ->setEmail($email)
                 ->setFullname($name ?: strstr($email, '@', true))
                 ->setPassword(\Authentication\Service\AuthenticationService::encryptPassword(bin2hex(random_bytes(16))))
-                ->setRole($em->find(\Authentication\Entity\Roles::class, \Authentication\Service\AuthenticationService::USER_ROLE_CUSTOMER))
+                ->setRole($em->find(\Authentication\Entity\Roles::class, \Authentication\Service\AuthenticationService::USER_ROLE_IRECYCLER))
                 ->setState($em->find(\Authentication\Entity\UserState::class, \Authentication\Service\AuthenticationService::USER_STATE_ENABLED))
                 ->setCreatedOn(new \DateTime())
                 ->setRegistrationDate(new \DateTime())
@@ -886,6 +874,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $uuid = Uuid::uuid4();
         $refresh_uid = uniqid('rt', true);
 
+        $jwtConfig = $this->jwtIssuer->getSystemConfig()['jwt'] ?? [];
+        $secretKeyExpires = $jwtConfig['secret_key_expires'] ?? '+30 days';
+        $refreshKeyExpires = $jwtConfig['refresh_key_expires'] ?? '+365 days';
+        $expireSeconds = strtotime($secretKeyExpires) - time();
+        $refreshExpireSeconds = strtotime($refreshKeyExpires) - time();
+
         $data_r = [
             'uuid' => $user->getUuid(),
             'uid' => $user->getUid(),
@@ -897,7 +891,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
 
         $data_r['token'] = $this->jwtIssuer->issueToken($data_r)->toString();
         $data_r['userid'] = $user->getId();
-        $data_r['expire'] = 1800;  // fix expiry date
+        $data_r['expire'] = $expireSeconds;
         $data_r['u_uid'] = $user->getUid();
         $data_r['refresh_uid'] = $refresh_uid;
 
@@ -908,7 +902,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $data['username'] = $user->getUsername();
         $data['role'] = $user->getRole()->getName();
         $data['role_id'] = $user->getRole()->getId();
-        $data['wallet'] = $user->getWallet() == null ? 0 : $user->getWallet()->getBalance();
+        $data['wallet'] = 0;
         $data['profile_pic'] = $user->getProfilePic();
 
         // Generate refresh token
@@ -923,7 +917,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $refreshToken = $this->jwtIssuer->generateRefreshToken($refreshData);
         $cookie = new SetCookie(self::COOKIE_NAME);
         $cookie->setValue($refreshToken);
-        $cookie->setExpires(60 * 60 * 24 * 30 * 12);
+        $cookie->setExpires($refreshExpireSeconds);
         $cookie->setPath('/');
         $cookie->setSecure(true);
         $cookie->setHttponly(true);
@@ -932,6 +926,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $cookie->setDomain($config['jwt']['url']);
 
         $data['cookie'] = $cookie;
+        $data['refresh_token'] = $refreshToken;
 
         return array_merge($data, $data_r);
     }

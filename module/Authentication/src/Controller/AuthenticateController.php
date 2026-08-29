@@ -282,7 +282,6 @@ class AuthenticateController extends AbstractActionController
         //         $user->setUid(UserService::createUserUid());
         //         $user->setFullName($data["fullname"]);
         //         $user->setEmail($data['email']);
-        //         $user->setRole($entityManager->find("CsnUser\Entity\Role", UserService::USER_ROLE_CUSTOMER));
         //         $user->setRegistrationDate(new \DateTime());
         //         $user->setUpdatedOn(new \DateTime());
         //         $user->setEmailConfirmed(false);

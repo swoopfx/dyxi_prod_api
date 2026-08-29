@@ -70,7 +70,7 @@ class JWTIssuer
         return  $config->builder()
             ->issuedBy($issuer)
             ->permittedFor($issuer)
-            ->identifiedBy($data["email"]) // device ID
+            ->identifiedBy($data["token_id"]) // unique token ID
             ->relatedTo($data["email"])->withClaim("coded", $data)
             ->issuedAt($now)
             ->expiresAt($now->modify($secretKeyExpires))
@@ -122,8 +122,7 @@ class JWTIssuer
             $issuer = $jwtConfig['issuer'] ?? '';
             $refreshKeyExpires = $jwtConfig['refresh_key_expires'] ?? '';
 
-            $ttlOverride = $longLived ? '+90 days' : $refreshKeyExpires;
-            $expiresOn = $now->modify($ttlOverride);
+            $expiresOn = $now->modify($refreshKeyExpires);
             $refreshToken = $config->builder()
                 ->issuedBy($issuer)
                 ->permittedFor($issuer)

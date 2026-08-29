@@ -23,7 +23,6 @@ class UserController extends AbstractActionController
     public function profileAction()
     {
         // Get user Details
-        // Get Wallet Balnace;
         // Get parent
         $jsonModel = new JsonModel();
         return $jsonModel;

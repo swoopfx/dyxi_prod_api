@@ -55,6 +55,7 @@ class ApiauthenticateControllerFactory implements FactoryInterface
             ->setAuthMailtrapService($authMailTrapService)
             ->setAuthPostmarkService($container->get(AuthenticationEmailService::class))
             ->setGoogleAuthService($googleAuthService)
+            ->setJwtIssuer($jwtIssuer)
             ->setConfig($config)
             ->setRegisterService($registerService);
 

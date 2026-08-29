@@ -99,6 +99,6 @@ class LoginInputFilter extends InputFilter
                     ]
                 ]
             ]
-                        ]);
+        ]);
     }
 }

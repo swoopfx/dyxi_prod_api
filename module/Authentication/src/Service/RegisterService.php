@@ -11,8 +11,6 @@ use Authentication\Entity\UserState;
 use Exception;
 use General\Service\GeneralService;
 use Authentication\Form\InputFilter\RegisterInputfilter;
-use Customer\Entity\Customer;
-use Customer\Service\CustomerService;
 use DateTime;
 use Doctrine\ORM\EntityManager;
 use General\Service\Mailtrap\MailtrapService;
@@ -77,7 +75,7 @@ class RegisterService
         $em = $this->generalService->getEm();
         $designatedRole = null;
         if (is_null($this->assignedRole)) {
-            $designatedRole = AuthenticationService::USER_ROLE_CUSTOMER;
+            $designatedRole = AuthenticationService::USER_ROLE_IRECYCLER;
         } else {
             $designatedRole = $this->assignedRole;
         }
@@ -130,20 +128,6 @@ class RegisterService
 
             //trigger other events
 
-            // Register customer Entity
-
-            $customerEntity = new Customer();
-            $customerEntity->setUser($newUser)
-                ->setCreatedOn(new \Datetime())
-                ->setAddress($data["address"])
-                ->setAddressPlaceId($data["address_google_place_id"])
-                ->setAddressLatitude($data["address_latitude"])
-                ->setCustomerUid(CustomerService::generateCustomerId())
-                ->setCustomerUuid(CustomerService::generareCustomerUuid())
-                ->setIsActive(true)
-
-                ->setAddressLongitude($data["address_longitude"]);
-
             // send email
             $roleEntity = $em->find(Roles::class, $designatedRole);
             $mailData["email"] = $data["email"];
@@ -159,7 +143,6 @@ class RegisterService
             } else {
                 $this->webMailNotifier($mailData);
             }
-            $em->persist($customerEntity);
             $em->persist($newUser);
             $em->flush();
             return $data;
