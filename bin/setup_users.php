@@ -40,20 +40,32 @@ try {
         exit(1);
     }
 
-    // Since USER_ROLE_CUSTOMER is removed, we'll assign USER_ROLE_IRECYCLER (126) or fallback to another role
-    $roleId = defined('Authentication\Service\AuthenticationService::USER_ROLE_IRECYCLER') 
-        ? AuthenticationService::USER_ROLE_IRECYCLER 
-        : 126;
+    // Seed/update standard system roles
+    $rolesMap = [
+        AuthenticationService::USER_ROLE_GUEST => 'Guest',
+        AuthenticationService::USER_ROLE_GUARDIAN => 'Guardian',
+        AuthenticationService::USER_ROLE_CONSULTANT => 'Consultant',
+        AuthenticationService::USER_ROLE_ADMIN => 'Admin',
+        AuthenticationService::USER_ROLE_SUPER_ADMIN => 'SuperAdmin',
+    ];
 
-    $roleEntity = $em->find(Roles::class, $roleId);
-    if (!$roleEntity) {
-        // Fallback to find the first role if IRECYCLER is not found
-        $roleEntity = $em->getRepository(Roles::class)->findOneBy([]);
+    foreach ($rolesMap as $rId => $rName) {
+        $roleObj = $em->find(Roles::class, $rId);
+        if (!$roleObj) {
+            $roleObj = new Roles();
+            // Set ID if possible or entity manager handles it
+            $refProp = new \ReflectionProperty(Roles::class, 'id');
+            $refProp->setAccessible(true);
+            $refProp->setValue($roleObj, $rId);
+        }
+        $roleObj->setName($rName);
+        $em->persist($roleObj);
     }
+    $em->flush();
 
+    $roleEntity = $em->find(Roles::class, AuthenticationService::USER_ROLE_GUARDIAN);
     if (!$roleEntity) {
-        echo "Error: No roles found in the database.\n";
-        exit(1);
+        $roleEntity = $em->getRepository(Roles::class)->findOneBy([]);
     }
 
     foreach ($usersData as $data) {

@@ -3,6 +3,7 @@
 namespace Game\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Ward\Entity\Ward;
 
 /**
  * Curriculum
@@ -27,8 +28,15 @@ class Curriculum
     private $uuid;
 
     /**
+     * @var Ward|null
+     * @ORM\OneToOne(targetEntity="Ward\Entity\Ward")
+     * @ORM\JoinColumn(name="ward_id", referencedColumnName="id", nullable=true, unique=true)
+     */
+    private $ward;
+
+    /**
      * @var string
-     * @ORM\Column(name="name", type="string", length=255, nullable=false, unique=true)
+     * @ORM\Column(name="name", type="string", length=255, nullable=false)
      */
     private $name;
 
@@ -125,6 +133,17 @@ class Curriculum
     public function setMaxAge(?int $maxAge): self
     {
         $this->maxAge = $maxAge;
+        return $this;
+    }
+
+    public function getWard(): ?Ward
+    {
+        return $this->ward;
+    }
+
+    public function setWard(?Ward $ward): self
+    {
+        $this->ward = $ward;
         return $this;
     }
 

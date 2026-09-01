@@ -9,6 +9,9 @@ use Game\Entity\Game;
 use Game\Entity\GamesCollection;
 use Ramsey\Uuid\Uuid;
 
+use Game\Service\CurriculumService;
+use General\Service\RedisCacheService;
+
 class GameService
 {
     /**
@@ -17,13 +20,29 @@ class GameService
     private $entityManager;
 
     /**
+     * @var RedisCacheService|null
+     */
+    private ?RedisCacheService $redisCacheService;
+
+    /**
+     * @var CurriculumService|null
+     */
+    private ?CurriculumService $curriculumService;
+
+    const CURRICULUM_CACHE_NAMESPACE = 'dyxi_curriculum';
+
+    /**
      * GameService constructor.
      *
      * @param EntityManager $entityManager
+     * @param RedisCacheService|null $redisCacheService
+     * @param CurriculumService|null $curriculumService
      */
-    public function __construct(EntityManager $entityManager)
+    public function __construct(EntityManager $entityManager, ?RedisCacheService $redisCacheService = null, ?CurriculumService $curriculumService = null)
     {
         $this->entityManager = $entityManager;
+        $this->redisCacheService = $redisCacheService;
+        $this->curriculumService = $curriculumService;
     }
 
     // ==========================================
@@ -115,48 +134,32 @@ class GameService
     }
 
     // ==========================================
-    // CURRICULUM CRUD
+    // CURRICULUM DELEGATION TO CurriculumService
     // ==========================================
 
     public function createCurriculum(array $data): Curriculum
     {
-        if (empty($data['name'])) {
-            throw new \Exception("Curriculum name is required.");
+        if ($this->curriculumService) {
+            return $this->curriculumService->createCurriculum($data);
         }
-
-        $existing = $this->entityManager->getRepository(Curriculum::class)->findOneBy(['name' => $data['name']]);
-        if ($existing) {
-            throw new \Exception("A Curriculum with this name already exists.");
-        }
-
-        $uuid = $data['uuid'] ?? Uuid::uuid4()->toString();
-        if (!Uuid::isValid($uuid)) {
-            throw new \Exception("Invalid UUID format.");
-        }
-
-        $curriculum = new Curriculum();
-        $curriculum->setUuid($uuid)
-                   ->setName($data['name'])
-                   ->setDescription($data['description'] ?? null)
-                   ->setMinAge(isset($data['min_age']) ? (int)$data['min_age'] : null)
-                   ->setMaxAge(isset($data['max_age']) ? (int)$data['max_age'] : null);
-
-        $this->entityManager->persist($curriculum);
-        $this->entityManager->flush();
-
-        return $curriculum;
+        throw new \Exception("CurriculumService is unavailable.");
     }
 
     public function listCurriculums(): array
     {
+        if ($this->curriculumService) {
+            return $this->curriculumService->listCurriculums();
+        }
         return $this->entityManager->getRepository(Curriculum::class)->findAll();
     }
 
     public function getCurriculumInfo($idOrUuid): Curriculum
     {
+        if ($this->curriculumService) {
+            return $this->curriculumService->getCurriculumInfo($idOrUuid);
+        }
         $repo = $this->entityManager->getRepository(Curriculum::class);
         $curriculum = null;
-
         if (is_numeric($idOrUuid)) {
             $curriculum = $repo->find((int) $idOrUuid);
         }
@@ -166,50 +169,66 @@ class GameService
         if (!$curriculum) {
             $curriculum = $repo->findOneBy(['name' => $idOrUuid]);
         }
-
         if (!$curriculum) {
             throw new \Exception("Curriculum not found.");
         }
-
         return $curriculum;
     }
 
     public function updateCurriculum($idOrUuid, array $data): Curriculum
     {
-        $curriculum = $this->getCurriculumInfo($idOrUuid);
-
-        if (!empty($data['name'])) {
-            $existing = $this->entityManager->getRepository(Curriculum::class)->findOneBy(['name' => $data['name']]);
-            if ($existing && $existing->getId() !== $curriculum->getId()) {
-                throw new \Exception("Another Curriculum with this name already exists.");
-            }
-            $curriculum->setName($data['name']);
+        if ($this->curriculumService) {
+            return $this->curriculumService->updateCurriculum($idOrUuid, $data);
         }
-
-        if (array_key_exists('description', $data)) {
-            $curriculum->setDescription($data['description']);
-        }
-
-        if (array_key_exists('min_age', $data)) {
-            $curriculum->setMinAge($data['min_age'] !== null ? (int)$data['min_age'] : null);
-        }
-
-        if (array_key_exists('max_age', $data)) {
-            $curriculum->setMaxAge($data['max_age'] !== null ? (int)$data['max_age'] : null);
-        }
-
-        $curriculum->setUpdatedOn(new \DateTime());
-        $this->entityManager->flush();
-
-        return $curriculum;
+        throw new \Exception("CurriculumService is unavailable.");
     }
 
     public function deleteCurriculum($idOrUuid): bool
     {
-        $curriculum = $this->getCurriculumInfo($idOrUuid);
-        $this->entityManager->remove($curriculum);
-        $this->entityManager->flush();
-        return true;
+        if ($this->curriculumService) {
+            return $this->curriculumService->deleteCurriculum($idOrUuid);
+        }
+        return false;
+    }
+
+    public function clearCurriculumCache(): void
+    {
+        if ($this->curriculumService) {
+            $this->curriculumService->clearCurriculumCache();
+        }
+    }
+
+    public function getCurriculumWithFilters($idOrUuid): array
+    {
+        if ($this->curriculumService) {
+            return $this->curriculumService->getCurriculumWithFilters($idOrUuid);
+        }
+        return [];
+    }
+
+    public function getCurriculumByWardUuid(string $wardUuid): Curriculum
+    {
+        if ($this->curriculumService) {
+            return $this->curriculumService->getCurriculumByWardUuid($wardUuid);
+        }
+        return $this->getCurriculumInfo($wardUuid);
+    }
+
+    public function getCurriculumFiltersByWardUuid(string $wardUuid): array
+    {
+        if ($this->curriculumService) {
+            return $this->curriculumService->getCurriculumFiltersByWardUuid($wardUuid);
+        }
+        return $this->getCurriculumWithFilters($wardUuid);
+    }
+
+    public function recreateCurriculumForWard(array $data): Curriculum
+    {
+        if ($this->curriculumService) {
+            return $this->curriculumService->recreateCurriculumForWard($data);
+        }
+        $data['force_recreate'] = true;
+        return $this->createCurriculum($data);
     }
 
     // ==========================================

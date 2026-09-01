@@ -41,6 +41,8 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
      */
     private $registerInputFilter;
 
+    private $authorizationService;
+
     /**
      * Login data validation and filtration class
      *
@@ -232,6 +234,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                     $data['cookie'] = $cookie;
                 }
                 $data['refresh_token'] = $refreshToken;
+
+                if ($this->authorizationService && $user->getRole()) {
+                    try {
+                        $this->authorizationService->getPermissionsForRole((int) $user->getRole()->getId());
+                    } catch (\Throwable $e) {}
+                }
 
                 $result = array_merge($data, $data_r);
 
@@ -620,6 +628,17 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         return $this;
     }
 
+    public function getAuthorizationService()
+    {
+        return $this->authorizationService;
+    }
+
+    public function setAuthorizationService($authorizationService)
+    {
+        $this->authorizationService = $authorizationService;
+        return $this;
+    }
+
     /**
      * Get login data validation and filtration class
      *
@@ -826,7 +845,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 ->setEmail($email)
                 ->setFullname($name ?: strstr($email, '@', true))
                 ->setPassword(\Authentication\Service\AuthenticationService::encryptPassword(bin2hex(random_bytes(16))))
-                ->setRole($em->find(\Authentication\Entity\Roles::class, \Authentication\Service\AuthenticationService::USER_ROLE_IRECYCLER))
+                ->setRole($em->find(\Authentication\Entity\Roles::class, \Authentication\Service\AuthenticationService::USER_ROLE_GUARDIAN))
                 ->setState($em->find(\Authentication\Entity\UserState::class, \Authentication\Service\AuthenticationService::USER_STATE_ENABLED))
                 ->setCreatedOn(new \DateTime())
                 ->setRegistrationDate(new \DateTime())
@@ -927,6 +946,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             $data['cookie'] = $cookie;
         }
         $data['refresh_token'] = $refreshToken;
+
+        if ($this->authorizationService && $user->getRole()) {
+            try {
+                $this->authorizationService->getPermissionsForRole((int) $user->getRole()->getId());
+            } catch (\Throwable $e) {}
+        }
 
         return array_merge($data, $data_r);
     }

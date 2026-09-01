@@ -241,3 +241,5 @@ $ composer cs-fix
 $ composer test
 ```
 # dyxi_prod_api
+
+For detailed API specifications, including endpoints, authentication requirements, and request/response payloads for the Consultant and Game modules, please refer to the [API Documentation](file:///Applications/MAMP/htdocs/dyxi_prod_api/API_DOCUMENTATION.md).

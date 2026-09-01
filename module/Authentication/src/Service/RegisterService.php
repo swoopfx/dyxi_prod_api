@@ -75,7 +75,7 @@ class RegisterService
         $em = $this->generalService->getEm();
         $designatedRole = null;
         if (is_null($this->assignedRole)) {
-            $designatedRole = AuthenticationService::USER_ROLE_IRECYCLER;
+            $designatedRole = AuthenticationService::USER_ROLE_GUARDIAN;
         } else {
             $designatedRole = $this->assignedRole;
         }
@@ -91,12 +91,7 @@ class RegisterService
             "fullname",
             "email",
             "password",
-            "confirm_password",
-            "address",
-            "address_google_place_id",
-            "address_longitude",
-            "address_latitude"
-
+            "confirm_password"
         ]);
 
         if ($this->registerInputFilter->isValid()) {
@@ -136,7 +131,7 @@ class RegisterService
             // $mailData['code'] =
 
 
-            if ($post["device_type"] == "mobile") {
+            if (($post["device_type"] ?? "mobile") == "mobile") {
                 // $this->mobileMailNotifer($mailData);
                 // $this->authmailtrapService->sendMobileVerifyCode($mailData);
                 $this->postmarkAuthMailService->confirmEmailMobile($mailData);

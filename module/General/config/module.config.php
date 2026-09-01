@@ -75,11 +75,13 @@ return [
             AuthenticationEmailService::class => AuthenticationEmailServiceFactory::class,
 
             ImageService::class => ImageServiceFactory::class,
+            \General\Service\RedisCacheService::class => \General\Service\Factory\RedisCacheServiceFactory::class,
         ],
         "aliases" => [
             "general_service" => "General\Service\GeneralService",
             "postmark_email_authentication_service" => AuthenticationEmailService::class,
             "mailtrap_service" => MailtrapService::class,
+            "redis_cache_service" => \General\Service\RedisCacheService::class,
         ]
     ],
     'view_manager' => [

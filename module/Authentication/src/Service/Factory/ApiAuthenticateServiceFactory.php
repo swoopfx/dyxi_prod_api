@@ -54,6 +54,10 @@ class ApiAuthenticateServiceFactory implements FactoryInterface
         $authenticationService = $generalService->getAuthService();
         // $authEmailService = $container->get(AuthenticationEmailService::class)
 
+        if ($container->has(\Authorization\Service\AuthorizationService::class)) {
+            $xserv->setAuthorizationService($container->get(\Authorization\Service\AuthorizationService::class));
+        }
+
         $xserv->setEntityManager($generalService->getEm())
             ->setLoginInputFilter($logininputFiler)
             ->setJwtIssuer($jwtIssuer)

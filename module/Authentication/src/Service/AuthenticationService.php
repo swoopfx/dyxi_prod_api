@@ -26,25 +26,11 @@ class AuthenticationService implements AuthenticationServiceInterface
 
 
 
-    const USER_ROLE_SETUP_BROKER = 3;
-
-    const USER_ROLE_SETUP_AGENT = 2;
-
-    const USER_ROLE_SCAVENGER = 125;
-
-    const USER_ROLE_IRECYCLER = 126;
-
-    const USER_ROLE_STAFF = 130;
-
-    const USER_ROLE_DORI_HOST = 150;
-
-    const USER_ROLE_TRASHBUSTER = 200;
-
-    const USER_ROLE_HUB_SUPERVISOR = 500;
-
-    const USER_ROLE_ADMIN = 600;
-
-    const USER_ROLE_SUPER_USER = 1000;
+    const USER_ROLE_GUEST = 10;
+    const USER_ROLE_GUARDIAN = 100;
+    const USER_ROLE_CONSULTANT = 200;
+    const USER_ROLE_ADMIN = 500;
+    const USER_ROLE_SUPER_ADMIN = 1000;
 
 
 

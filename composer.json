@@ -15,6 +15,7 @@
         "doctrine/doctrine-orm-module": "^6.3",
         "google/apiclient": "^1.1",
         "laminas-api-tools/api-tools-documentation-swagger": "^1.7",
+        "laminas/laminas-cache-storage-adapter-redis": "^2.10",
         "laminas/laminas-component-installer": "^3.4.0",
         "laminas/laminas-crypt": "^4.0",
         "laminas/laminas-db": "^2.20.0",
@@ -52,7 +53,8 @@
             "Adhd\\": "module/Adhd/src/",
             "Dyscalculia\\": "module/Dyscalculia/src/",
             "Game\\": "module/Game/src/",
-            "Consultant\\": "module/Consultant/src/"
+            "Consultant\\": "module/Consultant/src/",
+            "Authorization\\": "module/Authorization/src/"
         }
     },
     "autoload-dev": {

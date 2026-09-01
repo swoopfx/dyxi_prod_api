@@ -26,6 +26,7 @@ return [
     'Laminas\ApiTools\Documentation\Swagger',
     'Laminas\Cache\Storage\Adapter\Filesystem',
     'Laminas\Cache\Storage\Adapter\Memory',
+    'Laminas\Cache\Storage\Adapter\Redis',
     'DoctrineModule',
     'DoctrineORMModule',
     'Application',
@@ -40,5 +41,6 @@ return [
     'Dyscalculia',
     'Game',
     'Consultant',
+    'Authorization',
 ];
 

@@ -150,7 +150,7 @@ class ApiauthenticateController extends AbstractActionController
      *                         type="object",
      *                         @OA\Property(property="fullname", type="string", example="John Doe"),
      *                         @OA\Property(property="email", type="string", example="john@doe.com"),
-     *                         @OA\Property(property="role", type="string", example="IRecycler"),
+     *                         @OA\Property(property="role", type="string", example="Guardian"),
      *                         @OA\Property(property="username", type="string", example="john_doe"),
      *                         @OA\Property(property="uuid", type="string", example="d3b07384..."),
      *                         @OA\Property(property="wallet", type="integer", example=0),
@@ -578,26 +578,19 @@ class ApiauthenticateController extends AbstractActionController
      * @OA\POST(
      *     path="/auth/ipa/register",
      *     tags={"Authentication"},
-     *     description="Registers a new customer account in the system and triggers an email confirmation flow. Requires complete user profile information including address and geo-coordinates.",
+     *     description="Registers a new customer account in the system and triggers an email confirmation flow.",
      *     @OA\RequestBody(
      *         required=true,
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     required={"fullname", "username", "email", "password", "confirm_password", "address_longitude", "address_latitude", "address_google_place_id", "userAgent", "userIp", "device_type"},
-     *                     @OA\Property(property="fullname", type="string", example="Idowu Yusuf Chukwuma", description="Full legal name of the user"),
+     *                     required={"username", "fullname", "email", "password", "confirm_password"},
      *                     @OA\Property(property="username", type="string", example="09012121212", description="Desired unique username (phone number recommended)"),
+     *                     @OA\Property(property="fullname", type="string", example="Idowu Yusuf Chukwuma", description="Full legal name of the user"),
      *                     @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com", description="Valid, unique email address for verification"),
      *                     @OA\Property(property="password", type="string", example="Oluwaseun1", description="Plain text password meeting strength requirements"),
-     *                     @OA\Property(property="confirm_password", type="string", example="Oluwaseun1", description="Must match password exactly"),
-     *                     @OA\Property(property="address", type="string", example="15 Jacob Adeleye Street", description="Formatted residential street address"),
-     *                     @OA\Property(property="address_google_place_id", type="string", example="ChIJN1t_tDeuEmsRUsoyG83VSY4", description="Google Place ID for location verification"),
-     *                     @OA\Property(property="address_longitude", type="string", example="3.4556666", description="Address longitude coordinate"),
-     *                     @OA\Property(property="address_latitude", type="string", example="1.45322", description="Address latitude coordinate"),
-     *                     @OA\Property(property="userAgent", type="string", example="Mozilla/5.0..."),
-     *                     @OA\Property(property="userIp", type="string", example="127.0.0.1"),
-     *                     @OA\Property(property="device_type", type="string", example="mobile", description="Device type context ('web', 'mobile', or 'others')")
+     *                     @OA\Property(property="confirm_password", type="string", example="Oluwaseun1", description="Must match password exactly")
      *                 )
      *             )
      *         }
@@ -1979,7 +1972,7 @@ class ApiauthenticateController extends AbstractActionController
      *                         type="object",
      *                         @OA\Property(property="fullname", type="string", example="John Doe"),
      *                         @OA\Property(property="email", type="string", example="john.doe@gmail.com"),
-     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="role", type="string", example="Guardian"),
      *                         @OA\Property(property="username", type="string", example="john.doe@gmail.com"),
      *                         @OA\Property(property="uuid", type="string", example="d3b07384-d113-4956-a5db-e172e2cf69ef"),
      *                         @OA\Property(property="wallet", type="integer", example=150)
@@ -2144,7 +2137,7 @@ class ApiauthenticateController extends AbstractActionController
      *                         type="object",
      *                         @OA\Property(property="fullname", type="string", example="John Doe"),
      *                         @OA\Property(property="email", type="string", example="john.doe@gmail.com"),
-     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="role", type="string", example="Guardian"),
      *                         @OA\Property(property="username", type="string", example="john.doe@gmail.com"),
      *                         @OA\Property(property="uuid", type="string", example="d3b07384-d113-4956-a5db-e172e2cf69ef"),
      *                         @OA\Property(property="wallet", type="integer", example=150),
@@ -2271,7 +2264,7 @@ class ApiauthenticateController extends AbstractActionController
      *                         @OA\Property(property="fullname", type="string", example="John Doe"),
      *                         @OA\Property(property="display_name", type="string", example="John Doe"),
      *                         @OA\Property(property="email", type="string", example="john.doe@gmail.com"),
-     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="role", type="string", example="Guardian"),
      *                         @OA\Property(property="username", type="string", example="john.doe@gmail.com"),
      *                         @OA\Property(property="uuid", type="string", example="d3b07384-d113-4956-a5db-e172e2cf69ef"),
      *                         @OA\Property(property="wallet", type="integer", example=150),
@@ -2573,7 +2566,7 @@ class ApiauthenticateController extends AbstractActionController
      *                         type="object",
      *                         @OA\Property(property="fullname", type="string", example="John Doe"),
      *                         @OA\Property(property="email", type="string", example="john.doe@gmail.com"),
-     *                         @OA\Property(property="role", type="string", example="Customer"),
+     *                         @OA\Property(property="role", type="string", example="Guardian"),
      *                         @OA\Property(property="username", type="string", example="john.doe@gmail.com"),
      *                         @OA\Property(property="uuid", type="string", example="d3b07384-d113-4956-a5db-e172e2cf69ef"),
      *                         @OA\Property(property="wallet", type="integer", example=150),

@@ -93,6 +93,10 @@ return [
     'service_manager' => [
         'factories' => [
             GameService::class => GameServiceFactory::class,
+            \Game\Service\CurriculumService::class => \Game\Service\Factory\CurriculumServiceFactory::class,
+        ],
+        'aliases' => [
+            'curriculum_service' => \Game\Service\CurriculumService::class,
         ],
     ],
     'view_manager' => [

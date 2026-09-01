@@ -8,3 +8,5 @@ data/cache/*
 data/keys/*
 !data/cache/.gitkeep
 phpunit.xml
+.env
+.env.example
