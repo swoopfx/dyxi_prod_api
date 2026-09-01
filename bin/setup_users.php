@@ -5,13 +5,17 @@ declare(strict_types=1);
 chdir(dirname(__DIR__));
 require 'vendor/autoload.php';
 
+// First, hydrate preset database data (UserStates, Roles, Genders)
+echo "Ensuring database preset data is hydrated...\n";
+require __DIR__ . '/hydrate_preset_data.php';
+
 use Authentication\Entity\User;
 use Authentication\Entity\UserState;
 use Authentication\Entity\Roles;
 use Authentication\Service\AuthenticationService;
 use Ramsey\Uuid\Uuid;
 
-echo "Bootstrapping application...\n";
+echo "\nSetting up user accounts...\n";
 
 try {
     $container = require 'config/container.php';
@@ -39,29 +43,6 @@ try {
         echo "Error: UserState with ID " . AuthenticationService::USER_STATE_ENABLED . " (Enabled) not found in database.\n";
         exit(1);
     }
-
-    // Seed/update standard system roles
-    $rolesMap = [
-        AuthenticationService::USER_ROLE_GUEST => 'Guest',
-        AuthenticationService::USER_ROLE_GUARDIAN => 'Guardian',
-        AuthenticationService::USER_ROLE_CONSULTANT => 'Consultant',
-        AuthenticationService::USER_ROLE_ADMIN => 'Admin',
-        AuthenticationService::USER_ROLE_SUPER_ADMIN => 'SuperAdmin',
-    ];
-
-    foreach ($rolesMap as $rId => $rName) {
-        $roleObj = $em->find(Roles::class, $rId);
-        if (!$roleObj) {
-            $roleObj = new Roles();
-            // Set ID if possible or entity manager handles it
-            $refProp = new \ReflectionProperty(Roles::class, 'id');
-            $refProp->setAccessible(true);
-            $refProp->setValue($roleObj, $rId);
-        }
-        $roleObj->setName($rName);
-        $em->persist($roleObj);
-    }
-    $em->flush();
 
     $roleEntity = $em->find(Roles::class, AuthenticationService::USER_ROLE_GUARDIAN);
     if (!$roleEntity) {
@@ -103,8 +84,9 @@ try {
     }
 
     $em->flush();
-    echo "Database setup completed successfully.\n";
+    echo "User setup completed successfully.\n";
 } catch (Exception $e) {
     echo "Database error: " . $e->getMessage() . "\n";
     exit(1);
 }
+

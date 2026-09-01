@@ -23,7 +23,12 @@ class AuthorizationListener
         'logout',
         'google',
         'swagger',
-        'doc'
+        'swaggerJson',
+        'swagger-json',
+        'doc',
+        'legalInfo',
+        'legal-info',
+        'legalinfo'
     ];
 
     public function __construct(AuthorizationService $authorizationService)
@@ -49,7 +54,7 @@ class AuthorizationListener
         $request = $event->getRequest();
         if (method_exists($request, 'getUri')) {
             $path = $request->getUri()->getPath();
-            if (str_contains($path, '/auth/ipa/login') || str_contains($path, '/auth/ipa/register') || str_contains($path, '/auth/google')) {
+            if (str_contains($path, '/auth/ipa/login') || str_contains($path, '/auth/ipa/register') || str_contains($path, '/auth/google') || str_contains($path, '/api/docs') || str_contains($path, '/legal-info')) {
                 return;
             }
         }

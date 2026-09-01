@@ -29,6 +29,10 @@ use Laminas\View\Model\JsonModel;
  *     description="API documentation for Dyxi API"
  * )
  * @OA\Server(
+ *     url="/",
+ *     description="Current Server"
+ * )
+ * @OA\Server(
  *     url="http://localhost:8080",
  *     description="Local Development Server"
  * )
