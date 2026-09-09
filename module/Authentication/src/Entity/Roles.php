@@ -16,7 +16,7 @@ class Roles
      *
      * @var integer @ORM\Column(name="id", type="integer")
      *      @ORM\Id
-     *      @ORM\GeneratedValue(strategy="IDENTITY")
+     *      @ORM\GeneratedValue(strategy="NONE")
      */
     private $id;
 
@@ -62,6 +62,12 @@ class Roles
     public function getId()
     {
         return $this->id;
+    }
+
+    public function setId(int $id)
+    {
+        $this->id = $id;
+        return $this;
     }
 
     /**

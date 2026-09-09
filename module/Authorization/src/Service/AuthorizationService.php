@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Authorization\Service;
@@ -80,8 +81,9 @@ class AuthorizationService
             $role = $roleRepo->find($roleId);
 
             if ($role !== null) {
-                // SuperAdmin gets wildcard access
-                if ($role->getId() === 1000 || strtolower($role->getName()) === 'superadmin') {
+                $roleNameLower = strtolower($role->getName());
+                // SuperAdmin and Admin get wildcard access
+                if ($role->getId() === 1000 || $role->getId() === 500 || $roleNameLower === 'superadmin' || $roleNameLower === 'admin') {
                     $permissions = ['*'];
                 } else {
                     $rolePermissionRepo = $this->entityManager->getRepository(RolePermission::class);
@@ -91,7 +93,22 @@ class AuthorizationService
                         $permissions[] = strtolower($rp->getPermission()->getName());
                     }
 
-                    // Also include permissions from parent roles if any exist (Subsidiary roles support)
+                    // Default fallback permissions for standard user roles if DB permissions table is empty
+                    if (empty($permissions) && ($roleNameLower === 'guardian' || $roleNameLower === 'consultant' || in_array($role->getId(), [2, 3, 100, 200], true))) {
+                        $permissions = [
+                            'ward.*',
+                            'adhd.*',
+                            'dyslexia.*',
+                            'dyscalculia.*',
+                            'wallet.*',
+                            'resources.*',
+                            'general.*',
+                            'evaluation.*',
+                            'game.*'
+                        ];
+                    }
+
+                    // Also include permissions from parent roles if any exist
                     $parents = $role->getParents();
                     if ($parents) {
                         foreach ($parents as $parentRole) {
@@ -100,9 +117,40 @@ class AuthorizationService
                         }
                     }
                 }
+            } else {
+                // Fallback if role entity ID is numeric constant e.g. 100, 200, 500, 1000
+                if (in_array($roleId, [500, 1000], true)) {
+                    $permissions = ['*'];
+                } elseif (in_array($roleId, [2, 3, 100, 200], true)) {
+                    $permissions = [
+                        'ward.*',
+                        'adhd.*',
+                        'dyslexia.*',
+                        'dyscalculia.*',
+                        'wallet.*',
+                        'resources.*',
+                        'general.*',
+                        'evaluation.*',
+                        'game.*'
+                    ];
+                }
             }
         } catch (\Throwable $e) {
-            // Log or handle DB fetch error
+            if (in_array($roleId, [500, 1000], true)) {
+                $permissions = ['*'];
+            } elseif (in_array($roleId, [2, 3, 100, 200], true)) {
+                $permissions = [
+                    'ward.*',
+                    'adhd.*',
+                    'dyslexia.*',
+                    'dyscalculia.*',
+                    'wallet.*',
+                    'resources.*',
+                    'general.*',
+                    'evaluation.*',
+                    'game.*'
+                ];
+            }
         }
 
         // 3. Store in Redis cache
@@ -151,5 +199,142 @@ class AuthorizationService
         }
 
         return $this->isGranted($user->getRole()->getId(), $permissionName);
+    }
+
+    /**
+     * Get all registered system permissions.
+     */
+    public function getAllPermissions(): array
+    {
+        return $this->entityManager->getRepository(Permission::class)->findBy([], ['name' => 'ASC']);
+    }
+
+    /**
+     * Get all system roles.
+     */
+    public function getAllRoles(): array
+    {
+        return $this->entityManager->getRepository(Roles::class)->findBy([], ['id' => 'ASC']);
+    }
+
+    /**
+     * Get full role-permission mapping for matrix view.
+     */
+    public function getRolePermissionMatrix(): array
+    {
+        $matrix = [];
+        $roles = $this->getAllRoles();
+        $rolePermissionRepo = $this->entityManager->getRepository(RolePermission::class);
+
+        foreach ($roles as $role) {
+            $rpList = $rolePermissionRepo->findBy(['role' => $role]);
+            $permIds = [];
+            foreach ($rpList as $rp) {
+                if ($rp->getPermission() !== null) {
+                    $permIds[] = $rp->getPermission()->getId();
+                }
+            }
+            $matrix[$role->getId()] = $permIds;
+        }
+
+        return $matrix;
+    }
+
+    /**
+     * Toggle a permission for a role (grant or revoke).
+     */
+    public function togglePermissionForRole(int $roleId, int $permissionId, bool $grant): bool
+    {
+        $role = $this->entityManager->getRepository(Roles::class)->find($roleId);
+        $permission = $this->entityManager->getRepository(Permission::class)->find($permissionId);
+
+        if ($role === null || $permission === null) {
+            return false;
+        }
+
+        $rpRepo = $this->entityManager->getRepository(RolePermission::class);
+        $existing = $rpRepo->findOneBy(['role' => $role, 'permission' => $permission]);
+
+        if ($grant && $existing === null) {
+            $rp = new RolePermission();
+            $rp->setRole($role);
+            $rp->setPermission($permission);
+            $this->entityManager->persist($rp);
+            $this->entityManager->flush();
+        } elseif (!$grant && $existing !== null) {
+            $this->entityManager->remove($existing);
+            $this->entityManager->flush();
+        }
+
+        // Re-cache permissions in Redis for this role
+        $this->cacheStorage?->removeItem("role_permissions_" . $roleId);
+        $this->getPermissionsForRole($roleId);
+
+        return true;
+    }
+
+    /**
+     * Create a new permission.
+     */
+    public function createPermission(string $name, ?string $description = null): Permission
+    {
+        $name = strtolower(trim($name));
+        $permRepo = $this->entityManager->getRepository(Permission::class);
+        $existing = $permRepo->findOneBy(['name' => $name]);
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $perm = new Permission();
+        $perm->setName($name);
+        $perm->setDescription($description ?: 'System permission ' . $name);
+        $this->entityManager->persist($perm);
+        $this->entityManager->flush();
+
+        return $perm;
+    }
+
+    /**
+     * Sync all Redis cache for roles and users.
+     */
+    public function syncAllRedisCache(): array
+    {
+        $syncedRoles = 0;
+        $syncedUsers = 0;
+
+        $roles = $this->getAllRoles();
+        foreach ($roles as $role) {
+            $this->cacheStorage?->removeItem("role_permissions_" . $role->getId());
+            $this->getPermissionsForRole($role->getId());
+            $syncedRoles++;
+        }
+
+        $users = $this->entityManager->getRepository(User::class)->findAll();
+        foreach ($users as $user) {
+            if ($user->getEmail() && $this->cacheStorage !== null) {
+                $roleId = $user->getRole() ? $user->getRole()->getId() : 10;
+                $perms = $this->getPermissionsForRole($roleId);
+                $payload = [
+                    'uuid' => $user->getUuid(),
+                    'email' => $user->getEmail(),
+                    'role_id' => $roleId,
+                    'permissions' => $perms,
+                    'is_profiled' => (bool)$user->getIsProfiled(),
+                ];
+                try {
+                    $this->cacheStorage->setItem("user_authorization_" . $user->getEmail(), $payload);
+                    $this->cacheStorage->setItem("user_permissions_" . $user->getEmail(), $perms);
+                    $syncedUsers++;
+                } catch (\Throwable $e) {
+                    // Ignore cache write error
+                }
+            }
+        }
+
+        return [
+            'roles_synced' => $syncedRoles,
+            'users_synced' => $syncedUsers,
+        ];
     }
 }

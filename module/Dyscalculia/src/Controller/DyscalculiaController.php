@@ -41,20 +41,22 @@ class DyscalculiaController extends AbstractActionController
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Payload to register a new Dyscalculia assessment. Required fields: 'ward_id', 'arithmetic_score', 'number_sense_score', 'spatial_reasoning_score', 'severity_level', 'assessment_date'.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
      *                     required={"ward_id", "arithmetic_score", "number_sense_score", "spatial_reasoning_score", "severity_level", "assessment_date"},
-     *                     @OA\Property(property="ward_id", type="string", example="1"),
-     *                     @OA\Property(property="arithmetic_score", type="integer", example=75),
-     *                     @OA\Property(property="number_sense_score", type="integer", example=80),
-     *                     @OA\Property(property="spatial_reasoning_score", type="integer", example=70),
-     *                     @OA\Property(property="severity_level", type="string", example="Moderate"),
-     *                     @OA\Property(property="assessment_date", type="string", example="2026-08-19"),
-     *                     @OA\Property(property="notes", type="string", example="Struggles with basic addition."),
-     *                     @OA\Property(property="unique_identifier", type="string", example="CAL-DEF-789"),
-     *                     @OA\Property(property="uuid", type="string", example="d9cfc81b-53c8-47bc-ad78-cb75a8927495")
+     *                     description="Dyscalculia Assessment Registration Schema specifying required and optional parameters with data types and formats.",
+     *                     @OA\Property(property="ward_id", type="string", example="1", description="[REQUIRED] Database ID or UUID string of target Ward. Format: String or Integer."),
+     *                     @OA\Property(property="arithmetic_score", type="integer", example=75, description="[REQUIRED] Arithmetic sub-score. Format: Integer."),
+     *                     @OA\Property(property="number_sense_score", type="integer", example=80, description="[REQUIRED] Number sense sub-score. Format: Integer."),
+     *                     @OA\Property(property="spatial_reasoning_score", type="integer", example=70, description="[REQUIRED] Spatial reasoning sub-score. Format: Integer."),
+     *                     @OA\Property(property="severity_level", type="string", example="Moderate", description="[REQUIRED] Dyscalculia severity level result. Format: String."),
+     *                     @OA\Property(property="assessment_date", type="string", format="date", example="2026-08-19", description="[REQUIRED] Date of assessment. Format: YYYY-MM-DD (ISO 8601 date)."),
+     *                     @OA\Property(property="notes", type="string", example="Struggles with basic addition.", description="[OPTIONAL] Additional assessment notes. Format: String."),
+     *                     @OA\Property(property="unique_identifier", type="string", example="CAL-DEF-789", description="[OPTIONAL] Unique identifier. Format: String (max 255 chars). Auto-generated if omitted."),
+     *                     @OA\Property(property="uuid", type="string", format="uuid", example="d9cfc81b-53c8-47bc-ad78-cb75a8927495", description="[OPTIONAL] UUID v4 string. Format: UUID (8-4-4-4-12 hex). Auto-generated if omitted.")
      *                 )
      *             )
      *         }
@@ -73,7 +75,7 @@ class DyscalculiaController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isPost()) {
+        if (! $request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -106,7 +108,6 @@ class DyscalculiaController extends AbstractActionController
                 "data" => $this->mapEntityToArray($assessment),
                 "description" => "Successfully registered Dyscalculia assessment."
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -140,7 +141,7 @@ class DyscalculiaController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isGet()) {
+        if (! $request->isGet()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -173,7 +174,6 @@ class DyscalculiaController extends AbstractActionController
                 "success" => true,
                 "data" => $data
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -194,7 +194,14 @@ class DyscalculiaController extends AbstractActionController
      *     tags={"Dyscalculia"},
      *     description="Retrieve details of a specific Dyscalculia assessment by ID, UUID, or unique identifier.",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="[REQUIRED] Integer ID, UUID, or unique identifier of the assessment. Format: Integer, UUID, or String.",
+     *         @OA\Schema(type="string", description="Assessment identifier parameter.")
+     *     ),
+
      *     @OA\Response(response="200", description="Success"),
      *     @OA\Response(response="400", description="Bad Request"),
      *     @OA\Response(response="401", description="Unauthorized"),
@@ -209,7 +216,7 @@ class DyscalculiaController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isGet()) {
+        if (! $request->isGet()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -233,8 +240,8 @@ class DyscalculiaController extends AbstractActionController
 
             $id = $this->params()->fromRoute('id');
             if (empty($id)) {
-                $id = $this->params()->fromQuery('id') 
-                    ?? $this->params()->fromQuery('uuid') 
+                $id = $this->params()->fromQuery('id')
+                    ?? $this->params()->fromQuery('uuid')
                     ?? $this->params()->fromQuery('unique_identifier');
             }
 
@@ -249,7 +256,6 @@ class DyscalculiaController extends AbstractActionController
                 "success" => true,
                 "data" => $this->mapEntityToArray($assessment)
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -270,23 +276,32 @@ class DyscalculiaController extends AbstractActionController
      *     tags={"Dyscalculia"},
      *     description="Update an existing Dyscalculia assessment.",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="[REQUIRED] Integer ID, UUID, or unique identifier of the assessment to update. Format: Integer, UUID, or String.",
+     *         @OA\Schema(type="string", description="Assessment identifier parameter.")
+     *     ),
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Payload to update a Dyscalculia assessment. All properties are optional.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(property="arithmetic_score", type="integer", example=80),
-     *                     @OA\Property(property="number_sense_score", type="integer", example=85),
-     *                     @OA\Property(property="spatial_reasoning_score", type="integer", example=75),
-     *                     @OA\Property(property="severity_level", type="string", example="Mild"),
-     *                     @OA\Property(property="assessment_date", type="string", example="2026-08-20"),
-     *                     @OA\Property(property="notes", type="string", example="Showed improvement.")
+     *                     description="Dyscalculia Assessment Update Schema specifying optional update properties and data formats.",
+     *                     @OA\Property(property="arithmetic_score", type="integer", example=80, description="[OPTIONAL] Updated arithmetic sub-score. Format: Integer."),
+     *                     @OA\Property(property="number_sense_score", type="integer", example=85, description="[OPTIONAL] Updated number sense sub-score. Format: Integer."),
+     *                     @OA\Property(property="spatial_reasoning_score", type="integer", example=75, description="[OPTIONAL] Updated spatial reasoning sub-score. Format: Integer."),
+     *                     @OA\Property(property="severity_level", type="string", example="Mild", description="[OPTIONAL] Updated severity level text. Format: String."),
+     *                     @OA\Property(property="assessment_date", type="string", format="date", example="2026-08-20", description="[OPTIONAL] Updated assessment date. Format: YYYY-MM-DD (ISO 8601 date)."),
+     *                     @OA\Property(property="notes", type="string", example="Showed improvement.", description="[OPTIONAL] Updated assessment notes. Format: String.")
      *                 )
      *             )
      *         }
      *     ),
+
      *     @OA\Response(response="200", description="Updated"),
      *     @OA\Response(response="400", description="Bad Request"),
      *     @OA\Response(response="401", description="Unauthorized"),
@@ -301,7 +316,7 @@ class DyscalculiaController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isPut()) {
+        if (! $request->isPut()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -339,7 +354,6 @@ class DyscalculiaController extends AbstractActionController
                 "data" => $this->mapEntityToArray($assessment),
                 "description" => "Successfully updated Dyscalculia assessment."
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -360,7 +374,14 @@ class DyscalculiaController extends AbstractActionController
      *     tags={"Dyscalculia"},
      *     description="Delete an existing Dyscalculia assessment.",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="[REQUIRED] Integer ID, UUID, or unique identifier of the assessment to delete. Format: Integer, UUID, or String.",
+     *         @OA\Schema(type="string", description="Assessment identifier parameter.")
+     *     ),
+
      *     @OA\Response(response="200", description="Deleted"),
      *     @OA\Response(response="400", description="Bad Request"),
      *     @OA\Response(response="401", description="Unauthorized"),
@@ -375,7 +396,7 @@ class DyscalculiaController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isDelete()) {
+        if (! $request->isDelete()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -409,7 +430,6 @@ class DyscalculiaController extends AbstractActionController
                 "success" => true,
                 "description" => "Successfully deleted Dyscalculia assessment."
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([

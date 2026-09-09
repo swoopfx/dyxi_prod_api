@@ -41,6 +41,6 @@ return [
     'Dyscalculia',
     'Game',
     'Consultant',
-    'Authorization',
+    // 'Authorization',
+    'Admin',
 ];
-

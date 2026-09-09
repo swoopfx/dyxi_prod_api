@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DYXI - User Authentication & RBAC Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-card: #131b2e;
+            --bg-card-hover: #1c2742;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --glass-bg: rgba(19, 27, 46, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .brand-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .badge-superadmin {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c084fc;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .token-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .input-token {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.825rem;
+            width: 320px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .input-token:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: #fff;
+            border: none;
+            padding: 0.55rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+        }
+
+        .btn:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        .container {
+            max-width: 1320px;
+            width: 100%;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            flex: 1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.75rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            border-bottom-color: var(--accent-purple);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(15, 23, 42, 0.6);
+            color: var(--text-secondary);
+            font-size: 0.775rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .select-custom {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.45rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.825rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .select-custom:focus {
+            border-color: var(--accent-purple);
+        }
+
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.65rem;
+            border-radius: 12px;
+            font-size: 0.725rem;
+            font-weight: 600;
+        }
+
+        .badge-enabled { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .badge-disabled { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.15);
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-purple);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 { font-size: 1.15rem; font-weight: 700; }
+        .close-modal { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.65rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <div class="brand-logo">🛡️</div>
+            <div class="brand-title">
+                <h1>Admin Module - Authentication & RBAC Control</h1>
+                <p>DYXI Enterprise Access Management</p>
+            </div>
+            <span class="badge-superadmin">
+                <span>⚡</span> SuperAdmin Exclusive
+            </span>
+        </div>
+
+        <div class="token-bar">
+            <a href="/admin" class="btn btn-secondary" style="text-decoration: none;">&larr; Central Hub</a>
+            <input type="password" id="bearerTokenInput" class="input-token" placeholder="Bearer JWT Token (Optional if logged in)" />
+            <button class="btn btn-secondary" onclick="loadDashboardData()">🔄 Refresh</button>
+            <button class="btn btn-success" onclick="syncRedisCache()">⚡ Sync Redis</button>
+            <a href="/admin/logout" class="btn btn-secondary" style="text-decoration: none; border-color: rgba(239,68,68,0.4); color: #f87171;">🚪 Logout</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Live Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Total Users</span>
+                <span class="stat-value" id="statUsersCount">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Active System Roles</span>
+                <span class="stat-value" id="statRolesCount">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Defined Permissions</span>
+                <span class="stat-value" id="statPermissionsCount">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Redis Cache Engine</span>
+                <span class="stat-value" style="color: var(--accent-green);">ONLINE</span>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('tabUsers', this)">👥 User Accounts & Roles</button>
+            <button class="tab-btn" onclick="switchTab('tabMatrix', this)">🔑 Role & Permission Matrix</button>
+            <button class="tab-btn" onclick="switchTab('tabPermissions', this)">🛡️ Permissions Directory</button>
+        </div>
+
+        <!-- TAB 1: User Accounts -->
+        <div id="tabUsers" class="tab-content active">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                    <h3>User Accounts Authorization & Roles</h3>
+                    <input type="text" id="userSearchInput" class="input-token" style="width: 250px;" placeholder="Search user email..." onkeyup="filterUsers()" />
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User Email</th>
+                                <th>System Role</th>
+                                <th>Account State</th>
+                                <th>Email Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading user accounts...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Role & Permission Matrix -->
+        <div id="tabMatrix" class="tab-content">
+            <div class="card">
+                <div style="margin-bottom: 1.25rem;">
+                    <h3>Role-Permission Access Matrix</h3>
+                    <p style="font-size: 0.825rem; color: var(--text-muted); margin-top: 0.25rem;">Toggle switches to instantly grant or revoke system permissions for each role. Changes update DB & Redis in real time.</p>
+                </div>
+                <div class="table-responsive">
+                    <table id="matrixTable">
+                        <thead>
+                            <tr id="matrixHeaderRow">
+                                <th>Permission Name</th>
+                                <!-- Dynamic role headers -->
+                            </tr>
+                        </thead>
+                        <tbody id="matrixTableBody">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading RBAC Matrix...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Permissions Directory -->
+        <div id="tabPermissions" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                    <h3>Registered System Permissions</h3>
+                    <button class="btn" onclick="openCreatePermissionModal()">+ Add Permission</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Permission Name</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody id="permissionsTableBody">
+                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading permissions...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal: Add Permission -->
+    <div id="createPermModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add System Permission</h3>
+                <button class="close-modal" onclick="closeCreatePermissionModal()">&times;</button>
+            </div>
+            <form onsubmit="handleCreatePermission(event)">
+                <div class="form-group">
+                    <label>Permission Identifier (e.g., ward.edit, reports.*)</label>
+                    <input type="text" id="newPermName" class="form-control" placeholder="module.action" required />
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="newPermDesc" class="form-control" placeholder="Brief description of permission scope" />
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreatePermissionModal()">Cancel</button>
+                    <button type="submit" class="btn">Create Permission</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastIcon">✔</span>
+        <span id="toastMessage">Action completed successfully.</span>
+    </div>
+
+    <script>
+        let dashboardState = {
+            users: [],
+            roles: [],
+            permissions: [],
+            matrix: {}
+        };
+
+        function getAuthHeaders() {
+            const token = document.getElementById('bearerTokenInput').value.trim();
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            return headers;
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            document.getElementById('toastIcon').innerText = isError ? '❌' : '✔';
+            toast.style.borderColor = isError ? 'var(--accent-red)' : 'var(--accent-purple)';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        async function loadDashboardData() {
+            try {
+                const res = await fetch('/api/admin/rbac/dashboardData', {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                const data = await res.json();
+                if (!data.success) {
+                    showToast(data.description || 'Failed to load RBAC data', true);
+                    return;
+                }
+
+                dashboardState = data;
+                renderStats();
+                renderUsersTable();
+                renderMatrix();
+                renderPermissionsTable();
+                showToast('RBAC Dashboard data refreshed.');
+            } catch (err) {
+                showToast('Network error loading dashboard data', true);
+            }
+        }
+
+        function renderStats() {
+            document.getElementById('statUsersCount').innerText = dashboardState.users.length;
+            document.getElementById('statRolesCount').innerText = dashboardState.roles.length;
+            document.getElementById('statPermissionsCount').innerText = dashboardState.permissions.length;
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            dashboardState.users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.className = 'user-row';
+                tr.setAttribute('data-email', user.email.toLowerCase());
+
+                let roleOptions = dashboardState.roles.map(r => 
+                    `<option value="${r.id}" ${r.id === user.role_id ? 'selected' : ''}>${r.name} (${r.id})</option>`
+                ).join('');
+
+                let stateBadgeClass = user.state_id === 1 ? 'badge-enabled' : (user.state_id === 2 ? 'badge-disabled' : 'badge-pending');
+
+                tr.innerHTML = `
+                    <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">${user.id}</td>
+                    <td><strong>${user.email}</strong></td>
+                    <td>
+                        <select class="select-custom" id="roleSelect_${user.id}">
+                            ${roleOptions}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="select-custom" id="stateSelect_${user.id}">
+                            <option value="1" ${user.state_id === 1 ? 'selected' : ''}>Enabled</option>
+                            <option value="2" ${user.state_id === 2 ? 'selected' : ''}>Disabled</option>
+                            <option value="3" ${user.state_id === 3 ? 'selected' : ''}>Pending</option>
+                        </select>
+                    </td>
+                    <td>
+                        <span class="badge-status ${stateBadgeClass}">${user.email_confirmed ? 'Confirmed' : 'Unconfirmed'}</span>
+                    </td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.775rem;" onclick="saveUserUpdate(${user.id})">Save</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterUsers() {
+            const query = document.getElementById('userSearchInput').value.toLowerCase();
+            document.querySelectorAll('.user-row').forEach(row => {
+                const email = row.getAttribute('data-email');
+                row.style.display = email.includes(query) ? '' : 'none';
+            });
+        }
+
+        async function saveUserUpdate(userId) {
+            const roleId = parseInt(document.getElementById(`roleSelect_${userId}`).value);
+            const stateId = parseInt(document.getElementById(`stateSelect_${userId}`).value);
+
+            try {
+                const res = await fetch('/api/admin/rbac/updateUserRoleState', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        user_id: userId,
+                        role_id: roleId,
+                        state_id: stateId
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message);
+                    loadDashboardData();
+                } else {
+                    showToast(data.description || 'Failed to update user', true);
+                }
+            } catch (err) {
+                showToast('Error updating user', true);
+            }
+        }
+
+        function renderMatrix() {
+            const headerRow = document.getElementById('matrixHeaderRow');
+            const tbody = document.getElementById('matrixTableBody');
+
+            headerRow.innerHTML = '<th>Permission Identifier</th>';
+            dashboardState.roles.forEach(r => {
+                const th = document.createElement('th');
+                th.innerText = `${r.name} (${r.id})`;
+                headerRow.appendChild(th);
+            });
+
+            tbody.innerHTML = '';
+            dashboardState.permissions.forEach(perm => {
+                const tr = document.createElement('tr');
+                let cols = `<td><strong>${perm.name}</strong><br><span style="font-size: 0.725rem; color: var(--text-muted);">${perm.description || ''}</span></td>`;
+
+                dashboardState.roles.forEach(role => {
+                    const rolePerms = dashboardState.matrix[role.id] || [];
+                    const isChecked = rolePerms.includes(perm.id);
+
+                    cols += `
+                        <td>
+                            <label class="toggle-switch">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleRolePermission(${role.id}, ${perm.id}, this.checked)" />
+                                <span class="slider"></span>
+                            </label>
+                        </td>
+                    `;
+                });
+
+                tr.innerHTML = cols;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function toggleRolePermission(roleId, permissionId, grant) {
+            try {
+                const res = await fetch('/api/admin/rbac/toggleRolePermission', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        role_id: roleId,
+                        permission_id: permissionId,
+                        grant: grant
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Role permission ${grant ? 'granted' : 'revoked'}.`);
+                    dashboardState.matrix = data.matrix;
+                } else {
+                    showToast(data.description || 'Failed to update role permission', true);
+                    loadDashboardData();
+                }
+            } catch (err) {
+                showToast('Error toggling permission', true);
+            }
+        }
+
+        function renderPermissionsTable() {
+            const tbody = document.getElementById('permissionsTableBody');
+            tbody.innerHTML = '';
+
+            dashboardState.permissions.forEach(perm => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-family: monospace; color: var(--text-muted);">${perm.id}</td>
+                    <td><strong style="color: var(--accent-purple);">${perm.name}</strong></td>
+                    <td style="color: var(--text-secondary);">${perm.description || ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openCreatePermissionModal() {
+            document.getElementById('createPermModal').classList.add('show');
+        }
+
+        function closeCreatePermissionModal() {
+            document.getElementById('createPermModal').classList.remove('show');
+        }
+
+        async function handleCreatePermission(e) {
+            e.preventDefault();
+            const name = document.getElementById('newPermName').value.trim();
+            const description = document.getElementById('newPermDesc').value.trim();
+
+            try {
+                const res = await fetch('/api/admin/rbac/createPermission', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ name, description })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message);
+                    closeCreatePermissionModal();
+                    document.getElementById('newPermName').value = '';
+                    document.getElementById('newPermDesc').value = '';
+                    loadDashboardData();
+                } else {
+                    showToast(data.description || 'Failed to create permission', true);
+                }
+            } catch (err) {
+                showToast('Error creating permission', true);
+            }
+        }
+
+        async function syncRedisCache() {
+            try {
+                const res = await fetch('/api/admin/rbac/syncRedis', {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Redis Synced: ${data.details.roles_synced} roles & ${data.details.users_synced} users.`);
+                } else {
+                    showToast(data.description || 'Redis sync failed', true);
+                }
+            } catch (err) {
+                showToast('Error syncing Redis cache', true);
+            }
+        }
+
+        // Initialize Dashboard on load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>

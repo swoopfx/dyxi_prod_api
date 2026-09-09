@@ -5,6 +5,8 @@ namespace Ward\Service;
 use Doctrine\ORM\EntityManager;
 use Authentication\Entity\User;
 use Ward\Entity\Ward;
+use Ward\Entity\WardStatus;
+use General\Entity\Gender;
 use Ramsey\Uuid\Uuid;
 
 class WardService
@@ -43,7 +45,7 @@ class WardService
             'uuid' => $identity['uuid']
         ]);
 
-        if (!$user) {
+        if (! $user) {
             throw new \Exception("User not found.");
         }
 
@@ -58,23 +60,8 @@ class WardService
 
         $dobStr = $data['date_of_birth'];
         $dob = \DateTime::createFromFormat('Y-m-d', $dobStr);
-        if (!$dob || $dob->format('Y-m-d') !== $dobStr) {
+        if (! $dob || $dob->format('Y-m-d') !== $dobStr) {
             throw new \Exception("Invalid date of birth format. Use YYYY-MM-DD.");
-        }
-
-        // Handle unique identifier (support both spellings)
-        $uniqueIdentifier = $data['unique_identifier'] ?? $data['uniqie_identifer'] ?? null;
-        if (empty($uniqueIdentifier)) {
-            // Auto-generate if not provided
-            $uniqueIdentifier = 'WARD-' . strtoupper(substr(md5(uniqid('', true)), 0, 8));
-        }
-
-        // Check if unique identifier is already taken
-        $existingWard = $this->entityManager->getRepository(Ward::class)->findOneBy([
-            'uniqueIdentifier' => $uniqueIdentifier
-        ]);
-        if ($existingWard) {
-            throw new \Exception("A ward with this unique identifier already exists.");
         }
 
         // Handle uuid
@@ -82,7 +69,7 @@ class WardService
         if (empty($uuid)) {
             $uuid = Uuid::uuid4()->toString();
         } else {
-            if (!Uuid::isValid($uuid)) {
+            if (! Uuid::isValid($uuid)) {
                 throw new \Exception("Invalid UUID format.");
             }
             // Check if uuid is already taken
@@ -99,8 +86,81 @@ class WardService
         $ward->setFullname($data['fullname'])
              ->setDateOfBirth($dob)
              ->setUuid($uuid)
-             ->setUniqueIdentifier($uniqueIdentifier)
              ->setUser($user);
+
+        // Handle WardStatus
+        if (! empty($data['status'])) {
+            $statusEntity = null;
+            if (is_numeric($data['status'])) {
+                $statusEntity = $this->entityManager->getRepository(WardStatus::class)->find((int) $data['status']);
+            } else {
+                $statusEntity = $this->entityManager->getRepository(WardStatus::class)->findOneBy([
+                    'status' => strtolower((string) $data['status'])
+                ]);
+            }
+            if ($statusEntity) {
+                $ward->setStatus($statusEntity);
+            }
+        } else {
+            $defaultStatus = $this->entityManager->getRepository(WardStatus::class)->findOneBy([
+                'status' => WardStatus::STATUS_ACTIVE
+            ]);
+            if ($defaultStatus) {
+                $ward->setStatus($defaultStatus);
+            }
+        }
+
+        // Handle expireDate
+        $expireInput = $data['expireDate'] ?? $data['expire_date'] ?? null;
+        if ($expireInput !== null && $expireInput !== '') {
+            if ($expireInput instanceof \DateTime) {
+                $ward->setExpireDate($expireInput);
+            } elseif (is_numeric($expireInput)) {
+                $hours = (int) $expireInput;
+                $expireDt = (new \DateTime())->modify("+{$hours} hours");
+                $ward->setExpireDate($expireDt);
+            } else {
+                try {
+                    $expireDt = new \DateTime((string) $expireInput);
+                    $ward->setExpireDate($expireDt);
+                } catch (\Throwable $e) {
+                    throw new \Exception("Invalid expireDate format.");
+                }
+            }
+        }
+
+        // Handle Gender (Default to Female)
+        $genderEntity = null;
+        $genderVal = $data['gender_id'] ?? $data['gender'] ?? null;
+
+        if (! empty($genderVal)) {
+            if (is_numeric($genderVal)) {
+                $genderEntity = $this->entityManager->getRepository(Gender::class)->find((int) $genderVal);
+            } else {
+                $genderEntity = $this->entityManager->getRepository(Gender::class)->findOneBy([
+                    'gender' => ucfirst(strtolower((string) $genderVal))
+                ]);
+                if (! $genderEntity) {
+                    $genderEntity = $this->entityManager->getRepository(Gender::class)->findOneBy([
+                        'gender' => strtolower((string) $genderVal)
+                    ]);
+                }
+            }
+        }
+
+        if (! $genderEntity) {
+            // Default to Female
+            $genderEntity = $this->entityManager->getRepository(Gender::class)->findOneBy([
+                'gender' => 'Female'
+            ]);
+            if (! $genderEntity) {
+                $genderEntity = $this->entityManager->getRepository(Gender::class)->find(2);
+            }
+        }
+
+        if ($genderEntity) {
+            $ward->setGender($genderEntity);
+        }
 
         // 4. Persist
         $this->entityManager->persist($ward);
@@ -126,7 +186,7 @@ class WardService
             'uuid' => $identity['uuid']
         ]);
 
-        if (!$user) {
+        if (! $user) {
             throw new \Exception("User not found.");
         }
 
@@ -153,7 +213,7 @@ class WardService
             'uuid' => $identity['uuid']
         ]);
 
-        if (!$user) {
+        if (! $user) {
             throw new \Exception("User not found.");
         }
 
@@ -163,16 +223,12 @@ class WardService
         if (is_numeric($wardIdOrUuid)) {
             $ward = $repo->findOneBy(['id' => (int) $wardIdOrUuid, 'user' => $user]);
         }
-        
-        if (!$ward) {
+
+        if (! $ward) {
             $ward = $repo->findOneBy(['uuid' => $wardIdOrUuid, 'user' => $user]);
         }
 
-        if (!$ward) {
-            $ward = $repo->findOneBy(['uniqueIdentifier' => $wardIdOrUuid, 'user' => $user]);
-        }
-
-        if (!$ward) {
+        if (! $ward) {
             throw new \Exception("Ward not found or you do not have permission to view it.");
         }
 

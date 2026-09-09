@@ -74,8 +74,8 @@ if "${PHP_BIN}" "${DOCTRINE_BIN}" list | grep -q "migrations:migrate"; then
     fi
 else
     echo -e "  ⚠️  ${YELLOW}Doctrine migrations module not registered. Executing schema-tool:update instead...${NC}"
-    echo -e "  🚀 Running schema-tool:update --force..."
-    if "${PHP_BIN}" "${DOCTRINE_BIN}" orm:schema-tool:update --force; then
+    echo -e "  🚀 Running schema-tool:update --force --complete..."
+    if "${PHP_BIN}" "${DOCTRINE_BIN}" orm:schema-tool:update --force --complete; then
         echo -e "  ✔ ${GREEN}Schema updated successfully!${NC}"
     else
         echo -e "  ❌ ${RED}Database schema update failed!${NC}" >&2

@@ -87,9 +87,12 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
      *
      * @var [type]
      */
-    private $authEmailService;
-
-
+    /**
+     * Request-scoped in-memory identity claims for stateless REST execution
+     *
+     * @var array|null
+     */
+    private ?array $containerIdentity = null;
 
     public function getBearerToken()
     {
@@ -138,9 +141,6 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             $adapter = $authService->getAdapter();
             $phoneOrEmail = $data['username'];
 
-            $errorMessageContainer = new Container('error_code');
-            $errorMessageContainer->code = 400;
-
             $em = $this->entityManager;
             $user = $em
                 ->createQuery('SELECT u FROM Authentication\Entity\User u WHERE u.email = :phoneOrEmail OR u.username = :phoneOrEmail')
@@ -148,19 +148,17 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 ->getResult(\Doctrine\ORM\Query::HYDRATE_OBJECT);
 
             if (count($user) == 0) {
-                throw new \Exception('Invalid Credentials');
+                throw new \Exception('Invalid Credentials', 400);
             }
 
             /** @var User */
             $user = $user[0];
 
             if (!$user->getEmailConfirmed() == 1) {
-                $errorMessageContainer->code = 437;
-                throw new \Exception('You are yet to confirm your email! please go to the registered email to confirm your account');
+                throw new \Exception('You are yet to confirm your email! please go to the registered email to confirm your account', 437);
             }
             if ($user->getState()->getId() != 1) {
-                $errorMessageContainer->code = 419;
-                throw new \Exception('Your account is disabled');
+                throw new \Exception('Your account is disabled', 419);
             }
 
             $adapter->setIdentity($user->getEmail());
@@ -494,49 +492,54 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             throw new EmptyTokenException('This token is Empty');
         } else {
             $data = $token->claims()->get('coded');
-            $container = new Container('identity');
-            // $container->identify = $data[""];
+            $this->containerIdentity = is_array($data) ? $data : (array)$data;
             return $data;
         }
     }
 
     public function refreshTokenIdentity()
     {
-        $jwt = null;
-        // try {
-
         $jwt = $this->getBearerToken();
-        // } catch (\Throwable $th) {
-        //     throw new \Exception("No way");
-        // }
         $jwtServe = $this->jwtIssuer;
         $token = $jwtServe->expiredValidateToken($jwt);
-        // $expiredData = $jwtServe->retreiveTokenData($jwt);
         if ($token == null) {
             throw new EmptyTokenException('This token is Empty');
         } else {
             $data = $token->claims()->get('coded');
-            // $container = new Container("identity");
-            // $container->identify = $data[""];
+            $this->containerIdentity = is_array($data) ? $data : (array)$data;
             return $data;
         }
     }
 
     public function setContainerIdentity($claims)
     {
-        $identityContainer = new Container('api_identity');
-        $identityContainer->ide = $claims;
+        $this->containerIdentity = is_array($claims) ? $claims : (array)$claims;
         return $this;
     }
 
     public function getContainerIdentity()
     {
-        $identityContainer = new Container('api_identity');
-        return $identityContainer->ide;
+        if ($this->containerIdentity !== null) {
+            return $this->containerIdentity;
+        }
+
+        if ($this->requestObject instanceof Request && $this->requestObject->getHeader('Authorization')) {
+            try {
+                $ide = $this->getIdentity();
+                if (!empty($ide)) {
+                    $this->containerIdentity = is_array($ide) ? $ide : (array)$ide;
+                    return $this->containerIdentity;
+                }
+            } catch (\Throwable $e) {
+                // Fallback error ignored
+            }
+        }
+        return null;
     }
 
     public function clearIdentity()
     {
+        $this->containerIdentity = null;
         return '';
     }
 

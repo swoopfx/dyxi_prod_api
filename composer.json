@@ -54,7 +54,8 @@
             "Dyscalculia\\": "module/Dyscalculia/src/",
             "Game\\": "module/Game/src/",
             "Consultant\\": "module/Consultant/src/",
-            "Authorization\\": "module/Authorization/src/"
+            "Authorization\\": "module/Authorization/src/",
+            "Admin\\": "module/Admin/src/"
         }
     },
     "autoload-dev": {

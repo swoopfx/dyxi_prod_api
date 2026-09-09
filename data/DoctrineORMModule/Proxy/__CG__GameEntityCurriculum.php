@@ -67,10 +67,10 @@ class Curriculum extends \Game\Entity\Curriculum implements \Doctrine\ORM\Proxy\
     public function __sleep()
     {
         if ($this->__isInitialized__) {
-            return ['__isInitialized__', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'id', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'uuid', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'name', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'description', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'minAge', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'maxAge', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'createdOn', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'updatedOn'];
+            return ['__isInitialized__', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'id', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'uuid', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'ward', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'name', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'description', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'minAge', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'maxAge', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'createdOn', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'updatedOn'];
         }
 
-        return ['__isInitialized__', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'id', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'uuid', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'name', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'description', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'minAge', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'maxAge', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'createdOn', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'updatedOn'];
+        return ['__isInitialized__', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'id', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'uuid', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'ward', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'name', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'description', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'minAge', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'maxAge', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'createdOn', '' . "\0" . 'Game\\Entity\\Curriculum' . "\0" . 'updatedOn'];
     }
 
     /**
@@ -300,6 +300,28 @@ class Curriculum extends \Game\Entity\Curriculum implements \Doctrine\ORM\Proxy\
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setMaxAge', [$maxAge]);
 
         return parent::setMaxAge($maxAge);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getWard(): ?\Ward\Entity\Ward
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getWard', []);
+
+        return parent::getWard();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setWard(?\Ward\Entity\Ward $ward): \Game\Entity\Curriculum
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setWard', [$ward]);
+
+        return parent::setWard($ward);
     }
 
     /**

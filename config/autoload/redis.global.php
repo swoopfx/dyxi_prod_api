@@ -12,65 +12,75 @@ return [
     'caches' => [
         // Authorization RBAC Namespace
         'authorization_redis_cache' => [
-            'adapter' => [
-                'name' => 'redis',
-                'options' => [
-                    'server' => [
-                        'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
-                        'port' => (int)(getenv('REDIS_PORT') ?: 6379),
-                    ],
-                    'ttl' => 86400,
-                    'namespace' => 'dyxi_rbac',
+            'adapter' => 'redis',
+            'options' => [
+                'server' => [
+                    'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
+                    'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 ],
+                'ttl' => 86400,
+                'namespace' => 'dyxi_rbac',
             ],
             'plugins' => [
-                'exception_handler' => [
-                    'throw_exceptions' => false,
+                [
+                    'name' => 'exception_handler',
+                    'options' => [
+                        'throw_exceptions' => false,
+                    ],
                 ],
-                'serializer',
+                [
+                    'name' => 'serializer',
+                ],
             ],
         ],
 
         // Curriculum Service Namespace (0 = forever / no expiration)
         'curriculum_redis_cache' => [
-            'adapter' => [
-                'name' => 'redis',
-                'options' => [
-                    'server' => [
-                        'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
-                        'port' => (int)(getenv('REDIS_PORT') ?: 6379),
-                    ],
-                    'ttl' => 0, // 0 = forever / no expiration
-                    'namespace' => 'dyxi_curriculum',
+            'adapter' => 'redis',
+            'options' => [
+                'server' => [
+                    'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
+                    'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 ],
+                'ttl' => 0, // 0 = forever / no expiration
+                'namespace' => 'dyxi_curriculum',
             ],
             'plugins' => [
-                'exception_handler' => [
-                    'throw_exceptions' => false,
+                [
+                    'name' => 'exception_handler',
+                    'options' => [
+                        'throw_exceptions' => false,
+                    ],
                 ],
-                'serializer',
+                [
+                    'name' => 'serializer',
+                ],
             ],
         ],
 
         // General Multi-Purpose Namespace
         'general_redis_cache' => [
-            'adapter' => [
-                'name' => 'redis',
-                'options' => [
-                    'server' => [
-                        'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
-                        'port' => (int)(getenv('REDIS_PORT') ?: 6379),
-                    ],
-                    'ttl' => 86400,
-                    'namespace' => 'dyxi_general',
+            'adapter' => 'redis',
+            'options' => [
+                'server' => [
+                    'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
+                    'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 ],
+                'ttl' => 86400,
+                'namespace' => 'dyxi_general',
             ],
             'plugins' => [
-                'exception_handler' => [
-                    'throw_exceptions' => false,
+                [
+                    'name' => 'exception_handler',
+                    'options' => [
+                        'throw_exceptions' => false,
+                    ],
                 ],
-                'serializer',
+                [
+                    'name' => 'serializer',
+                ],
             ],
         ],
     ],
 ];
+

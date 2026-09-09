@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DYXI Central Administrative Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #080c14;
+            --bg-card: #0f172a;
+            --bg-card-hover: #1e293b;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --glass-bg: rgba(15, 23, 42, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.12);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 45%);
+            background-attachment: fixed;
+        }
+
+        header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1.25rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand { display: flex; align-items: center; gap: 1rem; }
+
+        .brand-logo {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1.35rem; color: #fff;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.45);
+        }
+
+        .brand-title h1 {
+            font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title p { font-size: 0.775rem; color: var(--text-muted); }
+
+        .badge-superadmin {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c084fc;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.775rem; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+
+        .container {
+            max-width: 1320px; width: 100%;
+            margin: 2.5rem auto;
+            padding: 0 2rem;
+            flex: 1;
+        }
+
+        .welcome-card {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.08));
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2.25rem;
+            margin-bottom: 2.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .welcome-text h2 { font-size: 1.65rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .welcome-text p { color: var(--text-secondary); font-size: 0.95rem; max-width: 650px; line-height: 1.5; }
+
+        .btn-hub {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: #fff; text-decoration: none;
+            padding: 0.85rem 1.75rem;
+            border-radius: 12px;
+            font-size: 0.95rem; font-weight: 700;
+            display: inline-flex; align-items: center; gap: 0.6rem;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
+            transition: all 0.25s;
+        }
+
+        .btn-hub:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex; flex-direction: column; gap: 0.5rem;
+            position: relative; overflow: hidden;
+            transition: all 0.25s;
+        }
+
+        .stat-card:hover { transform: translateY(-3px); border-color: var(--glass-border); }
+
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+        }
+
+        .stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-value { font-size: 2.1rem; font-weight: 800; color: var(--text-primary); }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .module-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.75rem;
+            display: flex; flex-direction: column; gap: 1.25rem;
+            transition: all 0.25s;
+            position: relative;
+        }
+
+        .module-card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .module-header { display: flex; align-items: center; gap: 1rem; }
+
+        .module-icon {
+            width: 48px; height: 48px; border-radius: 14px;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .module-info h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .module-info p { font-size: 0.825rem; color: var(--text-secondary); line-height: 1.4; }
+
+        .module-features { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+
+        .module-features li {
+            font-size: 0.85rem; color: var(--text-secondary);
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        .module-features li::before { content: '✔'; color: var(--accent-cyan); font-weight: 800; font-size: 0.75rem; }
+
+        .module-footer { margin-top: auto; pt: 0.5rem; }
+
+        .btn-module {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary); text-decoration: none;
+            padding: 0.75rem 1.25rem; border-radius: 10px;
+            font-size: 0.875rem; font-weight: 600;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .module-card:hover .btn-module {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-color: transparent; color: #fff;
+        }
+
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 2.5rem;
+            text-align: center;
+            font-size: 0.8rem; color: var(--text-muted);
+            background: rgba(8, 12, 20, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <div class="brand-logo">🏛️</div>
+            <div class="brand-title">
+                <h1>DYXI Central Admin Hub</h1>
+                <p>Enterprise Administrative Control Center</p>
+            </div>
+            <span class="badge-superadmin">
+                <span>⚡</span> SuperAdmin Authorized
+            </span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <a href="/admin/rbac" class="btn-hub" style="padding: 0.55rem 1.2rem; font-size: 0.85rem;">
+                🛡️ Open RBAC Control Hub &rarr;
+            </a>
+            <a href="/admin/logout" class="btn-hub" style="padding: 0.55rem 1rem; font-size: 0.85rem; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; box-shadow: none;">
+                🚪 Sign Out
+            </a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Welcome Hero -->
+        <div class="welcome-card">
+            <div class="welcome-text">
+                <h2>Central Administrative Interface</h2>
+                <p>Manage user authentication, system roles, granular RBAC permission matrices, account states, and live Redis cache synchronization from a unified enterprise control center.</p>
+            </div>
+            <div>
+                <a href="/admin/rbac" class="btn-hub">
+                    <span>⚡</span> Access Management Portal
+                </a>
+            </div>
+        </div>
+
+        <!-- System Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">User Accounts</span>
+                <span class="stat-value"><?= (int)($this->stats['total_users'] ?? 0) ?></span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">System Roles</span>
+                <span class="stat-value"><?= (int)($this->stats['total_roles'] ?? 0) ?></span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Defined Permissions</span>
+                <span class="stat-value"><?= (int)($this->stats['total_permissions'] ?? 0) ?></span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Redis Auth Engine</span>
+                <span class="stat-value" style="color: var(--accent-green);">ONLINE</span>
+            </div>
+        </div>
+
+        <!-- Administrative Modules Grid -->
+        <div class="modules-grid">
+            <!-- Module 1: RBAC & Auth Hub -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon">🔐</div>
+                    <div class="module-info">
+                        <h3>RBAC & User Auth Control</h3>
+                        <p>Full Role-Based Access Control and user authentication manager.</p>
+                    </div>
+                </div>
+                <ul class="module-features">
+                    <li>Interactive Role-Permission matrix editor</li>
+                    <li>Instant User Role assignment (Guest, Guardian, Consultant, Admin, SuperAdmin)</li>
+                    <li>Account State management (Enabled, Disabled, Pending)</li>
+                    <li>Custom system permission creation & directory</li>
+                </ul>
+                <div class="module-footer">
+                    <a href="/admin/rbac" class="btn-module">Manage RBAC & Auth &rarr;</a>
+                </div>
+            </div>
+
+            <!-- Module 2: Redis Engine & Authorization Cache -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon">⚡</div>
+                    <div class="module-info">
+                        <h3>Redis Cache & Auth Engine</h3>
+                        <p>Stateless JWT authentication & Redis payload synchronization.</p>
+                    </div>
+                </div>
+                <ul class="module-features">
+                    <li>One-click Redis RBAC payload synchronization</li>
+                    <li>Dual database & cache memory persistence</li>
+                    <li>Instant key invalidation and role-permission re-hydration</li>
+                    <li>Zero session dependence REST identity handling</li>
+                </ul>
+                <div class="module-footer">
+                    <a href="/admin/rbac" class="btn-module">Sync Redis Authorization &rarr;</a>
+                </div>
+            </div>
+
+            <!-- Module 3: System Security & API Audit -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon">📊</div>
+                    <div class="module-info">
+                        <h3>System Security & Audit</h3>
+                        <p>Stateless REST security & SuperAdmin access control enforcement.</p>
+                    </div>
+                </div>
+                <ul class="module-features">
+                    <li>SuperAdmin HTTP 403 Security Guard</li>
+                    <li>Bearer JWT Token live token inspection</li>
+                    <li>Audit logging and system endpoint monitoring</li>
+                    <li>RESTful OpenAPI / Swagger integration</li>
+                </ul>
+                <div class="module-footer">
+                    <a href="/api/docs" class="btn-module" target="_blank">View API Documentation &rarr;</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        DYXI Enterprise Platform &copy; <?= date('Y') ?> &bull; Central Administrative Interface &bull; SuperAdmin Portal
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DYXI Admin Hub - SuperAdmin Sign In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #080c14;
+            --bg-card: rgba(15, 23, 42, 0.85);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.18) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 50%);
+            background-attachment: fixed;
+            padding: 1.5rem;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 440px;
+            padding: 2.5rem 2.25rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+        }
+
+        .logo-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .logo-icon {
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: #fff;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.45);
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.35rem;
+        }
+
+        .header-title p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .badge-superadmin {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.35);
+            color: #c084fc;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.725rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .alert {
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            font-size: 0.825rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            display: none;
+            line-height: 1.4;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+
+        .form-group {
+            margin-bottom: 1.35rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: #fff;
+            border: none;
+            padding: 0.85rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
+        }
+
+        .btn-submit:hover {
+            opacity: 0.94;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.45);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .card-footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.775rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo-wrapper">
+            <div class="logo-icon">🛡️</div>
+        </div>
+
+        <div class="header-title">
+            <h1>DYXI Admin Hub</h1>
+            <p>SuperAdmin Authentication Portal</p>
+            <span class="badge-superadmin">
+                <span>⚡</span> Restricted SuperAdmin Access
+            </span>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+            <div class="form-group">
+                <label for="adminEmail">SuperAdmin Email</label>
+                <div class="input-wrapper">
+                    <input type="email" id="adminEmail" class="form-control" placeholder="swoopfx@gmail.com" required autocomplete="username" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="adminPassword">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="adminPassword" class="form-control" placeholder="••••••••••••" required autocomplete="current-password" />
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit">
+                <div id="btnSpinner" class="spinner"></div>
+                <span id="btnText">Sign In to Admin Hub &rarr;</span>
+            </button>
+        </form>
+
+        <div class="card-footer">
+            DYXI Enterprise Platform &bull; SuperAdmin Security Gate
+        </div>
+    </div>
+
+    <script>
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('alertBox');
+            const submitBtn = document.getElementById('submitBtn');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const btnText = document.getElementById('btnText');
+
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+
+            alertBox.style.display = 'none';
+            alertBox.className = 'alert';
+            submitBtn.disabled = true;
+            btnSpinner.style.display = 'block';
+            btnText.innerText = 'Authenticating...';
+
+            try {
+                const res = await fetch('/api/admin/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alertBox.className = 'alert alert-success';
+                    alertBox.innerText = '✔ Authentication successful! Redirecting to Admin Hub...';
+                    alertBox.style.display = 'block';
+
+                    // Store JWT token locally as well
+                    if (data.token) {
+                        localStorage.setItem('admin_bearer_token', data.token);
+                    }
+
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/admin';
+                    }, 800);
+                } else {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerText = '❌ ' + (data.description || 'Authentication failed. Access denied.');
+                    alertBox.style.display = 'block';
+                    submitBtn.disabled = false;
+                    btnSpinner.style.display = 'none';
+                    btnText.innerText = 'Sign In to Admin Hub \u2192';
+                }
+            } catch (err) {
+                alertBox.className = 'alert alert-error';
+                alertBox.innerText = '❌ Network error during authentication. Please try again.';
+                alertBox.style.display = 'block';
+                submitBtn.disabled = false;
+                btnSpinner.style.display = 'none';
+                btnText.innerText = 'Sign In to Admin Hub \u2192';
+            }
+        }
+    </script>
+</body>
+</html>

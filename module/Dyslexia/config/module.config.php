@@ -17,15 +17,13 @@ return [
             'api-dyslexia' => [
                 'type'    => Segment::class,
                 'options' => [
-                    'route'    => '/api/dyslexia[/:interface[/:action[/:id]]]',
+                    'route'    => '/api/dyslexia[/:action[/:id]]',
                     'constraints' => [
-                        'interface' => '[a-zA-Z][a-zA-Z0-9_-]*',
                         'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                        'id' => '[a-zA-Z0-9_-]*'
+                        'id'     => '[a-zA-Z0-9_-]*'
                     ],
                     'defaults' => [
                         'controller' => DyslexiaController::class,
-                        'interface'  => 'api',
                         'action'     => 'register',
                     ],
                 ],

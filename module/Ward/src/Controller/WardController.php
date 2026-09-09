@@ -41,15 +41,20 @@ class WardController extends AbstractActionController
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Payload to register a new ward. Required fields: 'fullname' and 'date_of_birth'.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
      *                     required={"fullname", "date_of_birth"},
-     *                     @OA\Property(property="fullname", type="string", example="John Doe Jr.", description="Ward's full name"),
-     *                     @OA\Property(property="date_of_birth", type="string", example="2015-08-15", description="Ward's date of birth (YYYY-MM-DD)"),
-     *                     @OA\Property(property="unique_identifier", type="string", example="WARD-JDJ-001", description="Optional unique identifier. Auto-generated if not provided."),
-     *                     @OA\Property(property="uuid", type="string", example="7b7f1ad9-d9d5-451e-8ef9-eb9915159045", description="Optional UUID. Auto-generated if not provided.")
+     *                     description="Ward Registration Schema specifying required and optional input parameters with data formats.",
+     *                     @OA\Property(property="fullname", type="string", example="John Doe Jr.", description="[REQUIRED] Ward's full name. Format: String (max 255 chars)."),
+     *                     @OA\Property(property="date_of_birth", type="string", format="date", example="2015-08-15", description="[REQUIRED] Ward's date of birth. Format: YYYY-MM-DD (ISO 8601 date)."),
+     *                     @OA\Property(property="status", type="string", example="active", enum={"active", "suspended", "pending"}, description="[OPTIONAL] Ward status. Format: String enum ('active', 'suspended', 'pending'). Defaults to 'active'."),
+     *                     @OA\Property(property="uuid", type="string", format="uuid", example="7b7f1ad9-d9d5-451e-8ef9-eb9915159045", description="[OPTIONAL] Ward UUID identifier. Format: UUID v4 string (8-4-4-4-12 hex). Auto-generated if not provided."),
+     *                     @OA\Property(property="expireDate", type="string", example="2026-10-01 12:00:00", description="[OPTIONAL] Date/time when ward account expires or duration in hours."),
+     *                     @OA\Property(property="gender", type="string", example="Female", description="[OPTIONAL] Ward gender name or gender ID. Defaults to 'Female'."),
+     *                     @OA\Property(property="gender_id", type="integer", example=2, description="[OPTIONAL] Ward gender ID (1=Male, 2=Female, 3=Other). Defaults to 2 (Female).")
      *                 )
      *             )
      *         }
@@ -69,7 +74,12 @@ class WardController extends AbstractActionController
      *                         @OA\Property(property="fullname", type="string", example="John Doe Jr."),
      *                         @OA\Property(property="date_of_birth", type="string", example="2015-08-15"),
      *                         @OA\Property(property="uuid", type="string", example="7b7f1ad9-d9d5-451e-8ef9-eb9915159045"),
-     *                         @OA\Property(property="unique_identifier", type="string", example="WARD-JDJ-001")
+     *                         @OA\Property(property="status", type="string", example="active"),
+     *                         @OA\Property(property="status_id", type="integer", example=1),
+     *                         @OA\Property(property="age", type="integer", example=11),
+     *                         @OA\Property(property="expireDate", type="integer", example=720),
+     *                         @OA\Property(property="gender", type="string", example="Female"),
+     *                         @OA\Property(property="gender_id", type="integer", example=2)
      *                     ),
      *                     @OA\Property(property="description", type="string", example="Successfully registered ward John Doe Jr.")
      *                 )
@@ -128,7 +138,7 @@ class WardController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isPost()) {
+        if (! $request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -163,17 +173,24 @@ class WardController extends AbstractActionController
                     "fullname" => $ward->getFullname(),
                     "date_of_birth" => $ward->getDateOfBirth()->format('Y-m-d'),
                     "uuid" => $ward->getUuid(),
-                    "unique_identifier" => $ward->getUniqueIdentifier()
+                    "status" => $ward->getStatus() ? $ward->getStatus()->getStatus() : null,
+                    "status_id" => $ward->getStatus() ? $ward->getStatus()->getId() : null,
+                    "age" => $ward->getAge(),
+                    "expireDate" => $ward->getExpireHours(),
+                    "gender" => $ward->getGender() ? $ward->getGender()->getGender() : null,
+                    "gender_id" => $ward->getGender() ? $ward->getGender()->getId() : null
                 ],
                 "description" => "Successfully registered ward {$ward->getFullname()}."
             ]);
-
         } catch (\Throwable $th) {
-            $response->setStatusCode(400);
+            $message = $th->getMessage();
+            $statusCode = str_contains($message, 'Unauthorized') ? 401 : (str_contains($message, 'permission') || str_contains($message, 'Access denied') ? 403 : 400);
+            $errorType = ($statusCode === 401) ? "Unauthorized" : (($statusCode === 403) ? "Forbidden" : "WardRegistrationError");
+            $response->setStatusCode($statusCode);
             $jsonModel->setVariables([
                 "success" => false,
-                "error" => "WardRegistrationError",
-                "description" => $th->getMessage()
+                "error" => $errorType,
+                "description" => $message
             ]);
         }
 
@@ -205,7 +222,12 @@ class WardController extends AbstractActionController
      *                             @OA\Property(property="fullname", type="string", example="John Doe Jr."),
      *                             @OA\Property(property="date_of_birth", type="string", example="2015-08-15"),
      *                             @OA\Property(property="uuid", type="string", example="7b7f1ad9-d9d5-451e-8ef9-eb9915159045"),
-     *                             @OA\Property(property="unique_identifier", type="string", example="WARD-JDJ-001")
+     *                             @OA\Property(property="status", type="string", example="active"),
+     *                             @OA\Property(property="status_id", type="integer", example=1),
+     *                             @OA\Property(property="age", type="integer", example=11),
+     *                             @OA\Property(property="expireDate", type="integer", example=720),
+     *                             @OA\Property(property="gender", type="string", example="Female"),
+     *                             @OA\Property(property="gender_id", type="integer", example=2)
      *                         )
      *                     )
      *                 )
@@ -224,7 +246,7 @@ class WardController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isGet()) {
+        if (! $request->isGet()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -254,7 +276,12 @@ class WardController extends AbstractActionController
                     "fullname" => $ward->getFullname(),
                     "date_of_birth" => $ward->getDateOfBirth()->format('Y-m-d'),
                     "uuid" => $ward->getUuid(),
-                    "unique_identifier" => $ward->getUniqueIdentifier()
+                    "status" => $ward->getStatus() ? $ward->getStatus()->getStatus() : null,
+                    "status_id" => $ward->getStatus() ? $ward->getStatus()->getId() : null,
+                    "age" => $ward->getAge(),
+                    "expireDate" => $ward->getExpireHours(),
+                    "gender" => $ward->getGender() ? $ward->getGender()->getGender() : null,
+                    "gender_id" => $ward->getGender() ? $ward->getGender()->getId() : null
                 ];
             }
 
@@ -263,13 +290,15 @@ class WardController extends AbstractActionController
                 "success" => true,
                 "data" => $data
             ]);
-
         } catch (\Throwable $th) {
-            $response->setStatusCode(400);
+            $message = $th->getMessage();
+            $statusCode = str_contains($message, 'Unauthorized') ? 401 : (str_contains($message, 'permission') || str_contains($message, 'Access denied') ? 403 : 400);
+            $errorType = ($statusCode === 401) ? "Unauthorized" : (($statusCode === 403) ? "Forbidden" : "WardListError");
+            $response->setStatusCode($statusCode);
             $jsonModel->setVariables([
                 "success" => false,
-                "error" => "WardListError",
-                "description" => $th->getMessage()
+                "error" => $errorType,
+                "description" => $message
             ]);
         }
 
@@ -288,8 +317,8 @@ class WardController extends AbstractActionController
      *         name="id",
      *         in="path",
      *         required=true,
-     *         description="The ID, UUID, or unique identifier of the ward",
-     *         @OA\Schema(type="string")
+     *         description="[REQUIRED] The integer ID or UUID string of the ward. Format: Integer ID (e.g. 1) or UUID string (e.g. 7b7f1ad9-d9d5-451e-8ef9-eb9915159045).",
+     *         @OA\Schema(type="string", description="Identifier parameter. Format: String representing integer ID or UUID.")
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -306,7 +335,12 @@ class WardController extends AbstractActionController
      *                         @OA\Property(property="fullname", type="string", example="John Doe Jr."),
      *                         @OA\Property(property="date_of_birth", type="string", example="2015-08-15"),
      *                         @OA\Property(property="uuid", type="string", example="7b7f1ad9-d9d5-451e-8ef9-eb9915159045"),
-     *                         @OA\Property(property="unique_identifier", type="string", example="WARD-JDJ-001")
+     *                         @OA\Property(property="status", type="string", example="active"),
+     *                         @OA\Property(property="status_id", type="integer", example=1),
+     *                         @OA\Property(property="age", type="integer", example=11),
+     *                         @OA\Property(property="expireDate", type="integer", example=720),
+     *                         @OA\Property(property="gender", type="string", example="Female"),
+     *                         @OA\Property(property="gender_id", type="integer", example=2)
      *                     )
      *                 )
      *             )
@@ -325,7 +359,7 @@ class WardController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isGet()) {
+        if (! $request->isGet()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -349,13 +383,12 @@ class WardController extends AbstractActionController
 
             $id = $this->params()->fromRoute('id');
             if (empty($id)) {
-                $id = $this->params()->fromQuery('id') 
-                    ?? $this->params()->fromQuery('uuid') 
-                    ?? $this->params()->fromQuery('unique_identifier');
+                $id = $this->params()->fromQuery('id')
+                    ?? $this->params()->fromQuery('uuid');
             }
 
             if (empty($id)) {
-                throw new \Exception("Ward identifier (id, uuid, or unique_identifier) is required.");
+                throw new \Exception("Ward identifier (id or uuid) is required.");
             }
 
             $ward = $this->wardService->getWardInfo($id, $identity);
@@ -368,16 +401,23 @@ class WardController extends AbstractActionController
                     "fullname" => $ward->getFullname(),
                     "date_of_birth" => $ward->getDateOfBirth()->format('Y-m-d'),
                     "uuid" => $ward->getUuid(),
-                    "unique_identifier" => $ward->getUniqueIdentifier()
+                    "status" => $ward->getStatus() ? $ward->getStatus()->getStatus() : null,
+                    "status_id" => $ward->getStatus() ? $ward->getStatus()->getId() : null,
+                    "age" => $ward->getAge(),
+                    "expireDate" => $ward->getExpireHours(),
+                    "gender" => $ward->getGender() ? $ward->getGender()->getGender() : null,
+                    "gender_id" => $ward->getGender() ? $ward->getGender()->getId() : null
                 ]
             ]);
-
         } catch (\Throwable $th) {
-            $response->setStatusCode(400);
+            $message = $th->getMessage();
+            $statusCode = str_contains($message, 'Unauthorized') ? 401 : (str_contains($message, 'permission') || str_contains($message, 'Access denied') ? 403 : 400);
+            $errorType = ($statusCode === 401) ? "Unauthorized" : (($statusCode === 403) ? "Forbidden" : "WardInfoError");
+            $response->setStatusCode($statusCode);
             $jsonModel->setVariables([
                 "success" => false,
-                "error" => "WardInfoError",
-                "description" => $th->getMessage()
+                "error" => $errorType,
+                "description" => $message
             ]);
         }
 

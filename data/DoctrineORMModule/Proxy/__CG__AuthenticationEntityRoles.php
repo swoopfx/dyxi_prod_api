@@ -195,6 +195,17 @@ class Roles extends \Authentication\Entity\Roles implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
+    public function setId(int $id)
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setId', [$id]);
+
+        return parent::setId($id);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function getDropPage()
     {
 

@@ -121,21 +121,24 @@ class ApiauthenticateController extends AbstractActionController
      *     description="Authenticates client credentials (email or username, and password). On success, returns a JWT access token and user profile. If client is 'web', sets an HttpOnly cookie with the rotated refresh token; if client is 'mobile', returns the refresh token directly in the response body.",
      *     @OA\RequestBody(
      *         required=true,
+     *         description="User login credentials payload. Required properties: 'username', 'password', 'user_agent', 'user_ip'.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
      *                     required={"username", "password", "user_agent", "user_ip"},
-     *                     @OA\Property(property="username", type="string", example="ezekiel_a@yahoo.com", description="User's registered email address or username"),
-     *                     @OA\Property(property="password", type="string", example="Oluwaseun1", description="User's plain text password"),
-     *                     @OA\Property(property="user_agent", type="string", example="Mozilla/5.0...", description="User agent string of the client device"),
-     *                     @OA\Property(property="user_ip", type="string", example="127.0.0.1", description="IP address of the client device"),
-     *                     @OA\Property(property="remember_me", type="boolean", example=true, description="Optional. If true, extends refresh token and session cookie lifetime to 90 days."),
-     *                     @OA\Property(property="client", type="string", enum={"web", "mobile"}, default="web", description="Client type: 'web' returns HttpOnly cookie; 'mobile' returns refresh_token in response JSON body.")
+     *                     description="Login Schema identifying required and optional authentication parameters with data formats.",
+     *                     @OA\Property(property="username", type="string", format="email", example="ezekiel_a@yahoo.com", description="[REQUIRED] User's registered email address or username. Format: String (email or username)."),
+     *                     @OA\Property(property="password", type="string", format="password", example="Oluwaseun1", description="[REQUIRED] User's plain text password. Format: String (min 6 chars)."),
+     *                     @OA\Property(property="user_agent", type="string", example="Mozilla/5.0...", description="[REQUIRED] Client device User-Agent header string. Format: String."),
+     *                     @OA\Property(property="user_ip", type="string", format="ipv4", example="127.0.0.1", description="[REQUIRED] Client device IP address. Format: IPv4 or IPv6 string."),
+     *                     @OA\Property(property="remember_me", type="boolean", example=true, description="[OPTIONAL] Extend session lifetime to 90 days. Format: Boolean."),
+     *                     @OA\Property(property="client", type="string", enum={"web", "mobile"}, default="web", description="[OPTIONAL] Client application type. Format: Enum ('web', 'mobile').")
      *                 )
      *             )
      *         }
      *     ),
+
      *     @OA\Response(
      *         response="200",
      *         description="Successful login, tokens and profile returned",
@@ -251,7 +254,6 @@ class ApiauthenticateController extends AbstractActionController
 
         $validatedData = $inputFilter->getValues();
         $validatedData['client'] = $postData['client'] ?? 'web';
-        $errorMessageContainer = new Container('error_code');
         try {
             // Authenticate here
             /** @var ApiAuthenticateService */
@@ -291,7 +293,8 @@ class ApiauthenticateController extends AbstractActionController
                 'description' => $th->getMessage()
             ]);
 
-            $response->setStatusCode($errorMessageContainer->code ?: 400);
+            $code = $th->getCode();
+            $response->setStatusCode(($code >= 400 && $code < 600) ? $code : 400);
         }
 
         return $jsonModel;
@@ -585,20 +588,23 @@ class ApiauthenticateController extends AbstractActionController
      *     description="Registers a new customer account in the system and triggers an email confirmation flow.",
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Customer Registration Payload. Required fields: 'username', 'fullname', 'email', 'password', 'confirm_password'.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
      *                     required={"username", "fullname", "email", "password", "confirm_password"},
-     *                     @OA\Property(property="username", type="string", example="09012121212", description="Desired unique username (phone number recommended)"),
-     *                     @OA\Property(property="fullname", type="string", example="Idowu Yusuf Chukwuma", description="Full legal name of the user"),
-     *                     @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com", description="Valid, unique email address for verification"),
-     *                     @OA\Property(property="password", type="string", example="Oluwaseun1", description="Plain text password meeting strength requirements"),
-     *                     @OA\Property(property="confirm_password", type="string", example="Oluwaseun1", description="Must match password exactly")
+     *                     description="Registration Schema specifying required parameters and format constraints.",
+     *                     @OA\Property(property="username", type="string", example="09012121212", description="[REQUIRED] Desired unique username or phone number. Format: String (min 3 chars)."),
+     *                     @OA\Property(property="fullname", type="string", example="Idowu Yusuf Chukwuma", description="[REQUIRED] Full legal name. Format: String (max 255 chars)."),
+     *                     @OA\Property(property="email", type="string", format="email", example="ezekiel_a@yahoo.com", description="[REQUIRED] Unique email address. Format: Valid email string."),
+     *                     @OA\Property(property="password", type="string", format="password", example="Oluwaseun1", description="[REQUIRED] Account password. Format: String (min 6 chars)."),
+     *                     @OA\Property(property="confirm_password", type="string", format="password", example="Oluwaseun1", description="[REQUIRED] Password confirmation. Format: String matching 'password' exactly.")
      *                 )
      *             )
      *         }
      *     ),
+
      *     @OA\Response(
      *         response="201",
      *         description="User registered successfully",
@@ -702,17 +708,20 @@ class ApiauthenticateController extends AbstractActionController
      *     description="Verifies the user's email address using a verification code sent during registration. On successful verification, the account state is set to Enabled.",
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Email Verification Payload. Required fields: 'email', 'code'.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
      *                     required={"code", "email"},
-     *                     @OA\Property(property="email", type="string", example="ezekiel_a@yahoo.com", description="The user's registered email address"),
-     *                     @OA\Property(property="code", type="string", example="345634", description="The verification code sent to the user's email")
+     *                     description="Email Verification Schema specifying required fields and formats.",
+     *                     @OA\Property(property="email", type="string", format="email", example="ezekiel_a@yahoo.com", description="[REQUIRED] User's registered email address. Format: Email string."),
+     *                     @OA\Property(property="code", type="string", example="345634", description="[REQUIRED] Verification code sent via email. Format: String/Numeric code.")
      *                 )
      *             )
      *         }
      *     ),
+
      *     @OA\Response(
      *         response="200",
      *         description="Email verified successfully",

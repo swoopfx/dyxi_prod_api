@@ -2,8 +2,9 @@
 
 namespace Ward\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
 use Authentication\Entity\User;
+use General\Entity\Gender;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Ward
@@ -40,17 +41,49 @@ class Ward
     private $uuid;
 
     /**
-     * @var string
-     * @ORM\Column(name="unique_identifier", type="string", length=255, nullable=false, unique=true)
-     */
-    private $uniqueIdentifier;
-
-    /**
      * @var User
      * @ORM\ManyToOne(targetEntity="Authentication\Entity\User")
      * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=false)
      */
     private $user;
+
+    /**
+     * @var WardStatus|null
+     * @ORM\ManyToOne(targetEntity="Ward\Entity\WardStatus")
+     * @ORM\JoinColumn(name="status_id", referencedColumnName="id", nullable=true)
+     */
+    private $status;
+
+    /**
+     * @var \DateTime|null
+     * @ORM\Column(name="expire_date", type="datetime", nullable=true)
+     */
+    private $expireDate;
+
+    /**
+     * @var Gender|null
+     * @ORM\ManyToOne(targetEntity="General\Entity\Gender")
+     * @ORM\JoinColumn(name="gender_id", referencedColumnName="id", nullable=true)
+     */
+    private $gender;
+
+    /**
+     * @var \DateTime|null
+     * @ORM\Column(name="created_on", type="datetime", nullable=true)
+     */
+    private $createdOn;
+
+    /**
+     * @var \DateTime|null
+     * @ORM\Column(name="updated_on", type="datetime", nullable=true)
+     */
+    private $updatedOn;
+
+    public function __construct()
+    {
+        $this->createdOn = new \DateTime();
+        $this->updatedOn = new \DateTime();
+    }
 
     /**
      * Get id
@@ -129,28 +162,6 @@ class Ward
     }
 
     /**
-     * Get unique identifier
-     *
-     * @return string
-     */
-    public function getUniqueIdentifier()
-    {
-        return $this->uniqueIdentifier;
-    }
-
-    /**
-     * Set unique identifier
-     *
-     * @param string $uniqueIdentifier
-     * @return Ward
-     */
-    public function setUniqueIdentifier(string $uniqueIdentifier)
-    {
-        $this->uniqueIdentifier = $uniqueIdentifier;
-        return $this;
-    }
-
-    /**
      * Get associated user
      *
      * @return User
@@ -169,6 +180,123 @@ class Ward
     public function setUser(User $user)
     {
         $this->user = $user;
+        return $this;
+    }
+
+    /**
+     * Get status
+     *
+     * @return WardStatus|null
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * Set status
+     *
+     * @param WardStatus|null $status
+     * @return Ward
+     */
+    public function setStatus(?WardStatus $status)
+    {
+        $this->status = $status;
+        return $this;
+    }
+
+    public function getCreatedOn()
+    {
+        return $this->createdOn;
+    }
+
+    public function setCreatedOn(\DateTime $createdOn)
+    {
+        $this->createdOn = $createdOn;
+        return $this;
+    }
+
+    public function getUpdatedOn()
+    {
+        return $this->updatedOn;
+    }
+
+    public function setUpdatedOn(\DateTime $updatedOn)
+    {
+        $this->updatedOn = $updatedOn;
+        return $this;
+    }
+
+    /**
+     * Get expire date
+     *
+     * @return \DateTime|null
+     */
+    public function getExpireDate(): ?\DateTime
+    {
+        return $this->expireDate;
+    }
+
+    /**
+     * Set expire date
+     *
+     * @param \DateTime|null $expireDate
+     * @return Ward
+     */
+    public function setExpireDate(?\DateTime $expireDate): self
+    {
+        $this->expireDate = $expireDate;
+        return $this;
+    }
+
+    /**
+     * Get calculated age from date of birth
+     *
+     * @return int
+     */
+    public function getAge(): int
+    {
+        if (! $this->dateOfBirth) {
+            return 0;
+        }
+        return $this->dateOfBirth->diff(new \DateTime())->y;
+    }
+
+    /**
+     * Get remaining hours until expiry date
+     *
+     * @return int|null
+     */
+    public function getExpireHours(): ?int
+    {
+        if (! $this->expireDate) {
+            return null;
+        }
+        $now = new \DateTime();
+        $diff = $now->diff($this->expireDate);
+        $hours = ($diff->days * 24) + $diff->h;
+        return $diff->invert ? -$hours : $hours;
+    }
+
+    /**
+     * Get gender
+     *
+     * @return Gender|null
+     */
+    public function getGender(): ?Gender
+    {
+        return $this->gender;
+    }
+
+    /**
+     * Set gender
+     *
+     * @param Gender|null $gender
+     * @return Ward
+     */
+    public function setGender(?Gender $gender): self
+    {
+        $this->gender = $gender;
         return $this;
     }
 }

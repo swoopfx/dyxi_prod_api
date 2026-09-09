@@ -17,16 +17,15 @@ return [
             'api-ward' => [
                 'type'    => Segment::class,
                 'options' => [
-                    'route'    => '/api/ward[/:interface[/:action[/:id]]]',
+                    'route'    => '/api/ward[/:action[/:id]]',
                     'constraints' => [
-                        'interface' => '[a-zA-Z][a-zA-Z0-9_-]*',
                         'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                        'id' => '[a-zA-Z0-9_-]*'
+                        'id'     => '[a-zA-Z0-9_-]*'
                     ],
                     'defaults' => [
                         'controller' => WardController::class,
-                        'interface'  => 'api',
                         'action'     => 'register',
+                        'interface'  => 'api',
                     ],
                 ],
             ],

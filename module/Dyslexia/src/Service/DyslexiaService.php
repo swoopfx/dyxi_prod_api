@@ -282,9 +282,6 @@ class DyslexiaService
         if (!$ward) {
             $ward = $repo->findOneBy(['uuid' => $wardIdOrUuid]);
         }
-        if (!$ward) {
-            $ward = $repo->findOneBy(['uniqueIdentifier' => $wardIdOrUuid]);
-        }
 
         if (!$ward) {
             throw new \Exception("Ward not found.");

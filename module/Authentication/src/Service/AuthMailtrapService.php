@@ -60,7 +60,7 @@ class AuthMailtrapService
                 CURLOPT_CUSTOMREQUEST => 'POST',
                 CURLOPT_POSTFIELDS => json_encode($param), //'{"from":{"email":"no-reply@aibltd.insure","name":"Advocate Insurance Brokers"},"to":[{"email":"ezekiel_a@yahoo.com"}],"template_uuid":"17608483-803f-4acc-842d-d340bf1c2cff","template_variables":{"user_email":"Test_User_email","pass_reset_link":"Test_Pass_reset_link"}}',
                 CURLOPT_HTTPHEADER => [
-                    'Authorization: Bearer ' . $config->getMailtrapToken(),
+                    'Authorization: Bearer ' . $this->getMailtrapTokenValue(),
                     'Content-Type: application/json'
                 ],
             ]);
@@ -120,7 +120,7 @@ class AuthMailtrapService
                 CURLOPT_CUSTOMREQUEST => 'POST',
                 CURLOPT_POSTFIELDS => json_encode($param), //'{"from":{"email":"no-reply@aibltd.insure","name":"Advocate Insurance Brokers"},"to":[{"email":"ezekiel_a@yahoo.com"}],"template_uuid":"17608483-803f-4acc-842d-d340bf1c2cff","template_variables":{"user_email":"Test_User_email","pass_reset_link":"Test_Pass_reset_link"}}',
                 CURLOPT_HTTPHEADER => [
-                    'Authorization: Bearer ' . $config->getMailtrapToken(),
+                    'Authorization: Bearer ' . $this->getMailtrapTokenValue(),
                     'Content-Type: application/json'
                 ],
             ]);
@@ -177,7 +177,7 @@ class AuthMailtrapService
                 CURLOPT_CUSTOMREQUEST => 'POST',
                 CURLOPT_POSTFIELDS => json_encode($param), //'{"from":{"email":"no-reply@aibltd.insure","name":"Advocate Insurance Brokers"},"to":[{"email":"ezekiel_a@yahoo.com"}],"template_uuid":"17608483-803f-4acc-842d-d340bf1c2cff","template_variables":{"user_email":"Test_User_email","pass_reset_link":"Test_Pass_reset_link"}}',
                 CURLOPT_HTTPHEADER => [
-                    'Authorization: Bearer ' . $config->getMailtrapToken(),
+                    'Authorization: Bearer ' . $this->getMailtrapTokenValue(),
                     'Content-Type: application/json'
                 ],
             ]);
@@ -232,7 +232,7 @@ class AuthMailtrapService
                 CURLOPT_CUSTOMREQUEST => 'POST',
                 CURLOPT_POSTFIELDS => json_encode($param),
                 CURLOPT_HTTPHEADER => [
-                    'Authorization: Bearer ' . $config->getMailtrapToken(),
+                    'Authorization: Bearer ' . $this->getMailtrapTokenValue(),
                     'Content-Type: application/json'
                 ],
             ]);
@@ -284,5 +284,10 @@ class AuthMailtrapService
         $this->appConfig = $appConfig;
 
         return $this;
+    }
+
+    private function getMailtrapTokenValue(): string
+    {
+        return getenv('MAILTRAP_TOKEN') ?: ($this->mailtrapconfig && method_exists($this->mailtrapconfig, 'getMailtrapToken') ? (string)$this->mailtrapconfig->getMailtrapToken() : '');
     }
 }

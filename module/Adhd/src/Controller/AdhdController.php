@@ -41,19 +41,21 @@ class AdhdController extends AbstractActionController
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Payload to register a new ADHD assessment. Required fields: 'ward_id', 'inattention_score', 'hyperactivity_score', 'diagnosis', 'assessment_date'.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
      *                     required={"ward_id", "inattention_score", "hyperactivity_score", "diagnosis", "assessment_date"},
-     *                     @OA\Property(property="ward_id", type="string", example="1"),
-     *                     @OA\Property(property="inattention_score", type="integer", example=14),
-     *                     @OA\Property(property="hyperactivity_score", type="integer", example=12),
-     *                     @OA\Property(property="diagnosis", type="string", example="Combined Type"),
-     *                     @OA\Property(property="assessment_date", type="string", example="2026-08-19"),
-     *                     @OA\Property(property="notes", type="string", example="Needs school accommodations."),
-     *                     @OA\Property(property="unique_identifier", type="string", example="ADH-XYZ-456"),
-     *                     @OA\Property(property="uuid", type="string", example="e25f828a-784c-47eb-ba68-c1a7428807d4")
+     *                     description="ADHD Assessment Registration Schema identifying required and optional parameters with data types and formats.",
+     *                     @OA\Property(property="ward_id", type="string", example="1", description="[REQUIRED] Database ID or UUID string of target Ward. Format: String or Integer."),
+     *                     @OA\Property(property="inattention_score", type="integer", example=14, description="[REQUIRED] Inattention sub-score. Format: Integer."),
+     *                     @OA\Property(property="hyperactivity_score", type="integer", example=12, description="[REQUIRED] Hyperactivity sub-score. Format: Integer."),
+     *                     @OA\Property(property="diagnosis", type="string", example="Combined Type", description="[REQUIRED] Diagnosis result text. Format: String."),
+     *                     @OA\Property(property="assessment_date", type="string", format="date", example="2026-08-19", description="[REQUIRED] Assessment date. Format: YYYY-MM-DD (ISO 8601 date)."),
+     *                     @OA\Property(property="notes", type="string", example="Needs school accommodations.", description="[OPTIONAL] Additional assessment notes. Format: String."),
+     *                     @OA\Property(property="unique_identifier", type="string", example="ADH-XYZ-456", description="[OPTIONAL] Unique identifier. Format: String (max 255 chars). Auto-generated if omitted."),
+     *                     @OA\Property(property="uuid", type="string", format="uuid", example="e25f828a-784c-47eb-ba68-c1a7428807d4", description="[OPTIONAL] UUID v4 string. Format: UUID (8-4-4-4-12 hex). Auto-generated if omitted.")
      *                 )
      *             )
      *         }
@@ -72,7 +74,7 @@ class AdhdController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isPost()) {
+        if (! $request->isPost()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -105,7 +107,6 @@ class AdhdController extends AbstractActionController
                 "data" => $this->mapEntityToArray($assessment),
                 "description" => "Successfully registered ADHD assessment."
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -139,7 +140,7 @@ class AdhdController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isGet()) {
+        if (! $request->isGet()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -172,7 +173,6 @@ class AdhdController extends AbstractActionController
                 "success" => true,
                 "data" => $data
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -193,7 +193,14 @@ class AdhdController extends AbstractActionController
      *     tags={"ADHD"},
      *     description="Retrieve details of a specific ADHD assessment by ID, UUID, or unique identifier.",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="[REQUIRED] Integer ID, UUID, or unique identifier of the assessment. Format: Integer, UUID, or String.",
+     *         @OA\Schema(type="string", description="Assessment identifier parameter.")
+     *     ),
+
      *     @OA\Response(response="200", description="Success"),
      *     @OA\Response(response="400", description="Bad Request"),
      *     @OA\Response(response="401", description="Unauthorized"),
@@ -208,7 +215,7 @@ class AdhdController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isGet()) {
+        if (! $request->isGet()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -232,8 +239,8 @@ class AdhdController extends AbstractActionController
 
             $id = $this->params()->fromRoute('id');
             if (empty($id)) {
-                $id = $this->params()->fromQuery('id') 
-                    ?? $this->params()->fromQuery('uuid') 
+                $id = $this->params()->fromQuery('id')
+                    ?? $this->params()->fromQuery('uuid')
                     ?? $this->params()->fromQuery('unique_identifier');
             }
 
@@ -248,7 +255,6 @@ class AdhdController extends AbstractActionController
                 "success" => true,
                 "data" => $this->mapEntityToArray($assessment)
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -269,22 +275,31 @@ class AdhdController extends AbstractActionController
      *     tags={"ADHD"},
      *     description="Update an existing ADHD assessment.",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="[REQUIRED] Integer ID, UUID, or unique identifier of the assessment to update. Format: Integer, UUID, or String.",
+     *         @OA\Schema(type="string", description="Assessment identifier parameter.")
+     *     ),
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Payload to update an ADHD assessment. All properties are optional.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     @OA\Property(property="inattention_score", type="integer", example=16),
-     *                     @OA\Property(property="hyperactivity_score", type="integer", example=10),
-     *                     @OA\Property(property="diagnosis", type="string", example="Inattentive Type"),
-     *                     @OA\Property(property="assessment_date", type="string", example="2026-08-20"),
-     *                     @OA\Property(property="notes", type="string", example="Therapy schedule updated.")
+     *                     description="ADHD Assessment Update Schema specifying optional update properties and data formats.",
+     *                     @OA\Property(property="inattention_score", type="integer", example=16, description="[OPTIONAL] Updated inattention sub-score. Format: Integer."),
+     *                     @OA\Property(property="hyperactivity_score", type="integer", example=10, description="[OPTIONAL] Updated hyperactivity sub-score. Format: Integer."),
+     *                     @OA\Property(property="diagnosis", type="string", example="Inattentive Type", description="[OPTIONAL] Updated diagnosis text. Format: String."),
+     *                     @OA\Property(property="assessment_date", type="string", format="date", example="2026-08-20", description="[OPTIONAL] Updated assessment date. Format: YYYY-MM-DD (ISO 8601 date)."),
+     *                     @OA\Property(property="notes", type="string", example="Therapy schedule updated.", description="[OPTIONAL] Updated assessment notes. Format: String.")
      *                 )
      *             )
      *         }
      *     ),
+
      *     @OA\Response(response="200", description="Updated"),
      *     @OA\Response(response="400", description="Bad Request"),
      *     @OA\Response(response="401", description="Unauthorized"),
@@ -299,7 +314,7 @@ class AdhdController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isPut()) {
+        if (! $request->isPut()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -337,7 +352,6 @@ class AdhdController extends AbstractActionController
                 "data" => $this->mapEntityToArray($assessment),
                 "description" => "Successfully updated ADHD assessment."
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([
@@ -358,7 +372,14 @@ class AdhdController extends AbstractActionController
      *     tags={"ADHD"},
      *     description="Delete an existing ADHD assessment.",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="[REQUIRED] Integer ID, UUID, or unique identifier of the assessment to delete. Format: Integer, UUID, or String.",
+     *         @OA\Schema(type="string", description="Assessment identifier parameter.")
+     *     ),
+
      *     @OA\Response(response="200", description="Deleted"),
      *     @OA\Response(response="400", description="Bad Request"),
      *     @OA\Response(response="401", description="Unauthorized"),
@@ -373,7 +394,7 @@ class AdhdController extends AbstractActionController
         $request = $this->getRequest();
         $response = $this->getResponse();
 
-        if (!$request->isDelete()) {
+        if (! $request->isDelete()) {
             $response->setStatusCode(405);
             $jsonModel->setVariables([
                 "success"     => false,
@@ -407,7 +428,6 @@ class AdhdController extends AbstractActionController
                 "success" => true,
                 "description" => "Successfully deleted ADHD assessment."
             ]);
-
         } catch (\Throwable $th) {
             $response->setStatusCode(400);
             $jsonModel->setVariables([

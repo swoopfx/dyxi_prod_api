@@ -569,50 +569,6 @@ class User extends \Authentication\Entity\User implements \Doctrine\ORM\Proxy\Pr
     /**
      * {@inheritDoc}
      */
-    public function getWallet()
-    {
-
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getWallet', []);
-
-        return parent::getWallet();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function setWallet(\Wallet\Entity\Wallet $wallet)
-    {
-
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setWallet', [$wallet]);
-
-        return parent::setWallet($wallet);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getCustomer()
-    {
-
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getCustomer', []);
-
-        return parent::getCustomer();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function setCustomer($customer)
-    {
-
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setCustomer', [$customer]);
-
-        return parent::setCustomer($customer);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public function getNin()
     {
 

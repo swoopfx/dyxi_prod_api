@@ -17,15 +17,13 @@ return [
             'api-dyscalculia' => [
                 'type'    => Segment::class,
                 'options' => [
-                    'route'    => '/api/dyscalculia[/:interface[/:action[/:id]]]',
+                    'route'    => '/api/dyscalculia[/:action[/:id]]',
                     'constraints' => [
-                        'interface' => '[a-zA-Z][a-zA-Z0-9_-]*',
                         'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                        'id' => '[a-zA-Z0-9_-]*'
+                        'id'     => '[a-zA-Z0-9_-]*'
                     ],
                     'defaults' => [
                         'controller' => DyscalculiaController::class,
-                        'interface'  => 'api',
                         'action'     => 'register',
                     ],
                 ],

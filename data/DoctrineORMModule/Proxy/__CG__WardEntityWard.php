@@ -67,10 +67,10 @@ class Ward extends \Ward\Entity\Ward implements \Doctrine\ORM\Proxy\Proxy
     public function __sleep()
     {
         if ($this->__isInitialized__) {
-            return ['__isInitialized__', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'id', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'fullname', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'dateOfBirth', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'uuid', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'uniqueIdentifier', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'user'];
+            return ['__isInitialized__', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'id', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'fullname', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'dateOfBirth', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'uuid', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'user', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'status', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'expireDate', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'gender', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'createdOn', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'updatedOn'];
         }
 
-        return ['__isInitialized__', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'id', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'fullname', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'dateOfBirth', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'uuid', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'uniqueIdentifier', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'user'];
+        return ['__isInitialized__', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'id', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'fullname', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'dateOfBirth', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'uuid', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'user', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'status', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'expireDate', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'gender', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'createdOn', '' . "\0" . 'Ward\\Entity\\Ward' . "\0" . 'updatedOn'];
     }
 
     /**
@@ -261,28 +261,6 @@ class Ward extends \Ward\Entity\Ward implements \Doctrine\ORM\Proxy\Proxy
     /**
      * {@inheritDoc}
      */
-    public function getUniqueIdentifier()
-    {
-
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getUniqueIdentifier', []);
-
-        return parent::getUniqueIdentifier();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function setUniqueIdentifier(string $uniqueIdentifier)
-    {
-
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setUniqueIdentifier', [$uniqueIdentifier]);
-
-        return parent::setUniqueIdentifier($uniqueIdentifier);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public function getUser()
     {
 
@@ -300,6 +278,138 @@ class Ward extends \Ward\Entity\Ward implements \Doctrine\ORM\Proxy\Proxy
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setUser', [$user]);
 
         return parent::setUser($user);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getStatus()
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getStatus', []);
+
+        return parent::getStatus();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setStatus(?\Ward\Entity\WardStatus $status)
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setStatus', [$status]);
+
+        return parent::setStatus($status);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getCreatedOn()
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getCreatedOn', []);
+
+        return parent::getCreatedOn();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setCreatedOn(\DateTime $createdOn)
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setCreatedOn', [$createdOn]);
+
+        return parent::setCreatedOn($createdOn);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getUpdatedOn()
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getUpdatedOn', []);
+
+        return parent::getUpdatedOn();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setUpdatedOn(\DateTime $updatedOn)
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setUpdatedOn', [$updatedOn]);
+
+        return parent::setUpdatedOn($updatedOn);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getExpireDate(): ?\DateTime
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getExpireDate', []);
+
+        return parent::getExpireDate();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setExpireDate(?\DateTime $expireDate): \Ward\Entity\Ward
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setExpireDate', [$expireDate]);
+
+        return parent::setExpireDate($expireDate);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getAge(): int
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getAge', []);
+
+        return parent::getAge();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getExpireHours(): ?int
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getExpireHours', []);
+
+        return parent::getExpireHours();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getGender(): ?\General\Entity\Gender
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getGender', []);
+
+        return parent::getGender();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setGender(?\General\Entity\Gender $gender): \Ward\Entity\Ward
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setGender', [$gender]);
+
+        return parent::setGender($gender);
     }
 
 }

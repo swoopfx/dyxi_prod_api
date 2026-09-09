@@ -116,22 +116,40 @@ class GeneralService
 
     public function getPusherConfig()
     {
-        return  $this->em
-            ->getRepository(Settings::class)
-            ->createQueryBuilder("g")
-            ->select([
-                "g.pusherAppKey as pusher_app_key",
-                "g.pusherSecretKey as pusher_secret_key",
-                "g.pusherAppId as pusher_app_id",
-                "g.pusherAppCluster as pusher_cluster",
-                "g.pusherChannel as pusher_channel"
-            ])
-            ->where("g.id = :id")
-            ->setParameters([
-                "id" => 100
-            ])
-            ->getQuery()
-            ->getResult(Query::HYDRATE_ARRAY);
+        try {
+            if ($this->em !== null) {
+                $dbConfig = $this->em
+                    ->getRepository(Settings::class)
+                    ->createQueryBuilder("g")
+                    ->select([
+                        "g.pusherAppKey as pusher_app_key",
+                        "g.pusherSecretKey as pusher_secret_key",
+                        "g.pusherAppId as pusher_app_id",
+                        "g.pusherAppCluster as pusher_cluster",
+                        "g.pusherChannel as pusher_channel"
+                    ])
+                    ->where("g.id = :id")
+                    ->setParameters(["id" => 100])
+                    ->getQuery()
+                    ->getResult(Query::HYDRATE_ARRAY);
+
+                if (!empty($dbConfig)) {
+                    return $dbConfig;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Table may not exist or query fail gracefully
+        }
+
+        return [
+            [
+                "pusher_app_key" => getenv('PUSHER_APP_KEY') ?: '',
+                "pusher_secret_key" => getenv('PUSHER_APP_SECRET') ?: '',
+                "pusher_app_id" => getenv('PUSHER_APP_ID') ?: '',
+                "pusher_cluster" => getenv('PUSHER_APP_CLUSTER') ?: 'mt1',
+                "pusher_channel" => getenv('PUSHER_CHANNEL') ?: '',
+            ]
+        ];
     }
 
     public function getPusherEvents()

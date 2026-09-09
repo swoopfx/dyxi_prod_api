@@ -30,6 +30,27 @@ class Module
         $application = $e->getApplication();
         $eventManager = $application->getEventManager();
         $eventManager->attach("route", [$this, 'onRoute'], -50);
+        $eventManager->attach(MvcEvent::EVENT_FINISH, [$this, 'onFinish'], 100);
+    }
+
+    public function onFinish(MvcEvent $e)
+    {
+        $response = $e->getResponse();
+        
+        if ($response instanceof \Laminas\ApiTools\ApiProblem\ApiProblemResponse) {
+            $problem = $response->getApiProblem();
+            if ($problem->status == 400 && str_contains((string)$problem->detail, 'JSON decoding error')) {
+                $newResponse = new \Laminas\Http\Response();
+                $newResponse->setStatusCode(400);
+                $newResponse->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+                $newResponse->setContent(json_encode([
+                    'success' => false,
+                    'error' => 'ValidationError',
+                    'description' => 'Invalid JSON payload format'
+                ]));
+                $e->setResponse($newResponse);
+            }
+        }
     }
 
     public function onRoute(MvcEvent $e)
@@ -40,21 +61,55 @@ class Module
         $controller = $routeMatch->getParam("controller");
         $action = $routeMatch->getParam("action");
         $interface = $routeMatch->getParam("interface");
-        $referContainer = new Container("refer");
         $response = $e->getResponse();
         $request = $e->getRequest();
-        if ($interface == "api") {
-            if ($controller === \General\Controller\GeneralController::class && $action === 'legal-info') {
+        $path = method_exists($request, 'getUri') ? $request->getUri()->getPath() : '';
+        $routeName = $routeMatch ? (string)$routeMatch->getMatchedRouteName() : '';
+        $isApi = ($interface === "api")
+            || str_starts_with($path, '/api/')
+            || str_starts_with($path, '/auth/ipa/')
+            || str_starts_with($routeName, 'api-');
+
+        if ($isApi) {
+            $publicRoutes = [
+                'login',
+                'authenticate',
+                'register',
+                'verify',
+                'resendMobileCode',
+                'resend-mobile-code',
+                'refresh',
+                'logout',
+                'google',
+                'swagger',
+                'swaggerJson',
+                'swagger-json',
+                'doc',
+                'legalInfo',
+                'legal-info',
+                'legalinfo'
+            ];
+
+            if ($action && in_array($action, $publicRoutes, true)) {
                 return;
             }
+
+            if (str_contains($path, '/auth/ipa/login')
+                || str_contains($path, '/auth/ipa/register')
+                || str_contains($path, '/auth/google')
+                || str_contains($path, '/api/docs')
+                || str_contains($path, '/legal-info')
+                || str_starts_with($path, '/admin')) {
+                return;
+            }
+
             try {
                 // get apiAuthService
                 /**
                  * @var ApiAuthenticateService
                  */
                 $api_auth = $sm->get("api_authentication_service");
-                $generalService = $sm->get("general_service");
-                $identityContainer = new Container("api_identity");
+                $api_auth->setRequestObject($request);
                 $data = $api_auth->getIdentity();
                 $api_auth->setContainerIdentity($data);
 
@@ -96,7 +151,6 @@ class Module
                 return $response;
             }
 
-
             // get token from header
             // retrieve claim
             // verify
@@ -104,6 +158,7 @@ class Module
         } 
         elseif ($interface == "web") {
             try {
+                $referContainer = new Container("refer");
                 $generalService = $sm->get("general_service");
                 $authService = $generalService->getAuthService();
                 $referContainer->location = "";

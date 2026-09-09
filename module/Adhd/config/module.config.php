@@ -17,15 +17,13 @@ return [
             'api-adhd' => [
                 'type'    => Segment::class,
                 'options' => [
-                    'route'    => '/api/adhd[/:interface[/:action[/:id]]]',
+                    'route'    => '/api/adhd[/:action[/:id]]',
                     'constraints' => [
-                        'interface' => '[a-zA-Z][a-zA-Z0-9_-]*',
                         'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                        'id' => '[a-zA-Z0-9_-]*'
+                        'id'     => '[a-zA-Z0-9_-]*'
                     ],
                     'defaults' => [
                         'controller' => AdhdController::class,
-                        'interface'  => 'api',
                         'action'     => 'register',
                     ],
                 ],
