@@ -94,6 +94,48 @@ class CurriculumService
     }
 
     /**
+     * Normalizes selected games payload into structured list containing game_id, is_played, reason, and custom_variables.
+     *
+     * @param array $data Input payload
+     * @return array List of normalized game objects
+     */
+    public function normalizeSelectedGames(array $data): array
+    {
+        $rawGames = $data['selected_games'] ?? $data['selectedGames'] ?? $data['games'] ?? null;
+        if ($rawGames === null && isset($data['game_ids']) && is_array($data['game_ids'])) {
+            $rawGames = $data['game_ids'];
+        }
+
+        if (!is_array($rawGames)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($rawGames as $item) {
+            if (is_scalar($item)) {
+                $normalized[] = [
+                    'game_id' => is_numeric($item) ? (int) $item : (string) $item,
+                    'is_played' => false,
+                    'reason' => null,
+                    'custom_variables' => null,
+                ];
+            } elseif (is_array($item)) {
+                $gameId = $item['game_id'] ?? $item['id'] ?? $item['game_uuid'] ?? null;
+                if ($gameId !== null) {
+                    $normalized[] = [
+                        'game_id' => is_numeric($gameId) ? (int) $gameId : (string) $gameId,
+                        'is_played' => (bool) ($item['is_played'] ?? $item['played'] ?? false),
+                        'reason' => isset($item['reason']) ? (string) $item['reason'] : null,
+                        'custom_variables' => $item['custom_variables'] ?? $item['custom_variable'] ?? $item['custom_vars'] ?? null,
+                    ];
+                }
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
      * Creates a new Curriculum entity mapped One-to-One with a Ward entity, or recreates an existing one if 'force_recreate' is set.
      * Immediately primes Redis cache under a single unique key (preferring Ward UUID) with specified or default TTL.
      *
@@ -102,6 +144,7 @@ class CurriculumService
      *                    - 'description' (string, optional): Detailed goals/summary.
      *                    - 'min_age' (int, optional): Minimum age limit.
      *                    - 'max_age' (int, optional): Maximum age limit.
+     *                    - 'selected_games' (array, optional): Structured array of selected games.
      *                    - 'ward_uuid'|'ward_id'|'ward'|'identifier' (string|int, optional): Associated Ward entity ID or UUID.
      *                    - 'force_recreate' (bool, optional): Force-recreates/refreshes existing curriculum if set to true.
      *                    - 'ttl'|'cache_ttl' (int, optional): Expiration time in seconds (0 = forever).
@@ -132,6 +175,8 @@ class CurriculumService
             }
         }
 
+        $selectedGames = $this->normalizeSelectedGames($data);
+
         $repo = $this->entityManager->getRepository(Curriculum::class);
         $existing = null;
 
@@ -160,6 +205,7 @@ class CurriculumService
                 ->setDescription($data['description'] ?? null)
                 ->setMinAge(isset($data['min_age']) ? (int) $data['min_age'] : null)
                 ->setMaxAge(isset($data['max_age']) ? (int) $data['max_age'] : null)
+                ->setSelectedGames($selectedGames)
                 ->setWard($wardEntity)
                 ->setUpdatedOn(new \DateTime());
 
@@ -178,6 +224,7 @@ class CurriculumService
                 ->setDescription($data['description'] ?? null)
                 ->setMinAge(isset($data['min_age']) ? (int) $data['min_age'] : null)
                 ->setMaxAge(isset($data['max_age']) ? (int) $data['max_age'] : null)
+                ->setSelectedGames($selectedGames)
                 ->setWard($wardEntity);
 
             $this->entityManager->persist($curriculum);
@@ -284,7 +331,7 @@ class CurriculumService
      * Updates an existing Curriculum entity by its identifier and purges single Redis cache key.
      *
      * @param int|string $idOrUuid Curriculum database ID or UUID to update.
-     * @param array $data Attributes to update ('name', 'description', 'min_age', 'max_age', 'ward_uuid').
+     * @param array $data Attributes to update ('name', 'description', 'min_age', 'max_age', 'selected_games', 'ward_uuid').
      * @return Curriculum The updated Curriculum entity instance.
      * @throws \Exception If curriculum is not found.
      */
@@ -308,6 +355,10 @@ class CurriculumService
             $curriculum->setMaxAge($data['max_age'] !== null ? (int) $data['max_age'] : null);
         }
 
+        if (array_key_exists('selected_games', $data) || array_key_exists('selectedGames', $data) || array_key_exists('games', $data) || array_key_exists('game_ids', $data)) {
+            $curriculum->setSelectedGames($this->normalizeSelectedGames($data));
+        }
+
         $wardUuid = $data['ward_uuid'] ?? $data['ward_id'] ?? $data['ward'] ?? null;
         if (!empty($wardUuid)) {
             $wardRepo = $this->entityManager->getRepository(Ward::class);
@@ -329,6 +380,60 @@ class CurriculumService
 
         return $curriculum;
     }
+
+    /**
+     * Updates the played indicator and custom variables for a specific game in a curriculum, reflecting in both DB and Redis.
+     *
+     * @param int|string $curriculumIdOrUuid Database ID, Curriculum UUID, or Ward UUID.
+     * @param int|string $gameId Target Game ID or UUID.
+     * @param bool $isPlayed Whether game was played.
+     * @param mixed $customVariables Custom parameters passed/returned for actual game execution.
+     * @param string|null $reason Optional updated reason.
+     * @return Curriculum Updated Curriculum instance.
+     */
+    public function updateGamePlayedStatus($curriculumIdOrUuid, $gameId, bool $isPlayed = true, $customVariables = null, ?string $reason = null): Curriculum
+    {
+        $curriculum = $this->getCurriculumInfo($curriculumIdOrUuid);
+        $selectedGames = $curriculum->getSelectedGames() ?? [];
+
+        $updated = false;
+        foreach ($selectedGames as &$item) {
+            if (isset($item['game_id']) && (string) $item['game_id'] === (string) $gameId) {
+                $item['is_played'] = $isPlayed;
+                if ($customVariables !== null) {
+                    $item['custom_variables'] = $customVariables;
+                }
+                if ($reason !== null) {
+                    $item['reason'] = $reason;
+                }
+                $updated = true;
+                break;
+            }
+        }
+
+        if (!$updated) {
+            $selectedGames[] = [
+                'game_id' => is_numeric($gameId) ? (int) $gameId : (string) $gameId,
+                'is_played' => $isPlayed,
+                'reason' => $reason,
+                'custom_variables' => $customVariables,
+            ];
+        }
+
+        $curriculum->setSelectedGames($selectedGames);
+        $curriculum->setUpdatedOn(new \DateTime());
+        $this->entityManager->flush();
+
+        if ($this->redisCacheService) {
+            $ns = self::CURRICULUM_CACHE_NAMESPACE;
+            $cacheKey = $this->getSingleCacheKey($curriculum, is_string($curriculumIdOrUuid) ? (string) $curriculumIdOrUuid : null);
+            $this->redisCacheService->delete($cacheKey, $ns);
+            $this->redisCacheService->set($cacheKey, $curriculum, $this->cacheTtl, $ns);
+        }
+
+        return $curriculum;
+    }
+
 
     /**
      * Deletes a Curriculum entity from the database and purges single Redis cache key.

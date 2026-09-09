@@ -272,9 +272,29 @@ class GameService
         $game->setUuid($uuid)
              ->setUniqueIdentifier($uniqueIdentifier)
              ->setTitle($data['title'])
+             ->setSummary($data['summary'] ?? null)
              ->setDescription($data['description'] ?? null)
              ->setGameType($gameType)
              ->setCurriculum($curriculum);
+
+        if (!empty($data['target_tags']) && is_array($data['target_tags'])) {
+            $tagRepo = $this->entityManager->getRepository(\Game\Entity\TargetTags::class);
+            foreach ($data['target_tags'] as $tagInput) {
+                $tag = null;
+                if (is_numeric($tagInput)) {
+                    $tag = $tagRepo->find((int) $tagInput);
+                }
+                if (!$tag) {
+                    $tag = $tagRepo->findOneBy(['uuid' => $tagInput]);
+                }
+                if (!$tag) {
+                    $tag = $tagRepo->findOneBy(['name' => $tagInput]);
+                }
+                if ($tag) {
+                    $game->addTargetTag($tag);
+                }
+            }
+        }
 
         $this->entityManager->persist($game);
         $this->entityManager->flush();
@@ -320,6 +340,10 @@ class GameService
             $game->setTitle($data['title']);
         }
 
+        if (array_key_exists('summary', $data)) {
+            $game->setSummary($data['summary']);
+        }
+
         if (array_key_exists('description', $data)) {
             $game->setDescription($data['description']);
         }
@@ -335,6 +359,26 @@ class GameService
             } else {
                 $curriculum = $this->getCurriculumInfo($data['curriculum_id']);
                 $game->setCurriculum($curriculum);
+            }
+        }
+
+        if (isset($data['target_tags']) && is_array($data['target_tags'])) {
+            $game->getTargetTags()->clear();
+            $tagRepo = $this->entityManager->getRepository(\Game\Entity\TargetTags::class);
+            foreach ($data['target_tags'] as $tagInput) {
+                $tag = null;
+                if (is_numeric($tagInput)) {
+                    $tag = $tagRepo->find((int) $tagInput);
+                }
+                if (!$tag) {
+                    $tag = $tagRepo->findOneBy(['uuid' => $tagInput]);
+                }
+                if (!$tag) {
+                    $tag = $tagRepo->findOneBy(['name' => $tagInput]);
+                }
+                if ($tag) {
+                    $game->addTargetTag($tag);
+                }
             }
         }
 

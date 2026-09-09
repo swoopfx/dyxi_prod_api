@@ -26,7 +26,60 @@ class GameTypeController extends AbstractActionController
         $this->apiAuthService = $apiAuthService;
     }
 
-    public function registerAction()
+    /**
+     * Create / Register a GameType.
+     *
+     * @OA\Post(
+     *     path="/api/game/game-type/create",
+     *     tags={"Games"},
+     *     summary="Create a new GameType",
+     *     description="Creates a new GameType entry.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Payload to create a GameType. Required field: 'name'.",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     required={"name"},
+     *                     description="GameType Creation Schema",
+     *                     @OA\Property(property="name", type="string", example="Puzzle", description="[REQUIRED] Unique name of the GameType."),
+     *                     @OA\Property(property="description", type="string", example="Logic and puzzle solving games.", description="[OPTIONAL] Description of the GameType."),
+     *                     @OA\Property(property="uuid", type="string", example="gt-uuid-12345", description="[OPTIONAL] UUID v4 string.")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="GameType created successfully",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(
+     *                         property="data",
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="uuid", type="string", example="gt-uuid-12345"),
+     *                         @OA\Property(property="name", type="string", example="Puzzle"),
+     *                         @OA\Property(property="description", type="string", example="Logic and puzzle solving games."),
+     *                         @OA\Property(property="created_on", type="string", example="2026-09-09 14:00:00"),
+     *                         @OA\Property(property="updated_on", type="string", example="2026-09-09 14:00:00")
+     *                     ),
+     *                     @OA\Property(property="description", type="string", example="Successfully registered GameType.")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(response="400", description="Bad Request"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="405", description="Method Not Allowed")
+     * )
+     */
+    public function createAction()
     {
         $jsonModel = new JsonModel();
         $request = $this->getRequest();
@@ -56,6 +109,9 @@ class GameTypeController extends AbstractActionController
 
             $json = $request->getContent();
             $postData = (array) json_decode($json, true);
+            if (empty($postData)) {
+                $postData = $request->getPost()->toArray();
+            }
 
             $gameType = $this->gameService->createGameType($postData);
 
@@ -78,6 +134,50 @@ class GameTypeController extends AbstractActionController
         return $jsonModel;
     }
 
+    /**
+     * Alias for createAction (POST /api/game/game-type/register).
+     */
+    public function registerAction()
+    {
+        return $this->createAction();
+    }
+
+    /**
+     * Lists GameTypes.
+     *
+     * @OA\Get(
+     *     path="/api/game/game-type/list",
+     *     tags={"Games"},
+     *     summary="List all GameTypes",
+     *     description="Retrieve list of all registered GameTypes.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response="200",
+     *         description="Success",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(
+     *                         property="data",
+     *                         type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="id", type="integer", example=1),
+     *                             @OA\Property(property="uuid", type="string", example="gt-uuid-12345"),
+     *                             @OA\Property(property="name", type="string", example="Puzzle"),
+     *                             @OA\Property(property="description", type="string", example="Logic and puzzle solving games.")
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="405", description="Method Not Allowed")
+     * )
+     */
     public function listAction()
     {
         $jsonModel = new JsonModel();
@@ -130,6 +230,47 @@ class GameTypeController extends AbstractActionController
         return $jsonModel;
     }
 
+    /**
+     * Get GameType info.
+     *
+     * @OA\Get(
+     *     path="/api/game/game-type/info/{id}",
+     *     tags={"Games"},
+     *     summary="View GameType details",
+     *     description="Retrieve details of a single GameType by integer ID, UUID, or name.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Integer ID, UUID, or name string of the GameType.",
+     *         @OA\Schema(type="string", example="1")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Success",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(
+     *                         property="data",
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="uuid", type="string", example="gt-uuid-12345"),
+     *                         @OA\Property(property="name", type="string", example="Puzzle"),
+     *                         @OA\Property(property="description", type="string", example="Logic and puzzle solving games.")
+     *                     )
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(response="400", description="Bad Request - GameType not found"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="405", description="Method Not Allowed")
+     * )
+     */
     public function infoAction()
     {
         $jsonModel = new JsonModel();
@@ -187,6 +328,41 @@ class GameTypeController extends AbstractActionController
         return $jsonModel;
     }
 
+    /**
+     * Update a GameType.
+     *
+     * @OA\Put(
+     *     path="/api/game/game-type/update/{id}",
+     *     tags={"Games"},
+     *     summary="Update a GameType",
+     *     description="Update existing GameType details by integer ID or UUID.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Integer ID or UUID of the GameType.",
+     *         @OA\Schema(type="string", example="1")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Payload to update a GameType.",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="name", type="string", example="Advanced Puzzle"),
+     *                     @OA\Property(property="description", type="string", example="Updated description.")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(response="200", description="GameType updated successfully"),
+     *     @OA\Response(response="400", description="Bad Request"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="405", description="Method Not Allowed")
+     * )
+     */
     public function updateAction()
     {
         $jsonModel = new JsonModel();
@@ -244,6 +420,28 @@ class GameTypeController extends AbstractActionController
         return $jsonModel;
     }
 
+    /**
+     * Delete a GameType.
+     *
+     * @OA\Delete(
+     *     path="/api/game/game-type/delete/{id}",
+     *     tags={"Games"},
+     *     summary="Delete a GameType",
+     *     description="Deletes a GameType record by integer ID or UUID.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Integer ID or UUID of the GameType to delete.",
+     *         @OA\Schema(type="string", example="1")
+     *     ),
+     *     @OA\Response(response="200", description="GameType deleted successfully"),
+     *     @OA\Response(response="400", description="Bad Request"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="405", description="Method Not Allowed")
+     * )
+     */
     public function deleteAction()
     {
         $jsonModel = new JsonModel();
@@ -304,8 +502,8 @@ class GameTypeController extends AbstractActionController
             "uuid" => $gameType->getUuid(),
             "name" => $gameType->getName(),
             "description" => $gameType->getDescription(),
-            "created_on" => $gameType->getCreatedOn()->format('Y-m-d H:i:s'),
-            "updated_on" => $gameType->getUpdatedOn()->format('Y-m-d H:i:s'),
+            "created_on" => $gameType->getCreatedOn() ? $gameType->getCreatedOn()->format('Y-m-d H:i:s') : null,
+            "updated_on" => $gameType->getUpdatedOn() ? $gameType->getUpdatedOn()->format('Y-m-d H:i:s') : null,
         ];
     }
 }

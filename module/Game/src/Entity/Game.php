@@ -2,6 +2,8 @@
 
 namespace Game\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -40,6 +42,12 @@ class Game
 
     /**
      * @var string|null
+     * @ORM\Column(name="summary", type="text", nullable=true)
+     */
+    private $summary;
+
+    /**
+     * @var string|null
      * @ORM\Column(name="description", type="text", nullable=true)
      */
     private $description;
@@ -59,6 +67,17 @@ class Game
     private $curriculum;
 
     /**
+     * @var Collection
+     *
+     * @ORM\ManyToMany(targetEntity="Game\Entity\TargetTags")
+     * @ORM\JoinTable(name="game_target_tags",
+     *      joinColumns={@ORM\JoinColumn(name="game_id", referencedColumnName="id", onDelete="CASCADE")},
+     *      inverseJoinColumns={@ORM\JoinColumn(name="tag_id", referencedColumnName="id", onDelete="CASCADE")}
+     *      )
+     */
+    private $targetTags;
+
+    /**
      * @var \DateTime
      * @ORM\Column(name="created_on", type="datetime", nullable=false)
      */
@@ -72,6 +91,7 @@ class Game
 
     public function __construct()
     {
+        $this->targetTags = new ArrayCollection();
         $this->createdOn = new \DateTime();
         $this->updatedOn = new \DateTime();
     }
@@ -114,6 +134,17 @@ class Game
         return $this;
     }
 
+    public function getSummary(): ?string
+    {
+        return $this->summary;
+    }
+
+    public function setSummary(?string $summary): self
+    {
+        $this->summary = $summary;
+        return $this;
+    }
+
     public function getDescription(): ?string
     {
         return $this->description;
@@ -144,6 +175,31 @@ class Game
     public function setCurriculum(?Curriculum $curriculum): self
     {
         $this->curriculum = $curriculum;
+        return $this;
+    }
+
+    public function getTargetTags(): Collection
+    {
+        return $this->targetTags;
+    }
+
+    public function addTargetTag(TargetTags $targetTag): self
+    {
+        if (!$this->targetTags->contains($targetTag)) {
+            $this->targetTags->add($targetTag);
+        }
+        return $this;
+    }
+
+    public function removeTargetTag(TargetTags $targetTag): self
+    {
+        $this->targetTags->removeElement($targetTag);
+        return $this;
+    }
+
+    public function setTargetTags(Collection $targetTags): self
+    {
+        $this->targetTags = $targetTags;
         return $this;
     }
 

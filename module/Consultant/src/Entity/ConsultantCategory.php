@@ -1,17 +1,16 @@
 <?php
 
-namespace Game\Entity;
+namespace Consultant\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Ward\Entity\Ward;
 
 /**
- * Curriculum
+ * ConsultantCategory
  *
- * @ORM\Table(name="curriculums")
+ * @ORM\Table(name="consultant_categories")
  * @ORM\Entity
  */
-class Curriculum
+class ConsultantCategory
 {
     /**
      * @var int
@@ -28,15 +27,8 @@ class Curriculum
     private $uuid;
 
     /**
-     * @var Ward|null
-     * @ORM\OneToOne(targetEntity="Ward\Entity\Ward")
-     * @ORM\JoinColumn(name="ward_id", referencedColumnName="id", nullable=true, unique=true)
-     */
-    private $ward;
-
-    /**
      * @var string
-     * @ORM\Column(name="name", type="string", length=255, nullable=false)
+     * @ORM\Column(name="name", type="string", length=100, nullable=false, unique=true)
      */
     private $name;
 
@@ -45,24 +37,6 @@ class Curriculum
      * @ORM\Column(name="description", type="text", nullable=true)
      */
     private $description;
-
-    /**
-     * @var int|null
-     * @ORM\Column(name="min_age", type="integer", nullable=true)
-     */
-    private $minAge;
-
-    /**
-     * @var int|null
-     * @ORM\Column(name="max_age", type="integer", nullable=true)
-     */
-    private $maxAge;
-
-    /**
-     * @var array|null
-     * @ORM\Column(name="selected_games", type="json", nullable=true)
-     */
-    private $selectedGames = [];
 
     /**
      * @var \DateTime
@@ -78,7 +52,6 @@ class Curriculum
 
     public function __construct()
     {
-        $this->selectedGames = [];
         $this->createdOn = new \DateTime();
         $this->updatedOn = new \DateTime();
     }
@@ -120,51 +93,6 @@ class Curriculum
         $this->description = $description;
         return $this;
     }
-
-    public function getMinAge(): ?int
-    {
-        return $this->minAge;
-    }
-
-    public function setMinAge(?int $minAge): self
-    {
-        $this->minAge = $minAge;
-        return $this;
-    }
-
-    public function getMaxAge(): ?int
-    {
-        return $this->maxAge;
-    }
-
-    public function setMaxAge(?int $maxAge): self
-    {
-        $this->maxAge = $maxAge;
-        return $this;
-    }
-
-    public function getSelectedGames(): ?array
-    {
-        return $this->selectedGames ?? [];
-    }
-
-    public function setSelectedGames(?array $selectedGames): self
-    {
-        $this->selectedGames = $selectedGames;
-        return $this;
-    }
-
-    public function getWard(): ?Ward
-    {
-        return $this->ward;
-    }
-
-    public function setWard(?Ward $ward): self
-    {
-        $this->ward = $ward;
-        return $this;
-    }
-
 
     public function getCreatedOn(): ?\DateTime
     {

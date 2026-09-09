@@ -11,6 +11,9 @@ use Authentication\Entity\Roles;
 use Authentication\Service\AuthenticationService;
 use General\Entity\Gender;
 use Ward\Entity\WardStatus;
+use Game\Entity\TargetTags;
+use Consultant\Entity\ConsultantCategory;
+use Ramsey\Uuid\Uuid;
 
 echo "Bootstrapping application for preset data hydration...\n";
 
@@ -109,6 +112,47 @@ try {
         $wardStatusObj->setStatus($wsName);
         $em->persist($wardStatusObj);
         echo " - WardStatus [$wsId]: $wsName\n";
+    }
+
+    // 5. Seed/Update Target Tags
+    $targetTagsMap = [
+        'ADHD' => 'Attention Deficit Hyperactivity Disorder',
+        'Dyslexia' => 'Difficulty reading and processing text',
+        'Dyscalculia' => 'Difficulty understanding numbers and math concepts',
+        'Autism' => 'Autism Spectrum Disorder',
+    ];
+
+    echo "Hydrating Target Tags...\n";
+    foreach ($targetTagsMap as $tagName => $tagDesc) {
+        $tagObj = $em->getRepository(TargetTags::class)->findOneBy(['name' => $tagName]);
+        if (! $tagObj) {
+            $tagObj = new TargetTags();
+            $tagObj->setUuid(Uuid::uuid4()->toString());
+            $tagObj->setName($tagName);
+        }
+        $tagObj->setDescription($tagDesc);
+        $em->persist($tagObj);
+        echo " - TargetTag: $tagName\n";
+    }
+
+    // 6. Seed/Update Consultant Categories
+    $consultantCategoriesMap = [
+        'Doctor' => 'Medical doctor specializing in clinical assessment and treatment.',
+        'Consultant' => 'Professional consultant providing specialist guidance and advice.',
+        'Psychologist' => 'Licensed psychologist specializing in mental health and neurodevelopmental evaluation.',
+    ];
+
+    echo "Hydrating Consultant Categories...\n";
+    foreach ($consultantCategoriesMap as $catName => $catDesc) {
+        $catObj = $em->getRepository(ConsultantCategory::class)->findOneBy(['name' => $catName]);
+        if (! $catObj) {
+            $catObj = new ConsultantCategory();
+            $catObj->setUuid(Uuid::uuid4()->toString());
+            $catObj->setName($catName);
+        }
+        $catObj->setDescription($catDesc);
+        $em->persist($catObj);
+        echo " - ConsultantCategory: $catName\n";
     }
 
     $em->flush();

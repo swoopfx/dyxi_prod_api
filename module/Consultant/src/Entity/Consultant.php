@@ -4,6 +4,7 @@ namespace Consultant\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Authentication\Entity\User;
+use Consultant\Entity\ConsultantCategory;
 
 /**
  * Consultant
@@ -44,6 +45,37 @@ class Consultant
      * @ORM\Column(name="phone", type="string", length=50, nullable=true)
      */
     private $phone;
+
+    /**
+     * @var string|null
+     * @ORM\Column(name="title", type="string", length=100, nullable=true)
+     */
+    private $title;
+
+    /**
+     * @var string|null
+     * @ORM\Column(name="introduction", type="text", nullable=true)
+     */
+    private $introduction;
+
+    /**
+     * @var string|null
+     * @ORM\Column(name="description", type="text", nullable=true)
+     */
+    private $description;
+
+    /**
+     * @var ConsultantCategory|null
+     * @ORM\ManyToOne(targetEntity="Consultant\Entity\ConsultantCategory")
+     * @ORM\JoinColumn(name="category_id", referencedColumnName="id", nullable=true, onDelete="SET NULL")
+     */
+    private $category;
+
+    /**
+     * @var string|null
+     * @ORM\Column(name="speciality", type="string", length=255, nullable=true)
+     */
+    private $speciality;
 
     /**
      * @var string|null
@@ -138,25 +170,84 @@ class Consultant
         return $this;
     }
 
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(?string $title): self
+    {
+        $this->title = $title;
+        return $this;
+    }
+
+    public function getIntroduction(): ?string
+    {
+        return $this->introduction;
+    }
+
+    public function setIntroduction(?string $introduction): self
+    {
+        $this->introduction = $introduction;
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description ?? $this->bio;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+        $this->bio = $description;
+        return $this;
+    }
+
+    public function getCategory(): ?ConsultantCategory
+    {
+        return $this->category;
+    }
+
+    public function setCategory(?ConsultantCategory $category): self
+    {
+        $this->category = $category;
+        return $this;
+    }
+
+    public function getSpeciality(): ?string
+    {
+        return $this->speciality ?? $this->specialization;
+    }
+
+    public function setSpeciality(?string $speciality): self
+    {
+        $this->speciality = $speciality;
+        $this->specialization = $speciality;
+        return $this;
+    }
+
     public function getSpecialization(): ?string
     {
-        return $this->specialization;
+        return $this->specialization ?? $this->speciality;
     }
 
     public function setSpecialization(?string $specialization): self
     {
         $this->specialization = $specialization;
+        $this->speciality = $specialization;
         return $this;
     }
 
     public function getBio(): ?string
     {
-        return $this->bio;
+        return $this->bio ?? $this->description;
     }
 
     public function setBio(?string $bio): self
     {
         $this->bio = $bio;
+        $this->description = $bio;
         return $this;
     }
 
