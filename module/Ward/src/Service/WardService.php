@@ -49,7 +49,7 @@ class WardService
             throw new \Exception("User not found.");
         }
 
-        // 2. Validate input parameters
+        // 2. Validate input parameters (fullname, date_of_birth)
         if (empty($data['fullname'])) {
             throw new \Exception("Full name is required.");
         }
@@ -64,22 +64,13 @@ class WardService
             throw new \Exception("Invalid date of birth format. Use YYYY-MM-DD.");
         }
 
-        // Handle uuid
-        $uuid = $data['uuid'] ?? null;
-        if (empty($uuid)) {
+        // Auto-generate a unique string UUID in the database
+        do {
             $uuid = Uuid::uuid4()->toString();
-        } else {
-            if (! Uuid::isValid($uuid)) {
-                throw new \Exception("Invalid UUID format.");
-            }
-            // Check if uuid is already taken
             $existingUuid = $this->entityManager->getRepository(Ward::class)->findOneBy([
                 'uuid' => $uuid
             ]);
-            if ($existingUuid) {
-                throw new \Exception("A ward with this UUID already exists.");
-            }
-        }
+        } while ($existingUuid !== null);
 
         // 3. Create Ward entity
         $ward = new Ward();
@@ -88,50 +79,21 @@ class WardService
              ->setUuid($uuid)
              ->setUser($user);
 
-        // Handle WardStatus
-        if (! empty($data['status'])) {
-            $statusEntity = null;
-            if (is_numeric($data['status'])) {
-                $statusEntity = $this->entityManager->getRepository(WardStatus::class)->find((int) $data['status']);
-            } else {
-                $statusEntity = $this->entityManager->getRepository(WardStatus::class)->findOneBy([
-                    'status' => strtolower((string) $data['status'])
-                ]);
-            }
-            if ($statusEntity) {
-                $ward->setStatus($statusEntity);
-            }
-        } else {
-            $defaultStatus = $this->entityManager->getRepository(WardStatus::class)->findOneBy([
-                'status' => WardStatus::STATUS_ACTIVE
-            ]);
-            if ($defaultStatus) {
-                $ward->setStatus($defaultStatus);
-            }
+        // Set default status (active)
+        $defaultStatus = $this->entityManager->getRepository(WardStatus::class)->findOneBy([
+            'status' => WardStatus::STATUS_ACTIVE
+        ]);
+        if ($defaultStatus) {
+            $ward->setStatus($defaultStatus);
         }
 
-        // Handle expireDate
-        $expireInput = $data['expireDate'] ?? $data['expire_date'] ?? null;
-        if ($expireInput !== null && $expireInput !== '') {
-            if ($expireInput instanceof \DateTime) {
-                $ward->setExpireDate($expireInput);
-            } elseif (is_numeric($expireInput)) {
-                $hours = (int) $expireInput;
-                $expireDt = (new \DateTime())->modify("+{$hours} hours");
-                $ward->setExpireDate($expireDt);
-            } else {
-                try {
-                    $expireDt = new \DateTime((string) $expireInput);
-                    $ward->setExpireDate($expireDt);
-                } catch (\Throwable $e) {
-                    throw new \Exception("Invalid expireDate format.");
-                }
-            }
-        }
+        // Set expireDate to a day before present date
+        $expireDt = (new \DateTime())->modify('-1 day');
+        $ward->setExpireDate($expireDt);
 
-        // Handle Gender (Default to Female)
+        // Handle Gender from request body (or default to Female)
         $genderEntity = null;
-        $genderVal = $data['gender_id'] ?? $data['gender'] ?? null;
+        $genderVal = $data['gender'] ?? $data['gender_id'] ?? null;
 
         if (! empty($genderVal)) {
             if (is_numeric($genderVal)) {

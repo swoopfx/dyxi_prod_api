@@ -43,4 +43,5 @@ return [
     'Consultant',
     // 'Authorization',
     'Admin',
+    'Subscription',
 ];

@@ -1,0 +1,946 @@
+<?php
+$token = $this->token;
+$decryptedData = $this->decryptedData;
+$subscriptionTypes = $this->subscriptionTypes ?: [];
+$error = $this->error;
+$paystackPublicKey = $this->paystackPublicKey;
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ward Subscription Portal | Dyxi Platform</title>
+    <!-- Modern Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <style>
+        :root {
+            --bg-primary: #090d16;
+            --bg-secondary: #111827;
+            --card-bg: rgba(17, 24, 39, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 45%);
+            background-attachment: fixed;
+            padding-bottom: 4rem;
+        }
+
+        .header {
+            border-bottom: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            background: rgba(9, 13, 22, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1.25rem 2rem;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: white;
+            font-weight: 800;
+            font-size: 1.4rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            background: var(--accent-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+            font-weight: 900;
+            font-size: 1.2rem;
+        }
+
+        .nav-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.4rem 0.85rem;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success-color);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success-color);
+        }
+
+        .main-container {
+            max-width: 1100px;
+            margin: 2.5rem auto 0;
+            padding: 0 1.5rem;
+        }
+
+        .hero-banner {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero-subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* Token decryption tech specs badge */
+        .decryption-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .step-pill {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            font-size: 0.82rem;
+        }
+
+        .step-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .step-val {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            color: var(--accent-secondary);
+            word-break: break-all;
+        }
+
+        /* User & Ward Details Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 1.25rem;
+        }
+
+        .info-box-header {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent-secondary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.65rem;
+            font-size: 0.9rem;
+        }
+
+        .info-key {
+            color: var(--text-muted);
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .verified-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.25rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Subscription Selector Cards */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .plan-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 1.75rem;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.25);
+        }
+
+        .plan-card.selected {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .plan-badge {
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: var(--accent-gradient);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 0.2rem 0.75rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .plan-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 1rem 0;
+            display: flex;
+            align-items: baseline;
+            gap: 0.3rem;
+        }
+
+        .plan-price span {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin: 1rem 0 1.5rem;
+        }
+
+        .plan-features li {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .plan-features li::before {
+            content: "✓";
+            color: var(--success-color);
+            font-weight: 800;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            width: 100%;
+            padding: 0.9rem 1.5rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-paystack {
+            background: #09a5db;
+            background: linear-gradient(135deg, #09a5db 0%, #00c3a5 100%);
+            color: white;
+            box-shadow: 0 4px 18px rgba(9, 165, 219, 0.4);
+        }
+
+        .btn-paystack:hover {
+            box-shadow: 0 8px 25px rgba(9, 165, 219, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Token Input Box */
+        .input-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .form-control {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 0.85rem 1.25rem;
+            color: white;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-primary);
+        }
+
+        /* Currency Toggle */
+        .currency-toggle {
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            width: max-content;
+            margin: 0 auto 1.5rem;
+        }
+
+        .currency-btn {
+            padding: 0.4rem 1.25rem;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .currency-btn.active {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        /* Modal Overlay for Pending Invoice */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1.5rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            max-width: 550px;
+            width: 100%;
+            padding: 2.25rem;
+            position: relative;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            animation: modalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalSlide {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning-color);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .status-paid {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .alert-box {
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="header-container">
+            <a href="#" class="brand">
+                <div class="brand-logo">D</div>
+                <span>Dyxi Platform</span>
+            </a>
+            <div class="nav-status">
+                <span class="status-dot"></span>
+                <span>Symmetric AES-256 Decryption Active</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+
+        <!-- Hero Title -->
+        <div class="hero-banner">
+            <h1 class="hero-title">Ward Subscription Portal</h1>
+            <p class="hero-subtitle">Decrypt security tokens, verify user & ward ownership, generate pending invoices, and activate subscriptions via Nigeria Paystack network.</p>
+        </div>
+
+        <?php if ($error): ?>
+            <div class="alert-box alert-danger">
+                <strong>Decryption Error:</strong> <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Token Input / Technical Specification Card -->
+        <div class="glass-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon">🔑</div>
+                    <span>Route Token & Symmetric Decryption Engine</span>
+                </div>
+                <span class="verified-badge">AES-256-CBC</span>
+            </div>
+
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                This web application receives an encrypted token via the route path (<code>/subscribe/:token</code>), converts the central hex key to binary bytes (<code>hex2bin</code>), decodes base64 string, separates the 16-byte IV from ciphertext, and extracts the payload.
+            </p>
+
+            <form action="/subscribe" method="GET" class="input-group">
+                <input type="text" name="token" class="form-control" placeholder="Paste encrypted token string or load from route path..." value="<?= htmlspecialchars($token ?? '') ?>" required>
+                <button type="submit" class="btn btn-primary" style="width: auto;">Decrypt Token</button>
+            </form>
+
+            <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+                <button type="button" onclick="generateDemoToken()" class="btn" style="background: rgba(255,255,255,0.06); color: white; width: auto; font-size: 0.82rem; padding: 0.4rem 0.85rem;">
+                    ⚡ Generate Test Encrypted Token
+                </button>
+            </div>
+
+            <?php if ($decryptedData): ?>
+            <div class="decryption-steps">
+                <div class="step-pill">
+                    <div class="step-label">Central Hex Key</div>
+                    <div class="step-val">4f8b2c6e...9a0b (32 Bytes)</div>
+                </div>
+                <div class="step-pill">
+                    <div class="step-label">IV Length</div>
+                    <div class="step-val">16 Bytes Extracted</div>
+                </div>
+                <div class="step-pill">
+                    <div class="step-label">Decrypted String</div>
+                    <div class="step-val"><?= htmlspecialchars($decryptedData['decrypted_token']['original_string'] ?? '') ?></div>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($decryptedData): ?>
+        <!-- User & Ward Ownership Verification Card -->
+        <div class="glass-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon">🛡️</div>
+                    <span>Verified User & Ward Relationship</span>
+                </div>
+                <span class="verified-badge">Relationship Confirmed</span>
+            </div>
+
+            <div class="info-grid">
+                <!-- User Details -->
+                <div class="info-box">
+                    <div class="info-box-header">
+                        <span>User Account</span>
+                        <span>ID: #<?= htmlspecialchars($decryptedData['user']['id']) ?></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-key">Full Name:</span>
+                        <span class="info-value"><?= htmlspecialchars($decryptedData['user']['fullname'] ?: 'N/A') ?></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-key">Email:</span>
+                        <span class="info-value"><?= htmlspecialchars($decryptedData['user']['email']) ?></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-key">User UUID:</span>
+                        <span class="info-value" style="font-size: 0.8rem; font-family: var(--font-mono);"><?= htmlspecialchars($decryptedData['user']['uuid']) ?></span>
+                    </div>
+                </div>
+
+                <!-- Ward Details -->
+                <div class="info-box">
+                    <div class="info-box-header">
+                        <span>Ward Entity</span>
+                        <span>ID: #<?= htmlspecialchars($decryptedData['ward']['id']) ?></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-key">Ward Name:</span>
+                        <span class="info-value"><?= htmlspecialchars($decryptedData['ward']['fullname']) ?></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-key">Current Expiration:</span>
+                        <span class="info-value" style="color: <?= $decryptedData['ward']['is_expired'] ? 'var(--warning-color)' : 'var(--success-color)' ?>;">
+                            <?= htmlspecialchars($decryptedData['ward']['expire_date'] ?: 'Expired / None') ?>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-key">Status:</span>
+                        <span class="info-value"><?= $decryptedData['ward']['is_expired'] ? 'Expired' : 'Active' ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Selector Card -->
+        <div class="glass-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon">⭐</div>
+                    <span>Select Subscription Type</span>
+                </div>
+            </div>
+
+            <!-- Currency Selector -->
+            <div class="currency-toggle">
+                <button type="button" class="currency-btn active" onclick="switchCurrency('NGN')">₦ NGN (Naira)</button>
+                <button type="button" class="currency-btn" onclick="switchCurrency('USD')">$ USD (Dollars)</button>
+            </div>
+
+            <div class="plans-grid">
+                <?php 
+                $userId = $decryptedData['user']['id'];
+                $wardId = $decryptedData['ward']['id'];
+                foreach ($subscriptionTypes as $index => $plan): 
+                ?>
+                <div class="plan-card <?= $index === 0 ? 'selected' : '' ?>" id="plan-card-<?= htmlspecialchars($plan['code']) ?>" onclick="selectPlan('<?= htmlspecialchars($plan['code']) ?>')">
+                    <?php if ($plan['code'] === 'monthly_premium'): ?>
+                        <div class="plan-badge">Most Popular</div>
+                    <?php endif; ?>
+                    
+                    <div>
+                        <div class="plan-name"><?= htmlspecialchars($plan['name']) ?></div>
+                        <div class="plan-price" id="price-<?= htmlspecialchars($plan['code']) ?>">
+                            ₦<?= number_format($plan['amount_ngn'], 2) ?> <span>/ month</span>
+                        </div>
+                        <ul class="plan-features">
+                            <li>30 Days Full Ward Access Extension</li>
+                            <li>Diagnostic & Assessment Modules</li>
+                            <li>Real-time Progress Tracking</li>
+                            <?php if ($plan['code'] === 'monthly_premium'): ?>
+                                <li>Consultant Booking & Direct Reports</li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="event.stopPropagation(); createPendingInvoice('<?= $userId ?>', '<?= $wardId ?>', '<?= htmlspecialchars($plan['code']) ?>')">
+                        Select & Generate Invoice
+                    </button>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+    </main>
+
+    <!-- Modal for Generated Pending Invoice & Paystack Checkout -->
+    <div class="modal-overlay" id="invoiceModal">
+        <div class="modal-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.3rem; font-weight: 800;">Generated Invoice</h3>
+                <span class="status-pill status-pending" id="modalInvoiceStatus">PENDING</span>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.25rem; margin-bottom: 1.5rem;">
+                <div class="info-row">
+                    <span class="info-key">Invoice Number:</span>
+                    <span class="info-value" id="modalInvoiceNumber" style="font-family: var(--font-mono);">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-key">User Email:</span>
+                    <span class="info-value" id="modalUserEmail">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-key">Ward Name:</span>
+                    <span class="info-value" id="modalWardName">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-key">Subscription Plan:</span>
+                    <span class="info-value" id="modalPlanName">-</span>
+                </div>
+                <div class="info-row" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.08);">
+                    <span class="info-key" style="font-size: 1.1rem; font-weight: 700; color: white;">Total Amount:</span>
+                    <span class="info-value" id="modalAmount" style="font-size: 1.25rem; color: var(--accent-secondary); font-weight: 800;">-</span>
+                </div>
+            </div>
+
+            <div id="paymentAlert" class="alert-box alert-success" style="display: none;"></div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <button type="button" class="btn btn-paystack" id="paystackPayBtn" onclick="triggerPaystackPayment()">
+                    💳 Pay Now via Paystack (Nigeria)
+                </button>
+                <button type="button" class="btn" style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3);" onclick="simulatePaystackSuccess()">
+                    ⚡ Instant Test Payment (Simulate Paystack Callback)
+                </button>
+                <button type="button" class="btn" style="background: transparent; color: var(--text-muted);" onclick="closeInvoiceModal()">
+                    Cancel & Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCurrency = 'NGN';
+        let selectedPlanCode = 'monthly_standard';
+        let currentInvoiceData = null;
+        let subscriptionPlans = <?= json_encode($subscriptionTypes) ?>;
+
+        function switchCurrency(currency) {
+            currentCurrency = currency;
+            document.querySelectorAll('.currency-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            subscriptionPlans.forEach(plan => {
+                const priceElem = document.getElementById('price-' + plan.code);
+                if (priceElem) {
+                    if (currency === 'USD') {
+                        priceElem.innerHTML = `$${plan.amount_usd.toFixed(2)} <span>/ month</span>`;
+                    } else {
+                        priceElem.innerHTML = `₦${plan.amount_ngn.toLocaleString('en-US', {minimumFractionDigits: 2})} <span>/ month</span>`;
+                    }
+                }
+            });
+        }
+
+        function selectPlan(code) {
+            selectedPlanCode = code;
+            document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('selected'));
+            const selectedCard = document.getElementById('plan-card-' + code);
+            if (selectedCard) selectedCard.classList.add('selected');
+        }
+
+        async function createPendingInvoice(userId, wardId, planCode) {
+            try {
+                const response = await fetch('/api/subscription/create-invoice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        ward_id: wardId,
+                        subscription_type_code: planCode,
+                        currency: currentCurrency
+                    })
+                });
+
+                const res = await response.json();
+                if (!res.status) {
+                    alert('Failed to generate invoice: ' + res.error);
+                    return;
+                }
+
+                currentInvoiceData = res.invoice;
+
+                // Populate Modal
+                document.getElementById('modalInvoiceNumber').innerText = currentInvoiceData.invoice_number;
+                document.getElementById('modalUserEmail').innerText = currentInvoiceData.user_email;
+                document.getElementById('modalWardName').innerText = currentInvoiceData.ward_name;
+                document.getElementById('modalPlanName').innerText = currentInvoiceData.subscription_type.name;
+                document.getElementById('modalInvoiceStatus').innerText = currentInvoiceData.status.toUpperCase();
+                
+                const formattedAmt = currentInvoiceData.currency === 'USD' 
+                    ? `$${currentInvoiceData.amount.toFixed(2)}`
+                    : `₦${currentInvoiceData.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                document.getElementById('modalAmount').innerText = formattedAmt;
+
+                document.getElementById('paymentAlert').style.display = 'none';
+                document.getElementById('invoiceModal').classList.add('active');
+            } catch (err) {
+                alert('Error creating invoice: ' + err.message);
+            }
+        }
+
+        function closeInvoiceModal() {
+            document.getElementById('invoiceModal').classList.remove('active');
+        }
+
+        async function triggerPaystackPayment() {
+            if (!currentInvoiceData) return;
+
+            try {
+                // Initialize transaction backend API
+                const res = await fetch('/api/subscription/paystack-initialize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        invoice_uuid: currentInvoiceData.uuid
+                    })
+                });
+
+                const data = await res.json();
+                if (!data.status) {
+                    alert('Paystack initialization failed: ' + data.error);
+                    return;
+                }
+
+                if (data.authorization_url) {
+                    window.location.href = data.authorization_url;
+                    return;
+                }
+
+                // Inline Paystack Popup
+                const handler = PaystackPop.setup({
+                    key: data.paystack_public_key,
+                    email: currentInvoiceData.user_email,
+                    amount: Math.round(currentInvoiceData.amount * 100),
+                    currency: currentInvoiceData.currency,
+                    ref: data.reference,
+                    callback: function(response) {
+                        verifyPaymentBackend(response.reference);
+                    },
+                    onClose: function() {
+                        alert('Payment window closed.');
+                    }
+                });
+                handler.openIframe();
+            } catch (err) {
+                alert('Paystack Checkout Error: ' + err.message);
+            }
+        }
+
+        async function simulatePaystackSuccess() {
+            if (!currentInvoiceData) return;
+            const ref = currentInvoiceData.paystack_reference || ('SIM-' + currentInvoiceData.invoice_number);
+            await verifyPaymentBackend(ref, true);
+        }
+
+        async function verifyPaymentBackend(reference, simulate = false) {
+            try {
+                const res = await fetch('/api/subscription/paystack-verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reference: reference || currentInvoiceData.invoice_number,
+                        simulate_success: simulate ? 1 : 0
+                    })
+                });
+
+                const data = await res.json();
+                if (data.status) {
+                    document.getElementById('modalInvoiceStatus').innerText = 'PAID';
+                    document.getElementById('modalInvoiceStatus').className = 'status-pill status-paid';
+                    
+                    const alertElem = document.getElementById('paymentAlert');
+                    alertElem.style.display = 'block';
+                    alertElem.innerHTML = `
+                        <strong>🎉 Subscription Activated!</strong><br>
+                        Payment verified via Paystack. Ward expiration date extended to: <strong>${data.ward.new_expire_date}</strong>.
+                    `;
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3500);
+                } else {
+                    alert('Verification error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Verification call failed: ' + err.message);
+            }
+        }
+
+        async function generateDemoToken() {
+            try {
+                const res = await fetch('/api/subscription/generate-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: 1, ward_id: 1 })
+                });
+
+                const data = await res.json();
+                if (data.status) {
+                    window.location.href = data.subscribe_url;
+                } else {
+                    alert('Could not generate token: ' + data.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

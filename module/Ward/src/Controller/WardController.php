@@ -41,20 +41,16 @@ class WardController extends AbstractActionController
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
-     *         description="Payload to register a new ward. Required fields: 'fullname' and 'date_of_birth'.",
+     *         description="Payload to register a new ward. Required fields: 'fullname' and 'date_of_birth'. Optional: 'gender'.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
      *                     required={"fullname", "date_of_birth"},
-     *                     description="Ward Registration Schema specifying required and optional input parameters with data formats.",
+     *                     description="Ward Registration Schema receiving fullname, date_of_birth, and gender.",
      *                     @OA\Property(property="fullname", type="string", example="John Doe Jr.", description="[REQUIRED] Ward's full name. Format: String (max 255 chars)."),
      *                     @OA\Property(property="date_of_birth", type="string", format="date", example="2015-08-15", description="[REQUIRED] Ward's date of birth. Format: YYYY-MM-DD (ISO 8601 date)."),
-     *                     @OA\Property(property="status", type="string", example="active", enum={"active", "suspended", "pending"}, description="[OPTIONAL] Ward status. Format: String enum ('active', 'suspended', 'pending'). Defaults to 'active'."),
-     *                     @OA\Property(property="uuid", type="string", format="uuid", example="7b7f1ad9-d9d5-451e-8ef9-eb9915159045", description="[OPTIONAL] Ward UUID identifier. Format: UUID v4 string (8-4-4-4-12 hex). Auto-generated if not provided."),
-     *                     @OA\Property(property="expireDate", type="string", example="2026-10-01 12:00:00", description="[OPTIONAL] Date/time when ward account expires or duration in hours."),
-     *                     @OA\Property(property="gender", type="string", example="Female", description="[OPTIONAL] Ward gender name or gender ID. Defaults to 'Female'."),
-     *                     @OA\Property(property="gender_id", type="integer", example=2, description="[OPTIONAL] Ward gender ID (1=Male, 2=Female, 3=Other). Defaults to 2 (Female).")
+     *                     @OA\Property(property="gender", type="string", example="Female", description="[OPTIONAL] Ward gender name or gender ID. Defaults to 'Female'.")
      *                 )
      *             )
      *         }
