@@ -30,7 +30,22 @@ class AuthorizationListener
         'doc',
         'legalInfo',
         'legal-info',
-        'legalinfo'
+        'legalinfo',
+        'decrypt',
+        'createInvoice',
+        'create-invoice',
+        'changePlan',
+        'change-plan',
+        'paystackInitialize',
+        'paystack-initialize',
+        'paystackVerify',
+        'paystack-verify',
+        'paystackWebhook',
+        'paystack-webhook',
+        'seedTest',
+        'seed-test',
+        'generateToken',
+        'generate-token',
     ];
 
     public function __construct(AuthorizationService $authorizationService)
@@ -56,7 +71,14 @@ class AuthorizationListener
         $request = $event->getRequest();
         if (method_exists($request, 'getUri')) {
             $path = $request->getUri()->getPath();
-            if (str_contains($path, '/auth/ipa/login') || str_contains($path, '/auth/ipa/register') || str_contains($path, '/auth/google') || str_contains($path, '/api/docs') || str_contains($path, '/legal-info') || str_starts_with($path, '/admin')) {
+            if (str_contains($path, '/auth/ipa/login')
+                || str_contains($path, '/auth/ipa/register')
+                || str_contains($path, '/auth/google')
+                || str_contains($path, '/api/docs')
+                || str_contains($path, '/legal-info')
+                || str_starts_with($path, '/admin')
+                || str_starts_with($path, '/api/subscription')
+                || str_starts_with($path, '/subscribe')) {
                 return;
             }
         }

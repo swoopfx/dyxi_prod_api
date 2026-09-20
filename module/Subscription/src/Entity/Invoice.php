@@ -40,6 +40,12 @@ class Invoice
     private $invoiceNumber;
 
     /**
+     * @var string|null
+     * @ORM\Column(name="reference_code", type="string", length=100, nullable=true, unique=true)
+     */
+    private $referenceCode;
+
+    /**
      * @var User
      * @ORM\ManyToOne(targetEntity="Authentication\Entity\User")
      * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=false)
@@ -65,6 +71,24 @@ class Invoice
      * @ORM\Column(name="amount", type="decimal", precision=10, scale=2, nullable=false)
      */
     private $amount;
+
+    /**
+     * @var float
+     * @ORM\Column(name="vat_rate", type="decimal", precision=5, scale=2, nullable=false)
+     */
+    private $vatRate = 7.50;
+
+    /**
+     * @var float
+     * @ORM\Column(name="vat_amount", type="decimal", precision=10, scale=2, nullable=false)
+     */
+    private $vatAmount = 0.00;
+
+    /**
+     * @var float
+     * @ORM\Column(name="subtotal", type="decimal", precision=10, scale=2, nullable=false)
+     */
+    private $subtotal = 0.00;
 
     /**
      * @var string
@@ -180,6 +204,39 @@ class Invoice
         return $this;
     }
 
+    public function getVatRate(): float
+    {
+        return (float) $this->vatRate;
+    }
+
+    public function setVatRate(float $vatRate): self
+    {
+        $this->vatRate = $vatRate;
+        return $this;
+    }
+
+    public function getVatAmount(): float
+    {
+        return (float) $this->vatAmount;
+    }
+
+    public function setVatAmount(float $vatAmount): self
+    {
+        $this->vatAmount = $vatAmount;
+        return $this;
+    }
+
+    public function getSubtotal(): float
+    {
+        return (float) $this->subtotal;
+    }
+
+    public function setSubtotal(float $subtotal): self
+    {
+        $this->subtotal = $subtotal;
+        return $this;
+    }
+
     public function getCurrency(): string
     {
         return $this->currency;
@@ -247,18 +304,34 @@ class Invoice
         return $this;
     }
 
+    public function getReferenceCode(): ?string
+    {
+        return $this->referenceCode;
+    }
+
+    public function setReferenceCode(?string $referenceCode): self
+    {
+        $this->referenceCode = $referenceCode;
+        return $this;
+    }
+
     public function toArray(): array
     {
         return [
             'id'                 => $this->getId(),
             'uuid'               => $this->getUuid(),
             'invoice_number'     => $this->getInvoiceNumber(),
+            'reference_code'     => $this->getReferenceCode(),
             'user_id'            => $this->getUser() ? $this->getUser()->getId() : null,
             'user_email'         => $this->getUser() ? $this->getUser()->getEmail() : null,
             'ward_id'            => $this->getWard() ? $this->getWard()->getId() : null,
             'ward_name'          => $this->getWard() ? $this->getWard()->getFullname() : null,
             'subscription_type'  => $this->getSubscriptionType() ? $this->getSubscriptionType()->toArray() : null,
             'amount'             => $this->getAmount(),
+            'subtotal'           => $this->getSubtotal(),
+            'vat_rate'           => $this->getVatRate(),
+            'vat_amount'         => $this->getVatAmount(),
+            'vat_inclusive'      => true,
             'currency'           => $this->getCurrency(),
             'status'             => $this->getStatus(),
             'paystack_reference' => $this->getPaystackReference(),

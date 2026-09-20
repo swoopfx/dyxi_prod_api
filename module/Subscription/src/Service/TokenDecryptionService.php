@@ -49,16 +49,21 @@ class TokenDecryptionService
             throw new \Exception("Invalid central hex key configuration.");
         }
 
-        // Handle URL-safe Base64 variants if present
-        $base64Token = str_replace(['-', '_'], ['+', '/'], trim($token));
+        // Handle URL-safe Base64 variants and query string space replacements
+        $rawToken = str_replace(' ', '+', trim($token));
+        $base64Token = str_replace(['-', '_'], ['+', '/'], $rawToken);
         // Add padding if missing
         $mod4 = strlen($base64Token) % 4;
         if ($mod4) {
             $base64Token .= substr('====', $mod4);
         }
 
-        // 2. Decode the base64 token sent
+        // 2. Decode the base64 token sent (try strict first, fallback to non-strict)
         $decodedBinary = base64_decode($base64Token, true);
+        if ($decodedBinary === false) {
+            $decodedBinary = base64_decode($base64Token, false);
+        }
+
         if ($decodedBinary === false || strlen($decodedBinary) < 17) {
             throw new \Exception("Invalid base64 token structure or length.");
         }

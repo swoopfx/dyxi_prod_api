@@ -181,6 +181,8 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                 $expireSeconds = strtotime($secretKeyExpires) - time();
                 $refreshExpireSeconds = strtotime($refreshKeyExpires) - time();
 
+                $semetryVi = $jwtConfig['semetry']['vi'] ?? ($this->jwtIssuer->getSystemConfig()['semetry']['vi'] ?? 'a7f9a46f8a2f78c7d3425a647d4def90ddd09c257d75d7afe15b1b9428ddb7ab');
+
                 $data_r = [
                     'uuid' => $user->getUuid(),
                     'uid' => $user->getUid(),
@@ -188,6 +190,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
                     'email' => $phoneOrEmail,
                     'role' => $user->getRole()->getId(),
                     'token_id' => self::generateTokenId(),
+                    'vi' => $semetryVi,
                 ];
 
                 $data_r['token'] = $this->jwtIssuer->issueToken($data_r)->toString();
@@ -350,6 +353,8 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $expireSeconds = strtotime($secretKeyExpires) - time();
         $refreshExpireSeconds = strtotime($refreshKeyExpires) - time();
 
+        $semetryVi = $jwtConfig['semetry']['vi'] ?? ($jwtIssuer->getSystemConfig()['semetry']['vi'] ?? 'a7f9a46f8a2f78c7d3425a647d4def90ddd09c257d75d7afe15b1b9428ddb7ab');
+
         $data_r = [
             'uuid' => $user->getUuid(),
             'uid' => $user->getUid(),
@@ -357,6 +362,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             'email' => $user->getEmail(),
             'role' => $user->getRole()->getId(),
             'token_id' => self::generateTokenId(),
+            'vi' => $semetryVi,
         ];
         $data_r['token'] = $jwtIssuer->issueToken($data_r)->toString();
         $data_r['userid'] = $user->getId();
@@ -903,6 +909,8 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
         $expireSeconds = strtotime($secretKeyExpires) - time();
         $refreshExpireSeconds = strtotime($refreshKeyExpires) - time();
 
+        $semetryVi = $jwtConfig['semetry']['vi'] ?? ($this->jwtIssuer->getSystemConfig()['semetry']['vi'] ?? 'a7f9a46f8a2f78c7d3425a647d4def90ddd09c257d75d7afe15b1b9428ddb7ab');
+
         $data_r = [
             'uuid' => $user->getUuid(),
             'uid' => $user->getUid(),
@@ -910,6 +918,7 @@ class ApiAuthenticateService implements AuthenticationServiceInterface
             'email' => $user->getEmail(),
             'role' => $user->getRole()->getId(),
             'token_id' => self::generateTokenId(),
+            'vi' => $semetryVi,
         ];
 
         $data_r['token'] = $this->jwtIssuer->issueToken($data_r)->toString();

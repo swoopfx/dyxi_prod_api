@@ -87,7 +87,22 @@ class Module
                 'doc',
                 'legalInfo',
                 'legal-info',
-                'legalinfo'
+                'legalinfo',
+                'decrypt',
+                'createInvoice',
+                'create-invoice',
+                'changePlan',
+                'change-plan',
+                'paystackInitialize',
+                'paystack-initialize',
+                'paystackVerify',
+                'paystack-verify',
+                'paystackWebhook',
+                'paystack-webhook',
+                'seedTest',
+                'seed-test',
+                'generateToken',
+                'generate-token',
             ];
 
             if ($action && in_array($action, $publicRoutes, true)) {
@@ -99,7 +114,9 @@ class Module
                 || str_contains($path, '/auth/google')
                 || str_contains($path, '/api/docs')
                 || str_contains($path, '/legal-info')
-                || str_starts_with($path, '/admin')) {
+                || str_starts_with($path, '/admin')
+                || str_starts_with($path, '/api/subscription')
+                || str_starts_with($path, '/subscribe')) {
                 return;
             }
 

@@ -67,10 +67,10 @@ class Consultant extends \Consultant\Entity\Consultant implements \Doctrine\ORM\
     public function __sleep()
     {
         if ($this->__isInitialized__) {
-            return ['__isInitialized__', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'id', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'uuid', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'fullname', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'email', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'phone', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'specialization', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'bio', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'status', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'user', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'createdOn', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'updatedOn'];
+            return ['__isInitialized__', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'id', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'uuid', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'fullname', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'email', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'phone', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'title', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'introduction', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'description', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'category', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'speciality', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'specialization', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'bio', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'status', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'user', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'createdOn', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'updatedOn'];
         }
 
-        return ['__isInitialized__', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'id', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'uuid', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'fullname', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'email', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'phone', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'specialization', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'bio', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'status', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'user', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'createdOn', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'updatedOn'];
+        return ['__isInitialized__', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'id', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'uuid', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'fullname', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'email', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'phone', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'title', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'introduction', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'description', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'category', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'speciality', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'specialization', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'bio', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'status', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'user', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'createdOn', '' . "\0" . 'Consultant\\Entity\\Consultant' . "\0" . 'updatedOn'];
     }
 
     /**
@@ -278,6 +278,116 @@ class Consultant extends \Consultant\Entity\Consultant implements \Doctrine\ORM\
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setPhone', [$phone]);
 
         return parent::setPhone($phone);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getTitle(): ?string
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getTitle', []);
+
+        return parent::getTitle();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setTitle(?string $title): \Consultant\Entity\Consultant
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setTitle', [$title]);
+
+        return parent::setTitle($title);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getIntroduction(): ?string
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getIntroduction', []);
+
+        return parent::getIntroduction();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setIntroduction(?string $introduction): \Consultant\Entity\Consultant
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setIntroduction', [$introduction]);
+
+        return parent::setIntroduction($introduction);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getDescription(): ?string
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getDescription', []);
+
+        return parent::getDescription();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setDescription(?string $description): \Consultant\Entity\Consultant
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setDescription', [$description]);
+
+        return parent::setDescription($description);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getCategory(): ?\Consultant\Entity\ConsultantCategory
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getCategory', []);
+
+        return parent::getCategory();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setCategory(?\Consultant\Entity\ConsultantCategory $category): \Consultant\Entity\Consultant
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setCategory', [$category]);
+
+        return parent::setCategory($category);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getSpeciality(): ?string
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getSpeciality', []);
+
+        return parent::getSpeciality();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setSpeciality(?string $speciality): \Consultant\Entity\Consultant
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setSpeciality', [$speciality]);
+
+        return parent::setSpeciality($speciality);
     }
 
     /**

@@ -93,45 +93,59 @@ try {
         $em->flush();
     }
 
-    // Seed system permissions in Database
-    $systemPermissions = [
-        '*'           => 'Wildcard full access to all system modules and endpoints',
-        'ward.*'      => 'Full access to ward management operations',
-        'adhd.*'      => 'Full access to ADHD evaluation module',
-        'dyslexia.*'  => 'Full access to Dyslexia evaluation module',
-        'dyscalculia.*' => 'Full access to Dyscalculia evaluation module',
-        'wallet.*'    => 'Full access to wallet and payments module',
-        'resources.*' => 'Full access to learning resources module',
-        'general.*'   => 'Full access to general system APIs',
-        'evaluation.*'=> 'Full access to diagnostic evaluation module',
-        'game.*'      => 'Full access to gamified learning module',
-    ];
-
-    $permissionRepo = $em->getRepository(Permission::class);
-    $rolePermRepo = $em->getRepository(RolePermission::class);
-
-    foreach ($systemPermissions as $permName => $permDesc) {
-        $permObj = $permissionRepo->findOneBy(['name' => $permName]);
-        if (! $permObj) {
-            $permObj = new Permission();
-            $permObj->setName($permName);
-            $permObj->setDescription($permDesc);
-            $em->persist($permObj);
-            $em->flush();
-            echo " - Created Permission: {$permName}\n";
-        }
-
-        // Link permission to role in role_permissions table
-        $rolePermObj = $rolePermRepo->findOneBy(['role' => $roleEntity, 'permission' => $permObj]);
-        if (! $rolePermObj) {
-            $rolePermObj = new RolePermission();
-            $rolePermObj->setRole($roleEntity);
-            $rolePermObj->setPermission($permObj);
-            $em->persist($rolePermObj);
-            echo " - Linked Permission '{$permName}' to Role '{$roleEntity->getName()}'\n";
-        }
+    // Check if Authorization module is activated
+    $isAuthorizationActivated = false;
+    if ($container->has('ModuleManager')) {
+        $loadedModules = $container->get('ModuleManager')->getLoadedModules();
+        $isAuthorizationActivated = isset($loadedModules['Authorization']);
+    } else {
+        $modulesConfig = file_exists('config/modules.config.php') ? require 'config/modules.config.php' : [];
+        $isAuthorizationActivated = in_array('Authorization', $modulesConfig, true);
     }
-    $em->flush();
+
+    if ($isAuthorizationActivated) {
+        // Seed system permissions in Database
+        $systemPermissions = [
+            '*'           => 'Wildcard full access to all system modules and endpoints',
+            'ward.*'      => 'Full access to ward management operations',
+            'adhd.*'      => 'Full access to ADHD evaluation module',
+            'dyslexia.*'  => 'Full access to Dyslexia evaluation module',
+            'dyscalculia.*' => 'Full access to Dyscalculia evaluation module',
+            'wallet.*'    => 'Full access to wallet and payments module',
+            'resources.*' => 'Full access to learning resources module',
+            'general.*'   => 'Full access to general system APIs',
+            'evaluation.*'=> 'Full access to diagnostic evaluation module',
+            'game.*'      => 'Full access to gamified learning module',
+        ];
+
+        $permissionRepo = $em->getRepository(Permission::class);
+        $rolePermRepo = $em->getRepository(RolePermission::class);
+
+        foreach ($systemPermissions as $permName => $permDesc) {
+            $permObj = $permissionRepo->findOneBy(['name' => $permName]);
+            if (! $permObj) {
+                $permObj = new Permission();
+                $permObj->setName($permName);
+                $permObj->setDescription($permDesc);
+                $em->persist($permObj);
+                $em->flush();
+                echo " - Created Permission: {$permName}\n";
+            }
+
+            // Link permission to role in role_permissions table
+            $rolePermObj = $rolePermRepo->findOneBy(['role' => $roleEntity, 'permission' => $permObj]);
+            if (! $rolePermObj) {
+                $rolePermObj = new RolePermission();
+                $rolePermObj->setRole($roleEntity);
+                $rolePermObj->setPermission($permObj);
+                $em->persist($rolePermObj);
+                echo " - Linked Permission '{$permName}' to Role '{$roleEntity->getName()}'\n";
+            }
+        }
+        $em->flush();
+    } else {
+        echo " ℹ Authorization module is NOT activated. Skipping permission setting in database.\n";
+    }
 
     // 3. Grant database user access
     echo "\n[3/4] Granting database user access for email: {$email}...\n";

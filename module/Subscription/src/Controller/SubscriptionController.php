@@ -37,11 +37,13 @@ class SubscriptionController extends AbstractActionController
         $decryptedData = null;
         $error = null;
 
-        if ($token) {
+        if (! $token) {
+            $error = 'Subscription access token is required. Please provide a valid authorization link to proceed.';
+        } else {
             try {
                 $decryptedData = $this->subscriptionService->processTokenAndValidate($token);
             } catch (\Exception $e) {
-                $error = $e->getMessage();
+                $error = 'Invalid or expired subscription access token: ' . $e->getMessage();
             }
         }
 
@@ -55,11 +57,34 @@ class SubscriptionController extends AbstractActionController
             'decryptedData'      => $decryptedData,
             'subscriptionTypes'  => $typesArray,
             'error'              => $error,
-            'paystackPublicKey'  => getenv('PAYSTACK_PUBLIC_KEY') ?: 'pk_test_paystack_dyxi_demo_public_key',
+            'paystackPublicKey'  => getenv('PAYSTACK_PUBLIC_KEY') ?: 'pk_test_e373276edc8ab4e606cbe28192fbbe8c9bf926ba',
         ]);
         $viewModel->setTemplate('subscription/subscription/index');
+        $viewModel->setTerminal(true);
 
         return $viewModel;
+    }
+
+    /**
+     * API / Web Route: Generate real seed data (User, Ward, Invoice, encrypted token URL)
+     * Route: /api/subscription/seed-test
+     */
+    public function seedTestAction()
+    {
+        try {
+            $result = $this->subscriptionService->seedTestData();
+
+            if ($this->params()->fromQuery('redirect') == '1') {
+                return $this->redirect()->toUrl($result['subscribe_url']);
+            }
+
+            return new JsonModel($result);
+        } catch (\Exception $e) {
+            return new JsonModel([
+                'status' => false,
+                'error'  => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -135,6 +160,90 @@ class SubscriptionController extends AbstractActionController
     }
 
     /**
+     * API: Revoke previous pending invoice and generate new invoice for changed service
+     * Endpoint: POST /api/subscription/change-plan
+     */
+    public function changePlanAction()
+    {
+        try {
+            $data = json_decode($this->getRequest()->getContent(), true) ?: $this->params()->fromPost();
+
+            $userId = $data['user_id'] ?? $data['userId'] ?? 1;
+            $wardId = $data['ward_id'] ?? $data['wardId'] ?? 1;
+            $subscriptionTypeCode = $data['subscription_type_code'] ?? $data['subscription_type_id'] ?? $data['service'] ?? null;
+            $invoiceUuid = $data['invoice_uuid'] ?? $data['invoice_number'] ?? null;
+            $currency = $data['currency'] ?? 'NGN';
+
+            if (! $subscriptionTypeCode) {
+                return new JsonModel([
+                    'status' => false,
+                    'error'  => 'subscription_type_code is required to change service.',
+                ]);
+            }
+
+            $result = $this->subscriptionService->revokeAndChangePendingInvoice(
+                $userId,
+                $wardId,
+                $subscriptionTypeCode,
+                $invoiceUuid,
+                $currency
+            );
+
+            return new JsonModel($result);
+        } catch (\Exception $e) {
+            return new JsonModel([
+                'status' => false,
+                'error'  => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * API: Update pending invoice currency and value in database
+     * Endpoint: POST /api/subscription/update-currency
+     */
+    public function updateCurrencyAction()
+    {
+        try {
+            $data = json_decode($this->getRequest()->getContent(), true) ?: $this->params()->fromPost();
+
+            $userId = $data['user_id'] ?? $data['userId'] ?? null;
+            $wardId = $data['ward_id'] ?? $data['wardId'] ?? null;
+            $currency = $data['currency'] ?? 'NGN';
+            $invoiceUuid = $data['invoice_uuid'] ?? $data['invoice_number'] ?? null;
+
+            if (! $userId || ! $wardId) {
+                if (! empty($data['token'])) {
+                    $decrypted = $this->subscriptionService->getTokenService()->decryptToken($data['token']);
+                    $userId = $userId ?: ($decrypted['user_id'] ?? $decrypted['userId'] ?? null);
+                    $wardId = $wardId ?: ($decrypted['ward_id'] ?? $decrypted['wardId'] ?? null);
+                }
+            }
+
+            if (! $userId || ! $wardId) {
+                return new JsonModel([
+                    'status' => false,
+                    'error'  => 'user_id and ward_id are required to update invoice currency.',
+                ]);
+            }
+
+            $result = $this->subscriptionService->updateInvoiceCurrency(
+                $userId,
+                $wardId,
+                $currency,
+                $invoiceUuid
+            );
+
+            return new JsonModel($result);
+        } catch (\Exception $e) {
+            return new JsonModel([
+                'status' => false,
+                'error'  => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * API: Initialize payment with Nigeria Paystack network
      * Endpoint: POST /api/subscription/paystack-initialize
      */
@@ -182,10 +291,28 @@ class SubscriptionController extends AbstractActionController
                 ]);
             }
 
-            $result = $this->subscriptionService->verifyAndFulfillPayment($reference, $forceSuccess);
+            $paymentMethod = $data['payment_method'] ?? $data['paymentMethod'] ?? 'paystack';
+            $extraDetails = $data['payment_details'] ?? $data['details'] ?? [];
+
+            $result = $this->subscriptionService->verifyAndFulfillPayment($reference, $forceSuccess, $paymentMethod, $extraDetails);
 
             return new JsonModel($result);
         } catch (\Exception $e) {
+            if (! empty($reference)) {
+                try {
+                    $em = $this->subscriptionService->getEntityManager();
+                    $invoiceRepo = $em->getRepository(\Subscription\Entity\Invoice::class);
+                    $invoice = $invoiceRepo->findOneBy(['paystackReference' => $reference])
+                        ?: $invoiceRepo->findOneBy(['invoiceNumber' => $reference])
+                        ?: $invoiceRepo->findOneBy(['referenceCode' => $reference])
+                        ?: $invoiceRepo->findOneBy(['uuid' => $reference]);
+
+                    if ($invoice) {
+                        $this->subscriptionService->logFailedTransaction($invoice, $reference, $e->getMessage(), $paymentMethod ?? 'paystack');
+                    }
+                } catch (\Throwable $txErr) {}
+            }
+
             return new JsonModel([
                 'status' => false,
                 'error'  => $e->getMessage(),
@@ -204,9 +331,12 @@ class SubscriptionController extends AbstractActionController
 
         if ($event && isset($event['event']) && $event['event'] === 'charge.success') {
             $reference = $event['data']['reference'] ?? null;
+            $webhookData = $event['data'] ?? [];
+            $channel = $event['data']['channel'] ?? 'paystack';
+
             if ($reference) {
                 try {
-                    $this->subscriptionService->verifyAndFulfillPayment($reference, true);
+                    $this->subscriptionService->verifyAndFulfillPayment($reference, true, $channel, $webhookData);
                     return new JsonModel(['status' => 'success']);
                 } catch (\Exception $e) {
                     return new JsonModel(['status' => 'error', 'message' => $e->getMessage()]);
@@ -242,6 +372,35 @@ class SubscriptionController extends AbstractActionController
                 'encrypted_token' => $token,
                 'subscribe_url'   => '/subscribe/' . $token,
             ]);
+        } catch (\Exception $e) {
+            return new JsonModel([
+                'status' => false,
+                'error'  => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * API: Send official DYXI payment receipt email via Postmark API
+     * Endpoint: POST /api/subscription/send-receipt
+     */
+    public function sendReceiptAction()
+    {
+        try {
+            $data = json_decode($this->getRequest()->getContent(), true) ?: $this->params()->fromPost();
+            $invoiceUuid = $data['invoice_uuid'] ?? $data['invoice_number'] ?? null;
+            $email = $data['email'] ?? null;
+
+            if (! $invoiceUuid) {
+                return new JsonModel([
+                    'status' => false,
+                    'error'  => 'invoice_uuid parameter is required.',
+                ]);
+            }
+
+            $result = $this->subscriptionService->sendPostmarkReceiptEmail($invoiceUuid, $email);
+
+            return new JsonModel($result);
         } catch (\Exception $e) {
             return new JsonModel([
                 'status' => false,

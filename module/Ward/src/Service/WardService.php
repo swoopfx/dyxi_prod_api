@@ -49,6 +49,38 @@ class WardService
             throw new \Exception("User not found.");
         }
 
+        // 1b. Check subscription max_child limit from database
+        $existingWards = $this->entityManager->getRepository(Ward::class)->findBy([
+            'user' => $user
+        ]);
+        $currentWardCount = is_array($existingWards) || $existingWards instanceof \Countable ? count($existingWards) : 0;
+
+        $maxChild = 1;
+        $invoiceRepo = $this->entityManager->getRepository(\Subscription\Entity\Invoice::class);
+        if ($invoiceRepo) {
+            $paidInvoices = $invoiceRepo->findBy(
+                ['user' => $user, 'status' => \Subscription\Entity\Invoice::STATUS_PAID],
+                ['id' => 'DESC']
+            );
+            if (! empty($paidInvoices) && isset($paidInvoices[0]) && $paidInvoices[0]->getSubscriptionType()) {
+                $maxChild = $paidInvoices[0]->getSubscriptionType()->getMaxChild();
+            }
+        }
+
+        if ($maxChild === 1) {
+            $subTypeRepo = $this->entityManager->getRepository(\Subscription\Entity\SubscriptionType::class);
+            if ($subTypeRepo) {
+                $standardType = $subTypeRepo->findOneBy(['code' => 'monthly_standard']);
+                if ($standardType) {
+                    $maxChild = $standardType->getMaxChild();
+                }
+            }
+        }
+
+        if ($currentWardCount >= $maxChild) {
+            throw new \Exception("Maximum child limit reached for your subscription plan. Limit is {$maxChild} child(ren).");
+        }
+
         // 2. Validate input parameters (fullname, date_of_birth)
         if (empty($data['fullname'])) {
             throw new \Exception("Full name is required.");

@@ -21,6 +21,8 @@ class WardServiceTest extends TestCase
     private $wardRepo;
     private $statusRepo;
     private $genderRepo;
+    private $invoiceRepo;
+    private $subTypeRepo;
     private $wardService;
 
     protected function setUp(): void
@@ -30,6 +32,8 @@ class WardServiceTest extends TestCase
         $this->wardRepo = $this->createMock(EntityRepository::class);
         $this->statusRepo = $this->createMock(EntityRepository::class);
         $this->genderRepo = $this->createMock(EntityRepository::class);
+        $this->invoiceRepo = $this->createMock(EntityRepository::class);
+        $this->subTypeRepo = $this->createMock(EntityRepository::class);
 
         $this->entityManager->method('getRepository')->willReturnCallback(function ($entityClass) {
             if ($entityClass === User::class) {
@@ -43,6 +47,12 @@ class WardServiceTest extends TestCase
             }
             if ($entityClass === Gender::class) {
                 return $this->genderRepo;
+            }
+            if ($entityClass === \Subscription\Entity\Invoice::class) {
+                return $this->invoiceRepo;
+            }
+            if ($entityClass === \Subscription\Entity\SubscriptionType::class) {
+                return $this->subTypeRepo;
             }
             return null;
         });
@@ -60,7 +70,13 @@ class WardServiceTest extends TestCase
             ->with(['uuid' => 'user-uuid-1234'])
             ->willReturn($user);
 
+        $this->wardRepo->method('findBy')->with(['user' => $user])->willReturn([]);
         $this->wardRepo->method('findOneBy')->willReturn(null);
+
+        $standardPlan = new \Subscription\Entity\SubscriptionType();
+        $standardPlan->setMaxChild(1);
+        $this->subTypeRepo->method('findOneBy')->with(['code' => 'monthly_standard'])->willReturn($standardPlan);
+        $this->invoiceRepo->method('findBy')->willReturn([]);
 
         $defaultStatus = new WardStatus();
         $defaultStatus->setStatus(WardStatus::STATUS_ACTIVE);
@@ -102,6 +118,28 @@ class WardServiceTest extends TestCase
         );
     }
 
+    public function testRegisterThrowsExceptionWhenMaxChildLimitReached(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Maximum child limit reached for your subscription plan. Limit is 1 child(ren).');
+
+        $identity = ['uuid' => 'user-uuid-1234'];
+        $user = new User();
+
+        $this->userRepo->method('findOneBy')->willReturn($user);
+        $this->wardRepo->method('findBy')->with(['user' => $user])->willReturn([new Ward()]);
+
+        $standardPlan = new \Subscription\Entity\SubscriptionType();
+        $standardPlan->setMaxChild(1);
+        $this->subTypeRepo->method('findOneBy')->with(['code' => 'monthly_standard'])->willReturn($standardPlan);
+        $this->invoiceRepo->method('findBy')->willReturn([]);
+
+        $this->wardService->register([
+            'fullname' => 'Second Ward',
+            'date_of_birth' => '2019-01-01'
+        ], $identity);
+    }
+
     public function testRegisterThrowsExceptionWhenDateOfBirthMissing(): void
     {
         $this->expectException(\Exception::class);
@@ -111,6 +149,7 @@ class WardServiceTest extends TestCase
         $user = new User();
 
         $this->userRepo->method('findOneBy')->willReturn($user);
+        $this->wardRepo->method('findBy')->with(['user' => $user])->willReturn([]);
 
         $this->wardService->register([
             'fullname' => 'No DOB Ward'

@@ -144,10 +144,14 @@ class AdminAuthController extends AbstractActionController
         // Sync Redis cache for this user
         $this->authorizationService->syncAllRedisCache();
 
+        $jwtConfig = $this->jwtIssuer->getSystemConfig()['jwt'] ?? [];
+        $vi = $jwtConfig['semetry']['vi'] ?? ($this->jwtIssuer->getSystemConfig()['semetry']['vi'] ?? 'a7f9a46f8a2f78c7d3425a647d4def90ddd09c257d75d7afe15b1b9428ddb7ab');
+
         return new JsonModel([
             'success' => true,
             'message' => 'SuperAdmin authentication successful.',
             'token' => $token,
+            'vi' => $vi,
             'redirect' => '/admin/rbac',
             'user' => [
                 'id' => $user->getId(),

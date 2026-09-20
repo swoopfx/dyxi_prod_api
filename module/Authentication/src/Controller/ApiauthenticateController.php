@@ -272,6 +272,7 @@ class ApiauthenticateController extends AbstractActionController
                 'expires_in' => $authResponse['expire'],
                 'token' => $authResponse['token'],
                 'luhn_token' => $authResponse['token_id'],
+                'vi' => $authResponse['vi'] ?? '',
                 'user' => [
                     'fullname' => $authResponse['fullname'],
                     'email' => $authResponse['email'],
@@ -431,6 +432,7 @@ class ApiauthenticateController extends AbstractActionController
                 'expires_in' => $authResponse['expire'],
                 'token' => $authResponse['token'],
                 'luhn_token' => $authResponse['token_id'],
+                'vi' => $authResponse['vi'] ?? '',
                 'user' => [
                     'fullname' => $authResponse['fullname'],
                     'email' => $authResponse['email'],
@@ -2092,6 +2094,7 @@ class ApiauthenticateController extends AbstractActionController
                     'expires_in' => $authResponse['expire'],
                     'token' => $authResponse['token'],
                     'luhn_token' => $authResponse['token_id'],
+                    'vi' => $authResponse['vi'] ?? '',
                     'user' => [
                         'fullname' => $authResponse['fullname'],
                         'email' => $authResponse['email'],
@@ -2361,6 +2364,7 @@ class ApiauthenticateController extends AbstractActionController
                 'token' => $authResponse['token'],
                 'access_token' => $authResponse['token'],
                 'luhn_token' => $authResponse['token_id'],
+                'vi' => $authResponse['vi'] ?? '',
                 'user' => [
                     'id' => (string) $authResponse['userid'],
                     'fullname' => $authResponse['fullname'],
@@ -2514,6 +2518,7 @@ class ApiauthenticateController extends AbstractActionController
                 'expires_in' => $authResponse['expire'],
                 'token' => $authResponse['token'],
                 'luhn_token' => $authResponse['token_id'],
+                'vi' => $authResponse['vi'] ?? '',
                 'user' => [
                     'fullname' => $authResponse['fullname'],
                     'email' => $authResponse['email'],
@@ -2707,6 +2712,7 @@ class ApiauthenticateController extends AbstractActionController
                 'expires_in' => $authResponse['expire'],
                 'token' => $authResponse['token'],
                 'luhn_token' => $authResponse['token_id'],
+                'vi' => $authResponse['vi'] ?? '',
                 'user' => [
                     'fullname' => $authResponse['fullname'],
                     'email' => $authResponse['email'],

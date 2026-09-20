@@ -51,6 +51,12 @@ class SubscriptionType
     private $intervalMonths = 1;
 
     /**
+     * @var int
+     * @ORM\Column(name="max_child", type="integer", nullable=false, options={"default": 1})
+     */
+    private $maxChild = 1;
+
+    /**
      * @var string|null
      * @ORM\Column(name="description", type="text", nullable=true)
      */
@@ -127,6 +133,17 @@ class SubscriptionType
         return $this;
     }
 
+    public function getMaxChild(): int
+    {
+        return (int) $this->maxChild;
+    }
+
+    public function setMaxChild(int $maxChild): self
+    {
+        $this->maxChild = $maxChild;
+        return $this;
+    }
+
     public function getDescription(): ?string
     {
         return $this->description;
@@ -158,6 +175,7 @@ class SubscriptionType
             'amount_ngn'      => $this->getAmountNgn(),
             'amount_usd'      => $this->getAmountUsd(),
             'interval_months' => $this->getIntervalMonths(),
+            'max_child'       => $this->getMaxChild(),
             'description'     => $this->getDescription(),
         ];
     }
