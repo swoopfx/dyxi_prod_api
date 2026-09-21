@@ -1,0 +1,14 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'postmark' => [
+        'live' => [
+            'authentication_service' => [
+                'apikey' => 'POSTMARK_LIVE_KEY_DUMMY_12345',
+            ],
+            'sender_email' => 'noreply@dyxi.com',
+        ],
+    ],
+];

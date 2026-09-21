@@ -693,7 +693,9 @@ class ApiauthenticateController extends AbstractActionController
             $jsonModel->setVariables([
                 'success' => false,
                 'error' => 'RegistrationError',
-                'description' => $th->getMessage()
+                'description' => $th->getMessage(),
+                "string" => $th->getTraceAsString(),
+                "trace" => $th->getTrace(),
             ]);
             $response->setStatusCode(400);
         }
@@ -725,7 +727,7 @@ class ApiauthenticateController extends AbstractActionController
      *     ),
 
      *     @OA\Response(
-     *         response="200",
+     *         response="202",
      *         description="Email verified successfully",
      *         content={
      *             @OA\MediaType(
@@ -783,8 +785,12 @@ class ApiauthenticateController extends AbstractActionController
             return $jsonModel;
         }
 
-        $son = $request->getContent();
-        $postData = json_decode($son, true);
+        $rawContent = $request->getContent();
+        $postData = json_decode($rawContent, true);
+        if (!is_array($postData)) {
+            $postData = $request->getPost()->toArray();
+        }
+
         $inputFilter = new InputFilter();
 
         $inputFilter->add([
@@ -840,8 +846,10 @@ class ApiauthenticateController extends AbstractActionController
                 $data = $inputFilter->getValues();
                 $this->registerService->confirmEmailMobile($data);
 
+                $response->setStatusCode(202);
                 $jsonModel->setVariables([
-                    'success' => true
+                    'success' => true,
+                    'description' => 'Email verified successfully'
                 ]);
             } catch (\Throwable $th) {
                 $response->setStatusCode(400);

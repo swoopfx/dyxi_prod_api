@@ -161,5 +161,25 @@ class ApiauthenticateControllerTest extends AbstractHttpControllerTestCase
         $this->assertFalse($responseContent['success']);
         $this->assertEquals('MethodNotAllowed', $responseContent['error']);
     }
+
+    public function testVerifyActionWithGetMethodReturns405(): void
+    {
+        $this->dispatch('/auth/ipa/verify', 'GET');
+        $this->assertResponseStatusCode(405);
+
+        $responseContent = json_decode($this->getResponse()->getContent(), true);
+        $this->assertFalse($responseContent['success']);
+        $this->assertEquals('MethodNotAllowed', $responseContent['error']);
+    }
+
+    public function testVerifyActionWithInvalidParamsReturns400ValidationError(): void
+    {
+        $this->dispatch('/auth/ipa/verify', 'POST', []);
+        $this->assertResponseStatusCode(400);
+
+        $responseContent = json_decode($this->getResponse()->getContent(), true);
+        $this->assertFalse($responseContent['success']);
+        $this->assertEquals('ValidationError', $responseContent['error']);
+    }
 }
 

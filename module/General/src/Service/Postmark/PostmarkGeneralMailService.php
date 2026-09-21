@@ -1,6 +1,6 @@
 <?php
 
-namespace General\Service;
+namespace General\Service\Postmark;
 
 use Application\Service\ApplicationService;
 use Postmark\PostmarkClient;

@@ -1,8 +1,8 @@
 <?php
 
-namespace General\Service\Factory;
+namespace General\Service\Postmark\Factory;
 
-use General\Service\PostmarkGeneralMailService;
+use General\Service\Postmark\PostmarkGeneralMailService;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Psr\Container\ContainerInterface;
 

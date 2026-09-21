@@ -63,22 +63,22 @@ class AuthenticationEmailService implements PostmarkEmailInterface
             throw new \Exception("SetData must be set before calling Mail function ");
         }
 
-        $client = new PostmarkClient($this->apiToken);
-        // $data = $data;
-        // Send an email:
-        $sendResult = $client->sendEmailWithTemplate(
-            $this->sender,
-            $data["email"],
-            32538803,
-            [
-
-                "action_url" => $data["link"],
-                "company_name" => ApplicationService::APP_COMPANY_NAME,
-                "company_address" => ApplicationService::APP_COMPANY_ADDRESS,
-                "name" => $data['fullname'],
-
-            ]
-        );
+        try {
+            $client = new PostmarkClient($this->apiToken);
+            $sendResult = $client->sendEmailWithTemplate(
+                $this->sender,
+                $data["email"],
+                32538803,
+                [
+                    "action_url" => $data["link"],
+                    "company_name" => ApplicationService::APP_COMPANY_NAME,
+                    "company_address" => ApplicationService::APP_COMPANY_ADDRESS,
+                    "name" => $data['fullname'],
+                ]
+            );
+        } catch (\Throwable $e) {
+            error_log("Postmark confirmEmailWeb Error: " . $e->getMessage());
+        }
     }
 
 
@@ -89,46 +89,43 @@ class AuthenticationEmailService implements PostmarkEmailInterface
      */
     public function confirmEmailMobile($data)
     {
-        // if ($this->data == null) {
-        //     throw new \Exception("SetData must be set before calling Mail function ");
-        // }
-
-        $client = new PostmarkClient($this->apiToken);
-        // $data = $this->data;
-        // Send an email:
-        $sendResult = $client->sendEmailWithTemplate(
-            $this->sender,
-            $data["email"],
-            32539328,
-            [
-
-                "action_url" => $data["code"],
-                "company_name" => ApplicationService::APP_COMPANY_NAME,
-                "company_address" => ApplicationService::APP_COMPANY_ADDRESS,
-                "name" => $data['fullname'],
-
-            ]
-        );
+        try {
+            $client = new PostmarkClient($this->apiToken);
+            $sendResult = $client->sendEmailWithTemplate(
+                $this->sender,
+                $data["email"],
+                47865122,
+                [
+                    "action_url" => $data["code"],
+                    "company_name" => ApplicationService::APP_COMPANY_NAME,
+                    "company_address" => ApplicationService::APP_COMPANY_ADDRESS,
+                    "name" => $data['fullname'],
+                    "product_name"=> ApplicationService::APP_NAME
+                ]
+            );
+        } catch (\Throwable $e) {
+            error_log("Postmark confirmEmailMobile Error: " . $e->getMessage());
+        }
     }
 
     public function welcome($data)
     {
-        $client = new PostmarkClient($this->apiToken);
-        // $data = $this->data;
-        // Send an email:
-        $sendResult = $client->sendEmailWithTemplate(
-            $this->sender,
-            $data["to"],
-            32539328,
-            [
-
-                "action_url" => "",
-                "company_name" => ApplicationService::APP_COMPANY_NAME,
-                "company_address" => ApplicationService::APP_COMPANY_ADDRESS,
-                "name" => $data['fullname'],
-
-            ]
-        );
+        try {
+            $client = new PostmarkClient($this->apiToken);
+            $sendResult = $client->sendEmailWithTemplate(
+                $this->sender,
+                $data["to"],
+                32539328,
+                [
+                    "action_url" => "",
+                    "company_name" => ApplicationService::APP_COMPANY_NAME,
+                    "company_address" => ApplicationService::APP_COMPANY_ADDRESS,
+                    "name" => $data['fullname'],
+                ]
+            );
+        } catch (\Throwable $e) {
+            error_log("Postmark welcome Error: " . $e->getMessage());
+        }
     }
 
     /**
@@ -138,50 +135,51 @@ class AuthenticationEmailService implements PostmarkEmailInterface
      */
     public function welcomeByAdmin($data)
     {
-        $client = new PostmarkClient($this->apiToken);
-        $sendResult = $client->sendEmailWithTemplate(
-            $this->sender,
-            $data["email"],
-            32559170,
-            [
-                "product_url" => GeneralService::COMPANY_URL,
-                "product_name" => GeneralService::APP_NAME,
-                "name" => $data["fullname"],
-                "action_url" => GeneralService::COMPANY_URL . "login",
-                "login_url" => GeneralService::COMPANY_URL . "login",
-                "username" => $data["email"],
-                "password" => $data["password"],
-                "support_email" => "app@recyclepoints.com",
-                "sender_name" => GeneralService::EMAIL_NOTIFiER,
-                "help_url" => GeneralService::COMPANY_URL,
-                "company_name" => GeneralService::COMPANY_NAME,
-                "company_address" => GeneralService::COMPANY_ADDRESS,
-            ]
-        );
+        try {
+            $client = new PostmarkClient($this->apiToken);
+            $sendResult = $client->sendEmailWithTemplate(
+                $this->sender,
+                $data["email"],
+                32559170,
+                [
+                    "product_url" => GeneralService::COMPANY_URL,
+                    "product_name" => GeneralService::APP_NAME,
+                    "name" => $data["fullname"],
+                    "action_url" => GeneralService::COMPANY_URL . "login",
+                    "login_url" => GeneralService::COMPANY_URL . "login",
+                    "username" => $data["email"],
+                    "password" => $data["password"],
+                    "support_email" => "app@recyclepoints.com",
+                    "sender_name" => GeneralService::EMAIL_NOTIFiER,
+                    "help_url" => GeneralService::COMPANY_URL,
+                    "company_name" => GeneralService::COMPANY_NAME,
+                    "company_address" => GeneralService::COMPANY_ADDRESS,
+                ]
+            );
+        } catch (\Throwable $e) {
+            error_log("Postmark welcomeByAdmin Error: " . $e->getMessage());
+        }
     }
 
     public function resetpassword($data)
     {
-        // Send an email:
-        $client = new PostmarkClient($this->apiToken);
-        $sendResult =  $client->sendEmailWithTemplate(
-            "app@recyclepoints.com",
-            $data["to"],
-            34403259,
-            [
-
-
-                "product_name" => "Waste Credits",
-                "name" => $data["toName"],
-                "action_url" => $data["fulllink"],
-
-                "company_name" => GeneralService::COMPANY_NAME,
-                "company_address" => GeneralService::COMPANY_ADDRESS,
-
-
-
-            ]
-        );
+        try {
+            $client = new PostmarkClient($this->apiToken);
+            $sendResult = $client->sendEmailWithTemplate(
+                "app@recyclepoints.com",
+                $data["to"],
+                34403259,
+                [
+                    "product_name" => "Waste Credits",
+                    "name" => $data["toName"],
+                    "action_url" => $data["fulllink"],
+                    "company_name" => GeneralService::COMPANY_NAME,
+                    "company_address" => GeneralService::COMPANY_ADDRESS,
+                ]
+            );
+        } catch (\Throwable $e) {
+            error_log("Postmark resetpassword Error: " . $e->getMessage());
+        }
     }
 
 

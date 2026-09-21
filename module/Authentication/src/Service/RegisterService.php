@@ -159,28 +159,24 @@ class RegisterService
             "email" => $data["email"]
         ]);
         if ($userEntity == null) {
-            throw new \Exception("Are you sure you have registered");
-        } else {
-            $code = $data["code"];
-            if ($code == $userEntity->getMobileActivateCode()) {
-                $userEntity->setUpdatedOn(new \Datetime())
-                    ->setEmailConfirmed(true)
-                    ->setMobileActivateCode(self::generateMobileCode());
-
-                $em->persist($userEntity);
-                $em->flush();
-
-                $mailData["to"] = $userEntity->getEmail();
-
-                $mailData["fullname"] = $userEntity->getFullname();
-                // Send Welcome Email
-                // $this->mailtrapService->welcomeEmail($mailData);
-                // Send welcome email
-                $this->postmarkAuthMailService->welcome($mailData);
-            } else {
-                throw new \Exception("Invalid Code");
-            }
+            throw new \Exception("User with the provided email address does not exist");
         }
+
+        $code = $data["code"] ?? null;
+        if ((string)$code !== (string)$userEntity->getMobileActivateCode()) {
+            throw new \Exception("Invalid verification code");
+        }
+
+        $userEntity->setUpdatedOn(new \Datetime())
+            ->setEmailConfirmed(true)
+            ->setMobileActivateCode(self::generateMobileCode());
+
+        $em->persist($userEntity);
+        $em->flush();
+
+        $mailData["to"] = $userEntity->getEmail();
+        $mailData["fullname"] = $userEntity->getFullname();
+        $this->postmarkAuthMailService->welcome($mailData);
     }
 
     // public function
