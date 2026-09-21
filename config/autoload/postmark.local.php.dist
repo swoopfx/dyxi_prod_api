@@ -6,7 +6,7 @@ return [
     'postmark' => [
         'live' => [
             'authentication_service' => [
-                'apikey' => 'POSTMARK_LIVE_KEY_DUMMY_12345',
+                'apikey' => '2ed8094d-e908-4e93-b21e-0fcb1dff4dd5',
             ],
             'sender_email' => 'noreply@dyxi.com',
         ],

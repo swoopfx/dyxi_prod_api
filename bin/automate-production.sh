@@ -86,10 +86,24 @@ fi
 # Step 5: Cache Clearing & Rebuilding
 echo -e "\n${BOLD}[5/5] Clearing & Rebuilding Caches...${NC}"
 
-# Clear Laminas configuration cache
+# Clear previous Laminas configuration cache
 if [ -f "bin/clear-config-cache.php" ]; then
-    echo -e "  🧹 Clearing Laminas config cache..."
-    "${PHP_BIN}" bin/clear-config-cache.php || echo -e "  ⚠️  ${YELLOW}No configuration cache to clear.${NC}"
+    echo -e "  🧹 Clearing previous Laminas config cache..."
+    "${PHP_BIN}" bin/clear-config-cache.php || echo -e "  ⚠️  ${YELLOW}No previous configuration cache to clear.${NC}"
+fi
+
+# Clean old runtime cache files in data/cache
+echo -e "  🧹 Cleaning data/cache directory..."
+find data/cache -type f -not -name '.gitkeep' -delete
+
+# Repackage / build new configuration cache
+if [ -f "bin/build-config-cache.php" ]; then
+    echo -e "  ⚙️  Building and packaging new configuration cache..."
+    if "${PHP_BIN}" bin/build-config-cache.php; then
+        echo -e "  ✔ ${GREEN}Configuration cache repackaged successfully!${NC}"
+    else
+        echo -e "  ⚠️  ${YELLOW}Could not build configuration cache file.${NC}"
+    fi
 fi
 
 # Clear Doctrine metadata/query/result caches
@@ -106,10 +120,6 @@ else
     echo -e "  ❌ ${RED}Failed to generate Doctrine proxies!${NC}" >&2
     exit 1
 fi
-
-# Clean runtime cache folders
-echo -e "  🧹 Cleaning data/cache directory..."
-find data/cache -type f -not -name '.gitkeep' -delete
 
 
 echo -e "\n${BOLD}${BG_GREEN}  🎉 DEPLOYMENT COMPLETE!  ${NC}\n"

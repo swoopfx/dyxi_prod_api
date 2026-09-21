@@ -209,28 +209,42 @@ class SubscriptionService
             }
         }
 
-        // 2. If no specific invoice token reference, look for active pending (unpaid) invoice for user & ward
+        // 2. Check if an unpaid invoice is already pending for user & ward
         if (! $targetInvoice && $subscriptionType) {
-            $targetInvoice = $invoiceRepo->findOneBy([
-                'user'             => $user,
-                'ward'             => $ward,
-                'subscriptionType' => $subscriptionType,
-                'status'           => Invoice::STATUS_PENDING,
+            $pendingInvoice = $invoiceRepo->findOneBy([
+                'user'   => $user,
+                'ward'   => $ward,
+                'status' => Invoice::STATUS_PENDING,
             ], ['id' => 'DESC']);
-        }
 
-        // 3. If no pending invoice, check for any existing invoice (e.g. paid) to preserve DB status
-        if (! $targetInvoice && $subscriptionType) {
-            $targetInvoice = $invoiceRepo->findOneBy([
-                'user'             => $user,
-                'ward'             => $ward,
-                'subscriptionType' => $subscriptionType,
-            ], ['id' => 'DESC']);
-        }
+            if ($pendingInvoice) {
+                // If the system already has an unpaid invoice pending, ignore generation of a new invoice
+                $targetInvoice = $pendingInvoice;
+            } else {
+                // Check if user already has a paid invoice for this user & ward
+                $paidInvoice = $invoiceRepo->findOneBy([
+                    'user'   => $user,
+                    'ward'   => $ward,
+                    'status' => Invoice::STATUS_PAID,
+                ], ['id' => 'DESC']);
 
-        // 4. If no invoice exists at all, generate a new pending invoice in DB
-        if (! $targetInvoice && $subscriptionType) {
-            $targetInvoice = $this->generatePendingInvoice($user->getId(), $ward->getId(), $subscriptionType->getCode());
+                if ($paidInvoice) {
+                    // Retrieve ward expiry date and check remaining days
+                    $expireDate = $ward->getExpireDate();
+                    $tenDaysFromNow = (new \DateTime())->modify('+10 days');
+
+                    // If ward has less than 10 days until subscription expires (or is expired / null), generate a new invoice
+                    if (! $expireDate || $expireDate < $tenDaysFromNow) {
+                        $targetInvoice = $this->generatePendingInvoice($user->getId(), $ward->getId(), $subscriptionType->getCode());
+                    } else {
+                        // Ward has 10 days or more remaining -> do not generate a new invoice
+                        $targetInvoice = $paidInvoice;
+                    }
+                } else {
+                    // Neither pending nor paid invoice exists -> generate initial pending invoice
+                    $targetInvoice = $this->generatePendingInvoice($user->getId(), $ward->getId(), $subscriptionType->getCode());
+                }
+            }
         }
 
         if ($targetInvoice) {
