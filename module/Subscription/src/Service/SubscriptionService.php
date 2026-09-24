@@ -167,6 +167,14 @@ class SubscriptionService
         $wardId = $decrypted['ward_id'] ?? $decrypted['wardId'] ?? null;
         $serviceCode = $decrypted['service'] ?? $decrypted['subscription_type_code'] ?? $decrypted['subscription_type'] ?? 'monthly_standard';
 
+        // Extract currency from decoded token parameter
+        $rawCurrency = $decrypted['currency'] ?? ($decrypted['payload']['currency'] ?? null);
+        if ($rawCurrency !== null && strtoupper(trim((string)$rawCurrency)) === 'NGN') {
+            $currency = 'NGN';
+        } else {
+            $currency = 'USD';
+        }
+
         if (! $userId || ! $wardId) {
             throw new \Exception("Decrypted token payload missing userId or wardId.");
         }
@@ -218,8 +226,18 @@ class SubscriptionService
             ], ['id' => 'DESC']);
 
             if ($pendingInvoice) {
-                // If the system already has an unpaid invoice pending, ignore generation of a new invoice
+                // If the system already has an unpaid invoice pending, update currency & amounts if token specified currency
                 $targetInvoice = $pendingInvoice;
+                if ($targetInvoice->getCurrency() !== $currency) {
+                    $subtotal = ($currency === 'NGN') ? $subscriptionType->getAmountNgn() : $subscriptionType->getAmountUsd();
+                    $vatAmount = round($subtotal * 0.075, 2);
+                    $amount = round($subtotal + $vatAmount, 2);
+                    $targetInvoice->setCurrency($currency)
+                                 ->setSubtotal($subtotal)
+                                 ->setVatAmount($vatAmount)
+                                 ->setAmount($amount);
+                    $this->entityManager->flush();
+                }
             } else {
                 // Check if user already has a paid invoice for this user & ward
                 $paidInvoice = $invoiceRepo->findOneBy([
@@ -235,14 +253,14 @@ class SubscriptionService
 
                     // If ward has less than 10 days until subscription expires (or is expired / null), generate a new invoice
                     if (! $expireDate || $expireDate < $tenDaysFromNow) {
-                        $targetInvoice = $this->generatePendingInvoice($user->getId(), $ward->getId(), $subscriptionType->getCode());
+                        $targetInvoice = $this->generatePendingInvoice($user->getId(), $ward->getId(), $subscriptionType->getCode(), $currency);
                     } else {
                         // Ward has 10 days or more remaining -> do not generate a new invoice
                         $targetInvoice = $paidInvoice;
                     }
                 } else {
                     // Neither pending nor paid invoice exists -> generate initial pending invoice
-                    $targetInvoice = $this->generatePendingInvoice($user->getId(), $ward->getId(), $subscriptionType->getCode());
+                    $targetInvoice = $this->generatePendingInvoice($user->getId(), $ward->getId(), $subscriptionType->getCode(), $currency);
                 }
             }
         }
@@ -252,7 +270,8 @@ class SubscriptionService
         }
 
         return [
-            'decrypted_token'    => $decrypted,
+            'decrypted_token'    => array_merge($decrypted, ['currency' => $currency]),
+            'currency'           => $currency,
             'user'               => [
                 'id'       => $validated['user']->getId(),
                 'uuid'     => $validated['user']->getUuid(),
@@ -324,7 +343,7 @@ class SubscriptionService
      * @return Invoice
      * @throws \Exception
      */
-    public function generatePendingInvoice($userId, $wardId, $subscriptionTypeIdOrCode, string $currency = 'NGN'): Invoice
+    public function generatePendingInvoice($userId, $wardId, $subscriptionTypeIdOrCode, string $currency = 'USD'): Invoice
     {
         $validated = $this->validateUserAndWard($userId, $wardId);
         $user = $validated['user'];
@@ -340,8 +359,8 @@ class SubscriptionService
             throw new \Exception("Subscription type not found.");
         }
 
-        $currency = strtoupper($currency) === 'USD' ? 'USD' : 'NGN';
-        $subtotal = ($currency === 'USD') ? $subscriptionType->getAmountUsd() : $subscriptionType->getAmountNgn();
+        $currency = (strtoupper(trim($currency)) === 'NGN') ? 'NGN' : 'USD';
+        $subtotal = ($currency === 'NGN') ? $subscriptionType->getAmountNgn() : $subscriptionType->getAmountUsd();
 
         // 7.5% VAT Calculation (Final Amount = Subtotal + 7.5% VAT)
         $vatRate = 7.50;
@@ -794,9 +813,13 @@ class SubscriptionService
             throw new \Exception("Invoice not found.");
         }
 
-        $email = $recipientEmail ?: ($invoice->getUser() ? $invoice->getUser()->getEmail() : null);
+        // Retrieve customer email directly from the User entity associated with the invoice
+        $user = $invoice->getUser();
+        $customerEmail = ($user && method_exists($user, 'getEmail')) ? $user->getEmail() : null;
+        $email = !empty($customerEmail) ? $customerEmail : $recipientEmail;
+
         if (! $email) {
-            throw new \Exception("Recipient email address is required.");
+            throw new \Exception("Recipient email address could not be retrieved from User entity.");
         }
 
         $postmarkToken = getenv('POSTMARK_SERVER_TOKEN')

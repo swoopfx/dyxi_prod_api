@@ -2392,9 +2392,12 @@ CLINIC NPI     : #1942801928
                 if (d.invoice) {
                   activeInvoice.value = d.invoice;
                   invoiceReference.value = d.invoice.reference_code || d.invoice.invoice_number;
-                  if (d.invoice.currency) {
-                    currentCurrency.value = d.invoice.currency;
-                  }
+                }
+                const rawCur = d.currency || (d.decrypted_token && d.decrypted_token.currency) || (d.invoice && d.invoice.currency);
+                if (rawCur && String(rawCur).toUpperCase() === 'NGN') {
+                  currentCurrency.value = 'NGN';
+                } else {
+                  currentCurrency.value = 'USD';
                 }
                 if (d.user) {
                   client.value.payerName = d.user.fullname || client.value.payerName;
@@ -2412,9 +2415,12 @@ CLINIC NPI     : #1942801928
               if (serverData.invoice) {
                 activeInvoice.value = serverData.invoice;
                 invoiceReference.value = serverData.invoice.reference_code || serverData.invoice.invoice_number;
-                if (serverData.invoice.currency) {
-                  currentCurrency.value = serverData.invoice.currency;
-                }
+              }
+              const rawCur = serverData.currency || (serverData.decrypted_token && serverData.decrypted_token.currency) || (serverData.invoice && serverData.invoice.currency);
+              if (rawCur && String(rawCur).toUpperCase() === 'NGN') {
+                currentCurrency.value = 'NGN';
+              } else {
+                currentCurrency.value = 'USD';
               }
               if (serverData.user) {
                 client.value.payerName = serverData.user.fullname || client.value.payerName;
@@ -2462,13 +2468,6 @@ CLINIC NPI     : #1942801928
 
           const fetchPromise = fetchStatelessInit();
           await Promise.all([fetchPromise, timerPromise]);
-
-          try {
-            const savedCurr = localStorage.getItem('neuropath_currency');
-            if (savedCurr && currencyRates[savedCurr]) {
-              currentCurrency.value = savedCurr;
-            }
-          } catch(e) {}
 
           window.addEventListener('currencyChange', (e) => {
             if (e.detail && e.detail.currency && currencyRates[e.detail.currency]) {

@@ -214,25 +214,28 @@ class TokenDecryptionService
          * ---------------------------------------------------------
          */
 
-        if (
-            !isset($payload['userId']) &&
-            isset($payload['user_id'])
-        ) {
+        if (!isset($payload['userId']) && isset($payload['user_id'])) {
             $payload['userId'] = $payload['user_id'];
         }
 
-        if (
-            !isset($payload['wardId']) &&
-            isset($payload['ward_id'])
-        ) {
+        if (!isset($payload['wardId']) && isset($payload['ward_id'])) {
             $payload['wardId'] = $payload['ward_id'];
         }
 
+        if (!isset($payload['currency']) && isset($payload['curr'])) {
+            $payload['currency'] = $payload['curr'];
+        }
+
+        $rawCurrency = $payload['currency'] ?? null;
+        $currency = ($rawCurrency !== null && strtoupper(trim((string)$rawCurrency)) === 'NGN') ? 'NGN' : 'USD';
+
         return [
             'original_string' => $decryptedString,
-            'payload' => $payload,
-            'user_id' => $payload['userId'] ?? null,
-            'ward_id' => $payload['wardId'] ?? null,
+            'payload'         => $payload,
+            'user_id'          => $payload['userId'] ?? $payload['user_id'] ?? null,
+            'ward_id'          => $payload['wardId'] ?? $payload['ward_id'] ?? null,
+            'currency'        => $currency,
+            'service'         => $payload['service'] ?? $payload['subscription_type_code'] ?? $payload['subscription_type'] ?? null,
         ];
     }
 
