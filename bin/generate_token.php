@@ -46,7 +46,7 @@ $positionalArgs = array_values(array_filter(array_slice($argv, 1), fn ($arg) => 
 $email = $options['email'] ?? $options['e'] ?? $positionalArgs[0] ?? 'sarah.jenkins@neuropath.org';
 $wardInput = $options['ward'] ?? $options['w'] ?? (isset($positionalArgs[1]) ? $positionalArgs[1] : null);
 $serviceCode = $options['service'] ?? $options['s'] ?? (isset($positionalArgs[1]) && !isset($options['ward']) && !isset($options['w']) ? ($positionalArgs[2] ?? 'monthly_standard') : ($positionalArgs[2] ?? 'monthly_standard'));
-$currency = strtoupper((string)($options['currency'] ?? $options['c'] ?? $positionalArgs[3] ?? 'USD'));
+$currency = strtoupper((string)($options['currency'] ?? $options['c'] ?? $positionalArgs[3] ?? 'NGN'));
 
 if (! in_array($currency, ['USD', 'NGN'], true)) {
     $currency = 'USD';
@@ -188,6 +188,7 @@ try {
         'user_id'    => $user->getId(),
         'ward_id'    => $ward->getId(),
         'service'    => $subscriptionType->getCode(),
+        'currency'   => $currency,
         'created_at' => date('Y-m-d H:i:s'),
     ];
 
