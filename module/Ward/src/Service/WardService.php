@@ -230,6 +230,119 @@ class WardService
     }
 
     /**
+     * Edit / update ward info for the authenticated user.
+     *
+     * @param array $data Input parameters
+     * @param array $identity Authenticated user's identity claims
+     * @return Ward
+     * @throws \Exception
+     */
+    public function editWard(array $data, array $identity): Ward
+    {
+        if (empty($identity['uuid'])) {
+            throw new \Exception("Unauthorized: User identity not found.");
+        }
+
+        $user = $this->entityManager->getRepository(User::class)->findOneBy([
+            'uuid' => $identity['uuid']
+        ]);
+
+        if (! $user) {
+            throw new \Exception("User not found.");
+        }
+
+        $wardIdOrUuid = $data['id'] ?? $data['ward_id'] ?? $data['uuid'] ?? null;
+        if (empty($wardIdOrUuid)) {
+            throw new \Exception("Ward identifier (id or uuid) is required.");
+        }
+
+        $repo = $this->entityManager->getRepository(Ward::class);
+        $ward = null;
+        if (is_numeric($wardIdOrUuid)) {
+            $ward = $repo->findOneBy(['id' => (int) $wardIdOrUuid, 'user' => $user]);
+        }
+        if (! $ward) {
+            $ward = $repo->findOneBy(['uuid' => $wardIdOrUuid, 'user' => $user]);
+        }
+
+        if (! $ward) {
+            throw new \Exception("Ward not found or you do not have permission to edit it.");
+        }
+
+        // 1. Update fullname if provided
+        if (array_key_exists('fullname', $data)) {
+            if (empty(trim((string) $data['fullname']))) {
+                throw new \Exception("Full name cannot be empty.");
+            }
+            $ward->setFullname(trim((string) $data['fullname']));
+        }
+
+        // 2. Update date_of_birth if provided
+        if (array_key_exists('date_of_birth', $data)) {
+            if (empty($data['date_of_birth'])) {
+                throw new \Exception("Date of birth cannot be empty.");
+            }
+            $dobStr = (string) $data['date_of_birth'];
+            $dob = \DateTime::createFromFormat('Y-m-d', $dobStr);
+            if (! $dob || $dob->format('Y-m-d') !== $dobStr) {
+                throw new \Exception("Invalid date of birth format. Use YYYY-MM-DD.");
+            }
+            $ward->setDateOfBirth($dob);
+        }
+
+        // 3. Update gender if provided
+        if (array_key_exists('gender', $data) || array_key_exists('gender_id', $data)) {
+            $genderVal = $data['gender'] ?? $data['gender_id'] ?? null;
+            if (! empty($genderVal)) {
+                $genderEntity = null;
+                if (is_numeric($genderVal)) {
+                    $genderEntity = $this->entityManager->getRepository(Gender::class)->find((int) $genderVal);
+                } else {
+                    $genderEntity = $this->entityManager->getRepository(Gender::class)->findOneBy([
+                        'gender' => ucfirst(strtolower((string) $genderVal))
+                    ]);
+                    if (! $genderEntity) {
+                        $genderEntity = $this->entityManager->getRepository(Gender::class)->findOneBy([
+                            'gender' => strtolower((string) $genderVal)
+                        ]);
+                    }
+                }
+
+                if (! $genderEntity) {
+                    throw new \Exception("Gender not found.");
+                }
+                $ward->setGender($genderEntity);
+            }
+        }
+
+        // 4. Update status if provided
+        if (array_key_exists('status', $data) || array_key_exists('status_id', $data)) {
+            $statusVal = $data['status'] ?? $data['status_id'] ?? null;
+            if (! empty($statusVal)) {
+                $statusEntity = null;
+                if (is_numeric($statusVal)) {
+                    $statusEntity = $this->entityManager->getRepository(WardStatus::class)->find((int) $statusVal);
+                } else {
+                    $statusEntity = $this->entityManager->getRepository(WardStatus::class)->findOneBy([
+                        'status' => strtolower((string) $statusVal)
+                    ]);
+                }
+
+                if (! $statusEntity) {
+                    throw new \Exception("Ward status not found.");
+                }
+                $ward->setStatus($statusEntity);
+            }
+        }
+
+        $ward->setUpdatedOn(new \DateTime());
+
+        $this->entityManager->flush();
+
+        return $ward;
+    }
+
+    /**
      * Get entity manager.
      *
      * @return EntityManager

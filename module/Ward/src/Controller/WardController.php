@@ -333,7 +333,8 @@ class WardController extends AbstractActionController
      *                         @OA\Property(property="uuid", type="string", example="7b7f1ad9-d9d5-451e-8ef9-eb9915159045"),
      *                         @OA\Property(property="status", type="string", example="active"),
      *                         @OA\Property(property="status_id", type="integer", example=1),
-     *                         @OA\Property(property="age", type="integer", example=11),
+     *                         @OA\Property(property="age", type="integer", example=132, description="Age of ward in months"),
+     *                         @OA\Property(property="age_in_months", type="integer", example=132, description="Age of ward in months"),
      *                         @OA\Property(property="expireDate", type="integer", example=720),
      *                         @OA\Property(property="gender", type="string", example="Female"),
      *                         @OA\Property(property="gender_id", type="integer", example=2)
@@ -399,7 +400,8 @@ class WardController extends AbstractActionController
                     "uuid" => $ward->getUuid(),
                     "status" => $ward->getStatus() ? $ward->getStatus()->getStatus() : null,
                     "status_id" => $ward->getStatus() ? $ward->getStatus()->getId() : null,
-                    "age" => $ward->getAge(),
+                    "age" => $ward->getAgeInMonths(),
+                    "age_in_months" => $ward->getAgeInMonths(),
                     "expireDate" => $ward->getExpireHours(),
                     "gender" => $ward->getGender() ? $ward->getGender()->getGender() : null,
                     "gender_id" => $ward->getGender() ? $ward->getGender()->getId() : null
@@ -418,5 +420,239 @@ class WardController extends AbstractActionController
         }
 
         return $jsonModel;
+    }
+
+    /**
+     * Edit Ward Info.
+     *
+     * @OA\Post(
+     *     path="/api/ward/edit-ward/{id}",
+     *     tags={"Ward"},
+     *     description="Updates/edits details of an existing ward (fullname, date_of_birth, gender, status). Accepts POST, PUT, or PATCH requests.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=false,
+     *         description="[OPTIONAL in path if provided in request body] The integer ID or UUID string of the ward. Format: Integer ID (e.g. 1) or UUID string.",
+     *         @OA\Schema(type="string", description="Ward identifier parameter in path.")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Payload to edit ward info. Optional fields: 'fullname', 'date_of_birth', 'gender' / 'gender_id', 'status' / 'status_id'. 'id' or 'uuid' can also be passed in body if not in path.",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     description="Ward Edit Schema.",
+     *                     @OA\Property(property="id", type="string", example="1", description="[OPTIONAL] Ward ID or UUID string if not specified in path."),
+     *                     @OA\Property(property="fullname", type="string", example="John Doe Jr.", description="[OPTIONAL] Ward's updated full name. Format: String (max 255 chars)."),
+     *                     @OA\Property(property="date_of_birth", type="string", format="date", example="2015-08-15", description="[OPTIONAL] Ward's updated date of birth. Format: YYYY-MM-DD (ISO 8601 date)."),
+     *                     @OA\Property(property="gender", type="string", example="Female", description="[OPTIONAL] Ward updated gender name ('Female', 'Male') or gender ID (1, 2)."),
+     *                     @OA\Property(property="gender_id", type="integer", example=2, description="[OPTIONAL] Ward updated gender ID."),
+     *                     @OA\Property(property="status", type="string", example="active", description="[OPTIONAL] Ward updated status name ('active', 'suspended', 'pending') or status ID."),
+     *                     @OA\Property(property="status_id", type="integer", example=1, description="[OPTIONAL] Ward updated status ID.")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Ward updated successfully",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(
+     *                         property="data",
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="fullname", type="string", example="John Doe Jr."),
+     *                         @OA\Property(property="date_of_birth", type="string", example="2015-08-15"),
+     *                         @OA\Property(property="uuid", type="string", example="7b7f1ad9-d9d5-451e-8ef9-eb9915159045"),
+     *                         @OA\Property(property="status", type="string", example="active"),
+     *                         @OA\Property(property="status_id", type="integer", example=1),
+     *                         @OA\Property(property="age", type="integer", example=132, description="Age of ward in months"),
+     *                         @OA\Property(property="age_in_months", type="integer", example=132, description="Age of ward in months"),
+     *                         @OA\Property(property="expireDate", type="integer", example=720),
+     *                         @OA\Property(property="gender", type="string", example="Female"),
+     *                         @OA\Property(property="gender_id", type="integer", example=2)
+     *                     ),
+     *                     @OA\Property(property="description", type="string", example="Successfully updated ward John Doe Jr.")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Bad Request (ward not found or invalid validation)",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="WardEditError"),
+     *                     @OA\Property(property="description", type="string", example="Ward not found or you do not have permission to edit it.")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="401",
+     *         description="Unauthorized",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="Unauthorized"),
+     *                     @OA\Property(property="description", type="string", example="User identity not found in request context.")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(
+     *         response="405",
+     *         description="Method Not Allowed",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=false),
+     *                     @OA\Property(property="error", type="string", example="MethodNotAllowed"),
+     *                     @OA\Property(property="description", type="string", example="Method Not Allowed. Use POST, PUT, or PATCH.")
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     *
+     * @OA\Put(
+     *     path="/api/ward/edit-ward/{id}",
+     *     tags={"Ward"},
+     *     description="Updates/edits details of an existing ward (PUT method alternative).",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=false,
+     *         description="[OPTIONAL in path if provided in request body] The integer ID or UUID string of the ward.",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Payload to edit ward info.",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="id", type="string", example="1"),
+     *                     @OA\Property(property="fullname", type="string", example="John Doe Jr."),
+     *                     @OA\Property(property="date_of_birth", type="string", format="date", example="2015-08-15"),
+     *                     @OA\Property(property="gender", type="string", example="Female"),
+     *                     @OA\Property(property="status", type="string", example="active")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(response="200", description="Ward updated successfully"),
+     *     @OA\Response(response="400", description="Bad Request"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="405", description="Method Not Allowed")
+     * )
+     *
+     * @return JsonModel
+     */
+    public function editWardAction()
+    {
+        $jsonModel = new JsonModel();
+        $request = $this->getRequest();
+        $response = $this->getResponse();
+
+        if (! ($request->isPost() || $request->isPut() || $request->isPatch())) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use POST, PUT, or PATCH."
+            ]);
+            return $jsonModel;
+        }
+
+        try {
+            $identity = $this->apiAuthService->getContainerIdentity();
+            if (empty($identity)) {
+                $response->setStatusCode(401);
+                $jsonModel->setVariables([
+                    "success" => false,
+                    "error" => "Unauthorized",
+                    "description" => "User identity not found in request context."
+                ]);
+                return $jsonModel;
+            }
+
+            $id = $this->params()->fromRoute('id');
+            if (empty($id)) {
+                $id = $this->params()->fromQuery('id')
+                    ?? $this->params()->fromQuery('uuid');
+            }
+
+            $json = $request->getContent();
+            $postData = (array) json_decode($json, true);
+
+            if (! empty($id)) {
+                $postData['id'] = $id;
+            }
+
+            $ward = $this->wardService->editWard($postData, $identity);
+
+            $response->setStatusCode(200);
+            $jsonModel->setVariables([
+                "success" => true,
+                "data" => [
+                    "id" => $ward->getId(),
+                    "fullname" => $ward->getFullname(),
+                    "date_of_birth" => $ward->getDateOfBirth() ? $ward->getDateOfBirth()->format('Y-m-d') : null,
+                    "uuid" => $ward->getUuid(),
+                    "status" => $ward->getStatus() ? $ward->getStatus()->getStatus() : null,
+                    "status_id" => $ward->getStatus() ? $ward->getStatus()->getId() : null,
+                    "age" => $ward->getAgeInMonths(),
+                    "age_in_months" => $ward->getAgeInMonths(),
+                    "expireDate" => $ward->getExpireHours(),
+                    "gender" => $ward->getGender() ? $ward->getGender()->getGender() : null,
+                    "gender_id" => $ward->getGender() ? $ward->getGender()->getId() : null
+                ],
+                "description" => "Successfully updated ward {$ward->getFullname()}."
+            ]);
+        } catch (\Throwable $th) {
+            $message = $th->getMessage();
+            $statusCode = str_contains($message, 'Unauthorized') ? 401 : (str_contains($message, 'permission') || str_contains($message, 'Access denied') ? 403 : 400);
+            $errorType = ($statusCode === 401) ? "Unauthorized" : (($statusCode === 403) ? "Forbidden" : "WardEditError");
+            $response->setStatusCode($statusCode);
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => $errorType,
+                "description" => $message
+            ]);
+        }
+
+        return $jsonModel;
+    }
+
+    /**
+     * Alias for editWardAction.
+     */
+    public function editAction()
+    {
+        return $this->editWardAction();
+    }
+
+    /**
+     * Alias for editWardAction.
+     */
+    public function updateAction()
+    {
+        return $this->editWardAction();
     }
 }

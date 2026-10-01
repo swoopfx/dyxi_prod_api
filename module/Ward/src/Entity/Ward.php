@@ -263,6 +263,24 @@ class Ward
     }
 
     /**
+     * Get calculated age in months from date of birth
+     *
+     * @return int
+     */
+    public function getAgeInMonths(): int
+    {
+        if (! $this->dateOfBirth) {
+            return 0;
+        }
+        $now = new \DateTime();
+        if ($this->dateOfBirth > $now) {
+            return 0;
+        }
+        $diff = $this->dateOfBirth->diff($now);
+        return ($diff->y * 12) + $diff->m;
+    }
+
+    /**
      * Get remaining hours until expiry date
      *
      * @return int|null

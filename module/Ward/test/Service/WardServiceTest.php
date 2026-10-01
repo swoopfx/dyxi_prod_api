@@ -155,4 +155,84 @@ class WardServiceTest extends TestCase
             'fullname' => 'No DOB Ward'
         ], $identity);
     }
+
+    public function testEditWardSuccess(): void
+    {
+        $identity = ['uuid' => 'user-uuid-1234'];
+        $user = new User();
+
+        $this->userRepo->expects($this->once())
+            ->method('findOneBy')
+            ->with(['uuid' => 'user-uuid-1234'])
+            ->willReturn($user);
+
+        $existingWard = new Ward();
+        $existingWard->setFullname('Old Name');
+        $existingWard->setDateOfBirth(new \DateTime('2015-01-01'));
+
+        $this->wardRepo->expects($this->once())
+            ->method('findOneBy')
+            ->with(['id' => 1, 'user' => $user])
+            ->willReturn($existingWard);
+
+        $maleGender = new Gender();
+        $maleGender->setGender('Male');
+        $this->genderRepo->expects($this->once())
+            ->method('findOneBy')
+            ->with(['gender' => 'Male'])
+            ->willReturn($maleGender);
+
+        $activeStatus = new WardStatus();
+        $activeStatus->setStatus('active');
+        $this->statusRepo->expects($this->once())
+            ->method('findOneBy')
+            ->with(['status' => 'active'])
+            ->willReturn($activeStatus);
+
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $editData = [
+            'id' => 1,
+            'fullname' => 'New Name',
+            'date_of_birth' => '2016-02-02',
+            'gender' => 'Male',
+            'status' => 'active'
+        ];
+
+        $updatedWard = $this->wardService->editWard($editData, $identity);
+
+        $this->assertSame('New Name', $updatedWard->getFullname());
+        $this->assertSame('2016-02-02', $updatedWard->getDateOfBirth()->format('Y-m-d'));
+        $this->assertSame($maleGender, $updatedWard->getGender());
+        $this->assertSame($activeStatus, $updatedWard->getStatus());
+    }
+
+    public function testEditWardThrowsExceptionWhenNotFound(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Ward not found or you do not have permission to edit it.');
+
+        $identity = ['uuid' => 'user-uuid-1234'];
+        $user = new User();
+
+        $this->userRepo->method('findOneBy')->willReturn($user);
+        $this->wardRepo->method('findOneBy')->willReturn(null);
+
+        $this->wardService->editWard(['id' => 999, 'fullname' => 'Test'], $identity);
+    }
+
+    public function testEditWardThrowsExceptionWhenInvalidDob(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Invalid date of birth format. Use YYYY-MM-DD.');
+
+        $identity = ['uuid' => 'user-uuid-1234'];
+        $user = new User();
+
+        $this->userRepo->method('findOneBy')->willReturn($user);
+        $ward = new Ward();
+        $this->wardRepo->method('findOneBy')->willReturn($ward);
+
+        $this->wardService->editWard(['id' => 1, 'date_of_birth' => 'invalid-date'], $identity);
+    }
 }

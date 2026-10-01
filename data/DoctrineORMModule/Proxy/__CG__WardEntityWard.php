@@ -382,6 +382,17 @@ class Ward extends \Ward\Entity\Ward implements \Doctrine\ORM\Proxy\Proxy
     /**
      * {@inheritDoc}
      */
+    public function getAgeInMonths(): int
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getAgeInMonths', []);
+
+        return parent::getAgeInMonths();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function getExpireHours(): ?int
     {
 

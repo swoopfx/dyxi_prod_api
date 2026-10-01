@@ -21,6 +21,27 @@ class WardTest extends TestCase
         $this->assertSame(10, $ward->getAge());
     }
 
+    public function testGetAgeInMonths(): void
+    {
+        $ward = new Ward();
+        $this->assertSame(0, $ward->getAgeInMonths());
+
+        // 1 year, 2 months, and 15 days ago => 14 months
+        $dob = (new \DateTime())->modify('-1 year -2 months -15 days');
+        $ward->setDateOfBirth($dob);
+        $this->assertSame(14, $ward->getAgeInMonths());
+
+        // 8 months and 5 days ago => 8 months
+        $dob2 = (new \DateTime())->modify('-8 months -5 days');
+        $ward->setDateOfBirth($dob2);
+        $this->assertSame(8, $ward->getAgeInMonths());
+
+        // Future date => 0 months
+        $futureDob = (new \DateTime())->modify('+1 month');
+        $ward->setDateOfBirth($futureDob);
+        $this->assertSame(0, $ward->getAgeInMonths());
+    }
+
     public function testExpireDateAndExpireHours(): void
     {
         $ward = new Ward();
