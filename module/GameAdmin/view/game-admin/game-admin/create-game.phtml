@@ -1,0 +1,129 @@
+<?php
+/**
+ * Create Game View Template
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$form = $this->form;
+$form->prepare();
+?>
+
+<div class="ga-page-title-bar">
+    <div>
+        <h1 class="ga-page-title">Register New Game Entity</h1>
+        <p class="ga-page-subtitle">Configure entity properties, launch endpoints, category mappings, and JSON schema configs.</p>
+    </div>
+    <div>
+        <a href="<?= $this->url('game-admin-games') ?>" class="ga-btn-secondary">
+            <i class="fa-solid fa-arrow-left"></i> Back to Catalog
+        </a>
+    </div>
+</div>
+
+<?php if (!empty($this->successMessage)): ?>
+    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-circle-check" style="font-size: 1.2rem;"></i>
+        <div><?= $this->escapeHtml($this->successMessage) ?></div>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($this->errorMessage)): ?>
+    <div style="background: #fef2f2; border: 1px solid #fecdd3; color: #b91c1c; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.2rem;"></i>
+        <div><?= $this->escapeHtml($this->errorMessage) ?></div>
+    </div>
+<?php endif; ?>
+
+<div class="ga-panel" style="max-width: 840px; margin: 0 auto;">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-gamepad" style="color: var(--ga-primary);"></i>
+            Game Entity Specification
+        </h2>
+    </div>
+
+    <?= $this->form()->openTag($form->setAttribute('action', $this->url('game-admin-game-create'))) ?>
+    <?= $this->formHidden($form->get('csrf')) ?>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- Title -->
+        <div class="ga-form-group">
+            <label class="ga-form-label"><?= $form->get('title')->getOption('label') ?> *</label>
+            <?= $this->formElement($form->get('title')) ?>
+            <?php if ($messages = $form->get('title')->getMessages()): ?>
+                <div style="color: var(--ga-accent-rose); font-size: 0.78rem; margin-top: 4px;"><?= current($messages) ?></div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Unique Identifier -->
+        <div class="ga-form-group">
+            <label class="ga-form-label"><?= $form->get('uniqueIdentifier')->getOption('label') ?> *</label>
+            <?= $this->formElement($form->get('uniqueIdentifier')) ?>
+            <?php if ($messages = $form->get('uniqueIdentifier')->getMessages()): ?>
+                <div style="color: var(--ga-accent-rose); font-size: 0.78rem; margin-top: 4px;"><?= current($messages) ?></div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- Game Type -->
+        <div class="ga-form-group">
+            <label class="ga-form-label"><?= $form->get('gameTypeId')->getOption('label') ?> *</label>
+            <?= $this->formElement($form->get('gameTypeId')) ?>
+            <?php if ($messages = $form->get('gameTypeId')->getMessages()): ?>
+                <div style="color: var(--ga-accent-rose); font-size: 0.78rem; margin-top: 4px;"><?= current($messages) ?></div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Curriculum -->
+        <div class="ga-form-group">
+            <label class="ga-form-label"><?= $form->get('curriculumId')->getOption('label') ?></label>
+            <?= $this->formElement($form->get('curriculumId')) ?>
+        </div>
+    </div>
+
+    <!-- Launch URL -->
+    <div class="ga-form-group">
+        <label class="ga-form-label"><?= $form->get('gameAbsoluteUrl')->getOption('label') ?> *</label>
+        <?= $this->formElement($form->get('gameAbsoluteUrl')) ?>
+        <?php if ($messages = $form->get('gameAbsoluteUrl')->getMessages()): ?>
+            <div style="color: var(--ga-accent-rose); font-size: 0.78rem; margin-top: 4px;"><?= current($messages) ?></div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Searchable Tags -->
+    <div class="ga-form-group">
+        <label class="ga-form-label"><i class="fa-solid fa-tags" style="color: var(--ga-accent-cyan);"></i> <?= $form->get('tags')->getOption('label') ?></label>
+        <?= $this->formElement($form->get('tags')) ?>
+    </div>
+
+    <!-- Markdown (.md) File Upload -->
+    <div class="ga-form-group">
+        <label class="ga-form-label"><i class="fa-solid fa-file-arrow-up" style="color: var(--ga-accent-emerald);"></i> <?= $form->get('mdFiles')->getOption('label') ?></label>
+        <?= $this->formElement($form->get('mdFiles')) ?>
+    </div>
+
+    <!-- Description (Source for Gemini AI summary & tag extraction) -->
+    <div class="ga-form-group">
+        <label class="ga-form-label"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--ga-primary);"></i> <?= $form->get('description')->getOption('label') ?></label>
+        <?= $this->formElement($form->get('description')) ?>
+        <?php if ($messages = $form->get('description')->getMessages()): ?>
+            <div style="color: var(--ga-accent-rose); font-size: 0.78rem; margin-top: 4px;"><?= current($messages) ?></div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Custom Config (JSON) -->
+    <div class="ga-form-group">
+        <label class="ga-form-label"><?= $form->get('customConfig')->getOption('label') ?></label>
+        <?= $this->formElement($form->get('customConfig')) ?>
+        <?php if ($messages = $form->get('customConfig')->getMessages()): ?>
+            <div style="color: var(--ga-accent-rose); font-size: 0.78rem; margin-top: 4px;"><?= current($messages) ?></div>
+        <?php endif; ?>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 14px; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--ga-border-color);">
+        <a href="<?= $this->url('game-admin-games') ?>" class="ga-btn-secondary">Cancel</a>
+        <?= $this->formElement($form->get('submit')) ?>
+    </div>
+
+    <?= $this->form()->closeTag() ?>
+</div>

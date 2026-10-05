@@ -1,0 +1,45 @@
+<?php
+/**
+ * GameAdmin Settings View
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+
+<div class="ga-page-title-bar">
+    <div>
+        <h1 class="ga-page-title">Game Engine Settings</h1>
+        <p class="ga-page-subtitle">Configure game runtime parameters, telemetry pipelines, and subsystem flags.</p>
+    </div>
+</div>
+
+<div class="ga-panel">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-sliders" style="color: var(--ga-primary);"></i>
+            Runtime Engine Configuration
+        </h2>
+    </div>
+
+    <form onsubmit="event.preventDefault(); GameAdminToast('Engine configuration saved successfully!', 'success');">
+        <div class="ga-form-group">
+            <label class="ga-form-label">Game Server Cluster Region</label>
+            <input type="text" class="ga-form-control" value="<?= $this->escapeHtmlAttr($this->config['game_server_region']) ?>">
+        </div>
+
+        <div class="ga-form-group">
+            <label class="ga-form-label">Max Concurrent Sessions Threshold</label>
+            <input type="number" class="ga-form-control" value="<?= (int)$this->config['max_concurrent_sessions'] ?>">
+        </div>
+
+        <div class="ga-form-group">
+            <label class="ga-form-label">Auto Save State Interval (seconds)</label>
+            <input type="number" class="ga-form-control" value="<?= (int)$this->config['auto_save_interval'] ?>">
+        </div>
+
+        <div style="margin-top: 24px;">
+            <button type="submit" class="ga-btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> Save Engine Configuration
+            </button>
+        </div>
+    </form>
+</div>

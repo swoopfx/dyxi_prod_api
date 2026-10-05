@@ -1,0 +1,192 @@
+<?php
+/**
+ * GameAdmin Dashboard Index View
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$form = $this->form;
+if ($form) {
+    $form->prepare();
+}
+?>
+
+<div class="ga-page-title-bar">
+    <div>
+        <h1 class="ga-page-title">Game Engine Dashboard</h1>
+        <p class="ga-page-subtitle">Real-time overview of active learning games, player throughput, and cognitive telemetry.</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="<?= $this->url('game-admin-game-create') ?>" class="ga-btn-primary">
+            <i class="fa-solid fa-plus"></i> New Game
+        </a>
+        <button class="ga-btn-secondary" onclick="location.reload();">
+            <i class="fa-solid fa-rotate-right"></i> Refresh Stats
+        </button>
+    </div>
+</div>
+
+<!-- Metric Cards Grid -->
+<div class="ga-stats-grid">
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Total Registered Games</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-purple">
+                <i class="fa-solid fa-gamepad"></i>
+            </div>
+        </div>
+        <div class="ga-stat-value"><?= $this->stats['total_games'] ?></div>
+        <div class="ga-stat-trend ga-trend-up">
+            <i class="fa-solid fa-arrow-trend-up"></i> +2 new this month
+        </div>
+    </div>
+
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Active Concurrent Players</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-cyan">
+                <i class="fa-solid fa-users"></i>
+            </div>
+        </div>
+        <div class="ga-stat-value" id="ga-live-players-card"><?= number_format($this->stats['active_players']) ?></div>
+        <div class="ga-stat-trend ga-trend-up">
+            <i class="fa-solid fa-circle-bolt"></i> Peak activity period
+        </div>
+    </div>
+
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Total Gameplay Sessions</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-emerald">
+                <i class="fa-solid fa-circle-play"></i>
+            </div>
+        </div>
+        <div class="ga-stat-value"><?= $this->stats['total_plays'] ?></div>
+        <div class="ga-stat-trend ga-trend-up">
+            <i class="fa-solid fa-arrow-trend-up"></i> +14.2% vs last week
+        </div>
+    </div>
+
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Avg Session Duration</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-amber">
+                <i class="fa-solid fa-stopwatch"></i>
+            </div>
+        </div>
+        <div class="ga-stat-value"><?= $this->stats['avg_session_min'] ?></div>
+        <div class="ga-stat-trend ga-trend-neutral">
+            <i class="fa-solid fa-minus"></i> Optimal engagement
+        </div>
+    </div>
+</div>
+
+<!-- Primary Glass Panel: Active Games Overview -->
+<div class="ga-panel">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-list-check" style="color: var(--ga-primary);"></i>
+            Managed Educational & Diagnostic Games
+        </h2>
+        <a href="<?= $this->url('game-admin-games') ?>" class="ga-btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
+            View Full Catalog
+        </a>
+    </div>
+
+    <div class="ga-table-wrapper">
+        <table class="ga-table">
+            <thead>
+                <tr>
+                    <th>Game & Identifier</th>
+                    <th>Category / Type</th>
+                    <th>Status</th>
+                    <th>Total Plays</th>
+                    <th>User Rating</th>
+                    <th>Created Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($this->games as $game): ?>
+                <tr>
+                    <td>
+                        <div class="ga-game-title-cell">
+                            <span class="ga-game-name"><?= $this->escapeHtml($game['title']) ?></span>
+                            <span class="ga-game-id"><?= $this->escapeHtml($game['uniqueIdentifier']) ?> • <?= $this->escapeHtml($game['uuid']) ?></span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="ga-badge ga-badge-type"><?= $this->escapeHtml($game['gameType']) ?></span>
+                    </td>
+                    <td>
+                        <?php if ($game['status'] === 'Active'): ?>
+                            <span class="ga-badge ga-badge-active"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        <?php else: ?>
+                            <span class="ga-badge ga-badge-maintenance"><i class="fa-solid fa-triangle-exclamation"></i> <?= $this->escapeHtml($game['status']) ?></span>
+                        <?php endif; ?>
+                    </td>
+                    <td><strong><?= number_format((int)$game['playsCount']) ?></strong></td>
+                    <td>
+                        <span style="color: #f59e0b;"><i class="fa-solid fa-star"></i> <?= $game['rating'] ?></span>
+                    </td>
+                    <td><?= $this->escapeHtml($game['createdOn']) ?></td>
+                    <td>
+                        <div class="ga-action-btn-group">
+                            <button class="ga-btn-icon" title="Edit Game Details" onclick="GameAdminToast('Editing <?= $this->escapeJs($game['title']) ?>...', 'info');">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <a href="<?= $this->escapeHtmlAttr($game['gameAbsoluteUrl']) ?>" target="_blank" class="ga-btn-icon" title="Launch Game Preview">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Component: Create New Game -->
+<div class="ga-modal-backdrop" id="ga-modal-backdrop">
+    <div class="ga-modal" style="max-width: 600px;">
+        <div class="ga-modal-header">
+            <h3 class="ga-modal-title">Register New Game Entity</h3>
+            <button class="ga-close-btn" id="ga-close-modal">&times;</button>
+        </div>
+        
+        <?php if ($form): ?>
+            <?= $this->form()->openTag($form->setAttribute('action', $this->url('game-admin-game-create'))) ?>
+            <?= $this->formHidden($form->get('csrf')) ?>
+
+            <div class="ga-form-group">
+                <label class="ga-form-label">Game Title *</label>
+                <?= $this->formElement($form->get('title')) ?>
+            </div>
+
+            <div class="ga-form-group">
+                <label class="ga-form-label">Unique Identifier *</label>
+                <?= $this->formElement($form->get('uniqueIdentifier')) ?>
+            </div>
+
+            <div class="ga-form-group">
+                <label class="ga-form-label">Intervention Category *</label>
+                <?= $this->formElement($form->get('gameTypeId')) ?>
+            </div>
+
+            <div class="ga-form-group">
+                <label class="ga-form-label">Absolute Launch URL *</label>
+                <?= $this->formElement($form->get('gameAbsoluteUrl')) ?>
+            </div>
+
+            <div class="ga-form-group">
+                <label class="ga-form-label">Detailed Description (Used by Gemini AI for Summary & Tags) *</label>
+                <?= $this->formElement($form->get('description')) ?>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                <button type="button" class="ga-btn-secondary" onclick="document.getElementById('ga-modal-backdrop').classList.remove('open');">Cancel</button>
+                <?= $this->formElement($form->get('submit')) ?>
+            </div>
+            <?= $this->form()->closeTag() ?>
+        <?php endif; ?>
+    </div>
+</div>

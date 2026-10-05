@@ -1,0 +1,165 @@
+<?php
+/**
+ * GameAdmin Catalog View Template
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$pagination = $this->pagination ?? ['page' => 1, 'limit' => 10, 'total' => count($this->games), 'totalPages' => 1, 'q' => ''];
+$page       = (int) $pagination['page'];
+$totalPages = (int) $pagination['totalPages'];
+$total      = (int) $pagination['total'];
+$q          = (string) $pagination['q'];
+?>
+
+<div class="ga-page-title-bar">
+    <div>
+        <h1 class="ga-page-title">Game Catalog Management</h1>
+        <p class="ga-page-subtitle">Search, filter, view specifications, edit parameters, and manage deployed game entities.</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="<?= $this->url('game-admin-game-create') ?>" class="ga-btn-primary">
+            <i class="fa-solid fa-plus"></i> Add New Game
+        </a>
+    </div>
+</div>
+
+<!-- Search Filter Bar -->
+<div class="ga-panel" style="padding: 16px 24px; margin-bottom: 24px;">
+    <form method="get" action="<?= $this->url('game-admin-games') ?>" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 260px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ga-text-dim);"></i>
+            <input type="text" name="q" value="<?= $this->escapeHtmlAttr($q) ?>" class="ga-form-control" placeholder="Search by title, identifier, tags (e.g. dyslexia, phonics, adhd)..." style="padding-left: 40px;">
+        </div>
+
+        <button type="submit" class="ga-btn-primary">
+            <i class="fa-solid fa-filter"></i> Apply Filter
+        </button>
+
+        <?php if (!empty($q)): ?>
+            <a href="<?= $this->url('game-admin-games') ?>" class="ga-btn-secondary">
+                <i class="fa-solid fa-xmark"></i> Clear Filter
+            </a>
+        <?php endif; ?>
+    </form>
+</div>
+
+<!-- Catalog Table Panel -->
+<div class="ga-panel">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-layer-group" style="color: var(--ga-accent-cyan);"></i>
+            Registered Games (<?= $total ?> total)
+        </h2>
+        <?php if (!empty($q)): ?>
+            <span class="ga-badge ga-badge-type">Filter: "<?= $this->escapeHtml($q) ?>"</span>
+        <?php endif; ?>
+    </div>
+
+    <div class="ga-table-wrapper">
+        <table class="ga-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title & Identifier</th>
+                    <th>Category</th>
+                    <th>Tags / Keywords</th>
+                    <th>Launch URL</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($this->games)): ?>
+                    <?php foreach ($this->games as $game): ?>
+                    <tr>
+                        <td>#<?= $game['id'] ?></td>
+                        <td>
+                            <div class="ga-game-title-cell">
+                                <span class="ga-game-name"><?= $this->escapeHtml($game['title']) ?></span>
+                                <span class="ga-game-id"><?= $this->escapeHtml($game['uniqueIdentifier']) ?></span>
+                            </div>
+                        </td>
+                        <td><span class="ga-badge ga-badge-type"><?= $this->escapeHtml($game['gameType']) ?></span></td>
+                        <td>
+                            <?php
+                            $tagsStr = (string) ($game['tags'] ?? '');
+                            $tagItems = array_slice(array_filter(array_map('trim', explode(',', $tagsStr))), 0, 3);
+                            if (!empty($tagItems)):
+                                foreach ($tagItems as $t):
+                            ?>
+                                <span class="ga-badge" style="background: #f1f5f9; border: 1px solid #e2e8f0; color: var(--ga-text-muted); font-size: 0.68rem; margin-right: 4px;">
+                                    <?= $this->escapeHtml($t) ?>
+                                </span>
+                            <?php
+                                endforeach;
+                            else:
+                            ?>
+                                <span style="color: var(--ga-text-dim); font-size: 0.78rem;">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td><code style="color: var(--ga-accent-cyan); font-size: 0.8rem;"><?= $this->escapeHtml($game['gameAbsoluteUrl']) ?></code></td>
+                        <td>
+                            <?php if ($game['status'] === 'Active'): ?>
+                                <span class="ga-badge ga-badge-active">Active</span>
+                            <?php else: ?>
+                                <span class="ga-badge ga-badge-maintenance"><?= $this->escapeHtml($game['status']) ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <div class="ga-action-btn-group">
+                                <!-- View Game Specification -->
+                                <a href="<?= $this->url('game-admin-game-view', ['id' => $game['id']]) ?>" class="ga-btn-icon" title="View Details & AI Summary">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <!-- Edit Game Entity -->
+                                <a href="<?= $this->url('game-admin-game-edit', ['id' => $game['id']]) ?>" class="ga-btn-icon" title="Edit Game Parameters">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <!-- Launch Preview -->
+                                <a href="<?= $this->escapeHtmlAttr($game['gameAbsoluteUrl']) ?>" target="_blank" class="ga-btn-icon" title="Launch Game Preview">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 32px; color: var(--ga-text-muted);">
+                            <i class="fa-solid fa-folder-open" style="font-size: 2rem; margin-bottom: 12px; display: block; color: var(--ga-text-dim);"></i>
+                            No games match your search criteria. Try adjusting your query filter.
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <?php if ($totalPages > 1): ?>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--ga-border-color); font-size: 0.88rem; color: var(--ga-text-muted);">
+            <div>
+                Showing Page <strong><?= $page ?></strong> of <strong><?= $totalPages ?></strong> (Total <?= $total ?> games)
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <?php if ($page > 1): ?>
+                    <a href="<?= $this->url('game-admin-games') ?>?q=<?= urlencode($q) ?>&page=<?= $page - 1 ?>" class="ga-btn-secondary" style="padding: 6px 12px;">
+                        <i class="fa-solid fa-chevron-left"></i> Previous
+                    </a>
+                <?php endif; ?>
+
+                <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+                    <a href="<?= $this->url('game-admin-games') ?>?q=<?= urlencode($q) ?>&page=<?= $p ?>" class="<?= $p === $page ? 'ga-btn-primary' : 'ga-btn-secondary' ?>" style="padding: 6px 12px; min-width: 36px; text-align: center;">
+                        <?= $p ?>
+                    </a>
+                <?php endfor; ?>
+
+                <?php if ($page < $totalPages): ?>
+                    <a href="<?= $this->url('game-admin-games') ?>?q=<?= urlencode($q) ?>&page=<?= $page + 1 ?>" class="ga-btn-secondary" style="padding: 6px 12px;">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+</div>

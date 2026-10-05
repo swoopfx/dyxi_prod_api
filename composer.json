@@ -57,7 +57,8 @@
             "Consultant\\": "module/Consultant/src/",
             "Authorization\\": "module/Authorization/src/",
             "Admin\\": "module/Admin/src/",
-            "Subscription\\": "module/Subscription/src/"
+            "Subscription\\": "module/Subscription/src/",
+            "GameAdmin\\": "module/GameAdmin/src/"
         }
     },
     "autoload-dev": {

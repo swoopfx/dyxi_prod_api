@@ -1,0 +1,142 @@
+<?php
+/**
+ * GameAdmin Dedicated Self-Contained Layout
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+use Laminas\Session\Container;
+
+$activeNav = $this->activeNav ?? 'dashboard';
+$session = new Container('GameAdmin');
+$user = $this->currentUser ?? ($session->user ?? [
+    'username'  => 'Admin User',
+    'email'     => 'admin@dyxi.internal',
+    'role_name' => 'SuperAdmin',
+]);
+
+$username = $user['username'] ?? $user['email'] ?? 'Admin';
+$email    = $user['email'] ?? '';
+$roleName = $user['role_name'] ?? 'Admin';
+$avatarInitials = strtoupper(substr($username, 0, 2));
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $this->headTitle('DYXI GameAdmin Control Center')->setSeparator(' - ')->setAutoEscape(false) ?></title>
+
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome / Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- GameAdmin Dedicated Stylesheet -->
+    <link rel="stylesheet" href="<?= $this->basePath('css/game-admin/game-admin.css') ?>">
+</head>
+<body class="game-admin-body">
+    <div class="ga-app-container">
+        
+        <!-- GameAdmin Sidebar -->
+        <aside class="ga-sidebar">
+            <div class="ga-sidebar-header">
+                <div class="ga-brand-icon">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+                <div class="ga-brand-title">GameAdmin</div>
+                <span class="ga-brand-badge"><?= strtoupper($this->escapeHtml($roleName)) ?></span>
+            </div>
+
+            <nav class="ga-sidebar-nav">
+                <div class="ga-nav-section-title">Core Engine</div>
+                <a href="<?= $this->url('game-admin') ?>" class="ga-nav-item <?= $activeNav === 'dashboard' ? 'active' : '' ?>">
+                    <span class="ga-nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="<?= $this->url('game-admin-games') ?>" class="ga-nav-item <?= $activeNav === 'games' ? 'active' : '' ?>">
+                    <span class="ga-nav-icon"><i class="fa-solid fa-layer-group"></i></span>
+                    <span>Game Catalog</span>
+                </a>
+
+                <div class="ga-nav-section-title">Insights & System</div>
+                <a href="<?= $this->url('game-admin-analytics') ?>" class="ga-nav-item <?= $activeNav === 'analytics' ? 'active' : '' ?>">
+                    <span class="ga-nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+                    <span>Analytics & Telemetry</span>
+                </a>
+                <a href="<?= $this->url('game-admin-settings') ?>" class="ga-nav-item <?= $activeNav === 'settings' ? 'active' : '' ?>">
+                    <span class="ga-nav-icon"><i class="fa-solid fa-sliders"></i></span>
+                    <span>Engine Settings</span>
+                </a>
+
+                <div class="ga-nav-section-title">Quick Links</div>
+                <a href="<?= $this->url('admin') ?>" class="ga-nav-item">
+                    <span class="ga-nav-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                    <span>System Admin</span>
+                </a>
+                <a href="<?= $this->url('game-admin-logout') ?>" class="ga-nav-item" style="color: var(--ga-accent-rose);">
+                    <span class="ga-nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
+                    <span>Log Out</span>
+                </a>
+            </nav>
+
+            <div class="ga-sidebar-footer">
+                <div class="ga-user-avatar"><?= $this->escapeHtml($avatarInitials) ?></div>
+                <div class="ga-user-info" style="overflow: hidden;">
+                    <span class="ga-user-name" style="white-space: nowrap; text-overflow: ellipsis; overflow: hidden;"><?= $this->escapeHtml($username) ?></span>
+                    <span class="ga-user-role" style="white-space: nowrap; text-overflow: ellipsis; overflow: hidden;"><?= $this->escapeHtml($email) ?></span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="ga-main-wrapper">
+            
+            <!-- Top Header Bar -->
+            <header class="ga-header">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button id="ga-sidebar-toggle" class="ga-btn-icon" style="display: none;" title="Toggle Sidebar">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+
+                    <div class="ga-header-search">
+                        <i class="fa-solid fa-magnifying-glass ga-search-icon"></i>
+                        <input type="text" id="ga-game-search" placeholder="Search games, identifiers, tags...">
+                    </div>
+                </div>
+
+                <div class="ga-header-actions">
+                    <div class="ga-status-indicator">
+                        <span class="ga-pulse-dot"></span>
+                        <span>Live Session: <strong id="ga-live-players">1,482</strong> players</span>
+                    </div>
+
+                    <button class="ga-btn-primary" id="ga-btn-create-game">
+                        <i class="fa-solid fa-plus"></i> New Game
+                    </button>
+
+                    <a href="<?= $this->url('game-admin-logout') ?>" class="ga-btn-secondary" title="Log out of GameAdmin" style="padding: 8px 12px;">
+                        <i class="fa-solid fa-power-off" style="color: var(--ga-accent-rose);"></i>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Main Content Container -->
+            <main class="ga-content">
+                <?= $this->content ?>
+            </main>
+
+            <!-- Footer -->
+            <footer class="ga-footer">
+                <div>&copy; <?= date('Y') ?> DYXI Game Engine & System Architecture. All rights reserved.</div>
+                <div>GameAdmin v2.5.0 • Doctrine Auth Guard</div>
+            </footer>
+        </div>
+
+    </div>
+
+    <!-- Self-Contained JavaScript -->
+    <script src="<?= $this->basePath('js/game-admin/game-admin.js') ?>"></script>
+</body>
+</html>

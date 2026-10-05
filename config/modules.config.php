@@ -44,4 +44,5 @@ return [
     // 'Authorization',
     'Admin',
     'Subscription',
+    'GameAdmin',
 ];

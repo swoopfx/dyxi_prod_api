@@ -1,0 +1,127 @@
+<?php
+/**
+ * Detailed View Game Entity Template
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$game = $this->game;
+?>
+
+<div class="ga-page-title-bar">
+    <div>
+        <h1 class="ga-page-title"><?= $this->escapeHtml($game['title']) ?></h1>
+        <p class="ga-page-subtitle">Identifier: <code><?= $this->escapeHtml($game['uniqueIdentifier']) ?></code> • UUID: <code><?= $this->escapeHtml($game['uuid']) ?></code></p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="<?= $this->url('game-admin-game-edit', ['id' => $game['id']]) ?>" class="ga-btn-primary">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Game Entity
+        </a>
+        <a href="<?= $this->url('game-admin-games') ?>" class="ga-btn-secondary">
+            <i class="fa-solid fa-arrow-left"></i> Back to Catalog
+        </a>
+    </div>
+</div>
+
+<!-- Key Metadata Cards -->
+<div class="ga-stats-grid">
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Category / Game Type</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-purple"><i class="fa-solid fa-layer-group"></i></div>
+        </div>
+        <div class="ga-stat-value" style="font-size: 1.2rem; margin-top: 6px;"><?= $this->escapeHtml($game['gameType']) ?></div>
+    </div>
+
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Target Curriculum</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-cyan"><i class="fa-solid fa-book-open"></i></div>
+        </div>
+        <div class="ga-stat-value" style="font-size: 1.1rem; margin-top: 6px;"><?= $this->escapeHtml($game['curriculum'] ?? 'None') ?></div>
+    </div>
+
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Launch Endpoint URL</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-emerald"><i class="fa-solid fa-link"></i></div>
+        </div>
+        <a href="<?= $this->escapeHtmlAttr($game['gameAbsoluteUrl']) ?>" target="_blank" class="ga-btn-secondary" style="margin-top: 8px; font-size: 0.8rem; justify-content: center;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Launch Preview
+        </a>
+    </div>
+
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Last Updated</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-amber"><i class="fa-solid fa-clock"></i></div>
+        </div>
+        <div class="ga-stat-value" style="font-size: 1rem; margin-top: 6px; color: var(--ga-text-muted);"><?= $this->escapeHtml($game['updatedOn'] ?? date('Y-m-d H:i')) ?></div>
+    </div>
+</div>
+
+<!-- Gemini AI Summary Panel -->
+<div class="ga-panel">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--ga-primary);"></i>
+            Gemini AI Generated Summary
+        </h2>
+    </div>
+    <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px; padding: 20px; color: #1e1b4b; line-height: 1.7; font-size: 0.95rem;">
+        <?= $this->escapeHtml($game['summary'] ?: 'No summary available.') ?>
+    </div>
+</div>
+
+<!-- Search Engine Tags Panel -->
+<div class="ga-panel">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-tags" style="color: var(--ga-accent-cyan);"></i>
+            Search Engine Keywords & Special Needs Tags
+        </h2>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <?php
+        $rawTags = $game['tags'] ?? '';
+        $tagArray = is_array($rawTags) ? $rawTags : array_filter(array_map('trim', explode(',', (string)$rawTags)));
+        if (!empty($tagArray)):
+            foreach ($tagArray as $tag):
+        ?>
+            <span class="ga-badge ga-badge-type" style="padding: 6px 14px; font-size: 0.82rem; border-radius: 20px;">
+                <i class="fa-solid fa-hashtag" style="font-size: 0.7rem; opacity: 0.7;"></i> <?= $this->escapeHtml($tag) ?>
+            </span>
+        <?php
+            endforeach;
+        else:
+        ?>
+            <span style="color: var(--ga-text-muted); font-size: 0.88rem;">No tags assigned.</span>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Full Description Content Panel -->
+<div class="ga-panel">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-file-lines" style="color: var(--ga-accent-emerald);"></i>
+            Full Educational Description & Extracted Markdown Content
+        </h2>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid var(--ga-border-color); border-radius: 12px; padding: 24px; color: var(--ga-text-main); white-space: pre-wrap; font-family: var(--ga-font-family); font-size: 0.92rem; line-height: 1.8;">
+        <?= $this->escapeHtml($game['description'] ?: 'No detailed description specified.') ?>
+    </div>
+</div>
+
+<?php if (!empty($game['customConfig'])): ?>
+<!-- Custom JSON Config Panel -->
+<div class="ga-panel">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-sliders" style="color: var(--ga-accent-amber);"></i>
+            Custom Engine Configuration (JSON)
+        </h2>
+    </div>
+    <pre style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 20px; color: #38bdf8; font-family: monospace; font-size: 0.88rem; overflow-x: auto;">
+<?= $this->escapeHtml(is_array($game['customConfig']) ? json_encode($game['customConfig'], JSON_PRETTY_PRINT) : $game['customConfig']) ?>
+    </pre>
+</div>
+<?php endif; ?>

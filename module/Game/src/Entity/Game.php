@@ -41,16 +41,23 @@ class Game
     private $title;
 
     /**
-     * @var string|null
+     * @var string|null contains Ai generated summary of the description
      * @ORM\Column(name="summary", type="text", nullable=true)
      */
     private $summary;
 
     /**
-     * @var string|null
-     * @ORM\Column(name="description", type="text", nullable=true)
+     * @var string|null Detailed description of the game (accepts large text data)
+     * @ORM\Column(name="description", type="text", length=65535, nullable=true)
      */
     private $description;
+
+    /**
+     * Searchable keywords and tags for search engine query matching
+     * @var string|null
+     * @ORM\Column(name="tags", type="text", nullable=true)
+     */
+    private $tags;
 
     /**
      * @var GameType
@@ -82,6 +89,18 @@ class Game
      * @ORM\Column(name="created_on", type="datetime", nullable=false)
      */
     private $createdOn;
+
+    /**
+     * @var string
+     * @ORM\Column(name="game_absolute_url", type="string", length=512, nullable=false)
+     */
+    private $gameAbsoluteUrl;
+
+    /**
+     * @var array
+     * @ORM\Column(name="custom_config", type="json", nullable=true)
+     */
+    private $customConfig;
 
     /**
      * @var \DateTime
@@ -222,6 +241,43 @@ class Game
     public function setUpdatedOn(\DateTime $updatedOn): self
     {
         $this->updatedOn = $updatedOn;
+        return $this;
+    }
+
+    public function getGameAbsoluteUrl(): ?string
+    {
+        return $this->gameAbsoluteUrl;
+    }
+
+    public function setGameAbsoluteUrl(?string $gameAbsoluteUrl): self
+    {
+        $this->gameAbsoluteUrl = $gameAbsoluteUrl;
+        return $this;
+    }
+
+    public function getCustomConfig(): ?array
+    {
+        return $this->customConfig;
+    }
+
+    public function setCustomConfig(?array $customConfig): self
+    {
+        $this->customConfig = $customConfig;
+        return $this;
+    }
+
+    public function getTags(): ?string
+    {
+        return $this->tags;
+    }
+
+    public function setTags($tags): self
+    {
+        if (is_array($tags)) {
+            $this->tags = implode(', ', array_filter($tags));
+        } else {
+            $this->tags = $tags;
+        }
         return $this;
     }
 }

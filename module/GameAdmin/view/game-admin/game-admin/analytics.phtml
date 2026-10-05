@@ -1,0 +1,62 @@
+<?php
+/**
+ * GameAdmin Analytics View
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+?>
+
+<div class="ga-page-title-bar">
+    <div>
+        <h1 class="ga-page-title">Analytics & Telemetry</h1>
+        <p class="ga-page-subtitle">Real-time performance telemetry, session engagement metrics, and intervention success rates.</p>
+    </div>
+</div>
+
+<div class="ga-stats-grid">
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Daily Active Users</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-cyan"><i class="fa-solid fa-chart-line"></i></div>
+        </div>
+        <div class="ga-stat-value"><?= number_format($this->metrics['daily_active_users']) ?></div>
+    </div>
+
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Session Completion Rate</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-emerald"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="ga-stat-value"><?= $this->metrics['completion_rate'] ?></div>
+    </div>
+
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">7-Day Retention</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-purple"><i class="fa-solid fa-rotate"></i></div>
+        </div>
+        <div class="ga-stat-value"><?= $this->metrics['retention_rate_7d'] ?></div>
+    </div>
+
+    <div class="ga-stat-card">
+        <div class="ga-stat-card-header">
+            <span class="ga-stat-label">Avg Gameplay Score</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-amber"><i class="fa-solid fa-trophy"></i></div>
+        </div>
+        <div class="ga-stat-value"><?= $this->metrics['avg_score'] ?></div>
+    </div>
+</div>
+
+<div class="ga-panel">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-tower-cell" style="color: var(--ga-accent-emerald);"></i>
+            Telemetry Stream Monitor
+        </h2>
+    </div>
+    <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #10b981; line-height: 1.8;">
+        <div>[<?= date('H:i:s') ?>] TELEMETRY_STREAM_CONNECTED -> Listener active on port 9092</div>
+        <div>[<?= date('H:i:s') ?>] EVENT: session_start (user_uuid: 8f4a-9b12, game: game_word_quest)</div>
+        <div>[<?= date('H:i:s') ?>] METRIC: response_time_ms = 420ms | accuracy_rate = 94.5%</div>
+        <div>[<?= date('H:i:s') ?>] EVENT: level_complete (score: 950, errors: 0)</div>
+    </div>
+</div>
