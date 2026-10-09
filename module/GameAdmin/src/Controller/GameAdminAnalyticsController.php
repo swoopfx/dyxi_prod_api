@@ -16,6 +16,7 @@ namespace GameAdmin\Controller;
 
 use Doctrine\ORM\EntityManager;
 use Game\Entity\Game;
+use Game\Service\CurriculumService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Session\Container;
 use Laminas\View\Model\JsonModel;
@@ -32,13 +33,20 @@ class GameAdminAnalyticsController extends AbstractActionController
     private ?EntityManager $entityManager;
 
     /**
+     * Curriculum Service instance.
+     */
+    private ?CurriculumService $curriculumService;
+
+    /**
      * GameAdminAnalyticsController Constructor.
      *
      * @param EntityManager|null $entityManager
+     * @param CurriculumService|null $curriculumService
      */
-    public function __construct(?EntityManager $entityManager = null)
+    public function __construct(?EntityManager $entityManager = null, ?CurriculumService $curriculumService = null)
     {
         $this->entityManager = $entityManager;
+        $this->curriculumService = $curriculumService;
     }
 
     /**
@@ -70,7 +78,7 @@ class GameAdminAnalyticsController extends AbstractActionController
      */
     public function statsApiAction(): JsonModel
     {
-        $totalGames = 5;
+        $totalGames = 0;
         if ($this->entityManager !== null) {
             try {
                 $totalGames = count($this->entityManager->getRepository(Game::class)->findAll());
@@ -79,14 +87,14 @@ class GameAdminAnalyticsController extends AbstractActionController
             }
         }
 
+        $activePlayers = $this->curriculumService ? $this->curriculumService->getActiveConcurrentPlayers('global') : 0;
+
         return new JsonModel([
             'success'   => true,
             'timestamp' => date('Y-m-d H:i:s'),
             'metrics'   => [
-                'active_players'    => rand(1400, 1600),
-                'server_latency_ms' => rand(12, 28),
-                'fps_average'       => rand(58, 60),
-                'total_games'       => $totalGames,
+                'active_players' => $activePlayers,
+                'total_games'    => $totalGames,
             ],
         ]);
     }

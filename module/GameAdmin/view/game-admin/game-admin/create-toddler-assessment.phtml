@@ -1,0 +1,85 @@
+<?php
+/**
+ * Create Toddler Assessment View Template
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$form = $this->form;
+$form->prepare();
+?>
+
+<div class="ga-page-title-bar">
+    <div>
+        <h1 class="ga-page-title"><i class="fa-solid fa-baby" style="color: var(--ga-primary); margin-right: 8px;"></i> Add Game to Toddler Assessment</h1>
+        <p class="ga-page-subtitle">Configure early development game assignments and custom runtime options for ToddlerGamesList.</p>
+    </div>
+    <div>
+        <a href="<?= $this->url('game-admin-toddler-assessment') ?>" class="ga-btn-secondary">
+            <i class="fa-solid fa-arrow-left"></i> Back to Toddler Assessment
+        </a>
+    </div>
+</div>
+
+<?php if (!empty($this->successMessage)): ?>
+    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-circle-check" style="font-size: 1.2rem;"></i>
+        <div><?= $this->escapeHtml($this->successMessage) ?></div>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($this->errorMessage)): ?>
+    <div style="background: #fef2f2; border: 1px solid #fecdd3; color: #b91c1c; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.2rem;"></i>
+        <div><?= $this->escapeHtml($this->errorMessage) ?></div>
+    </div>
+<?php endif; ?>
+
+<div class="ga-panel" style="max-width: 720px; margin: 0 auto;">
+    <div class="ga-panel-header">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-baby-carriage" style="color: var(--ga-primary);"></i>
+            Toddler Assessment Specification Form
+        </h2>
+    </div>
+
+    <?= $this->form()->openTag($form->setAttribute('action', $this->url('game-admin-toddler-assessment-create'))) ?>
+    <?= $this->formHidden($form->get('csrf')) ?>
+
+    <!-- Game Selection -->
+    <div class="ga-form-group" style="margin-bottom: 20px;">
+        <label class="ga-form-label"><?= $form->get('gameId')->getOption('label') ?> *</label>
+        <?= $this->formElement($form->get('gameId')) ?>
+        <?php if ($messages = $form->get('gameId')->getMessages()): ?>
+            <div style="color: var(--ga-accent-rose); font-size: 0.78rem; margin-top: 4px;"><?= current($messages) ?></div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Custom Config (JSON) -->
+    <div class="ga-form-group" style="margin-bottom: 20px;">
+        <label class="ga-form-label"><?= $form->get('customConfig')->getOption('label') ?></label>
+        <?= $this->formElement($form->get('customConfig')) ?>
+        <p style="font-size: 0.8rem; color: var(--ga-text-muted); margin-top: 6px;">
+            Optional JSON configuration specifying age bounds, high contrast themes, or sound cues for early learners.
+        </p>
+        <?php if ($messages = $form->get('customConfig')->getMessages()): ?>
+            <div style="color: var(--ga-accent-rose); font-size: 0.78rem; margin-top: 4px;"><?= current($messages) ?></div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Is Active Checkbox Option -->
+    <div class="ga-form-group" style="margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid var(--ga-border-color);">
+        <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer;">
+            <?= $this->formElement($form->get('isActive')) ?>
+            <span><?= $form->get('isActive')->getOption('label') ?></span>
+        </label>
+        <p style="font-size: 0.8rem; color: var(--ga-text-muted); margin-top: 6px; margin-left: 26px;">
+            Checking this box automatically sets this entry as the active Toddler Assessment and deactivates all other entries in the database.
+        </p>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 14px; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--ga-border-color);">
+        <a href="<?= $this->url('game-admin-toddler-assessment') ?>" class="ga-btn-secondary">Cancel</a>
+        <?= $this->formElement($form->get('submit')) ?>
+    </div>
+
+    <?= $this->form()->closeTag() ?>
+</div>

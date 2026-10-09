@@ -19,7 +19,10 @@ use Doctrine\ORM\EntityManager;
 use Game\Entity\Curriculum;
 use Game\Entity\Game;
 use Game\Entity\GameType;
+use Game\Entity\ToddlerGamesList;
 use GameAdmin\Form\GameForm;
+use GameAdmin\Form\ToddlerAssessmentForm;
+use GameAdmin\Form\ToddlerNestForm;
 use GameAdmin\Service\GeminiService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Session\Container;
@@ -250,23 +253,6 @@ class GameManageController extends AbstractActionController
             }
         }
 
-        // Fallback to sample data if entity not found in DB
-        if ($gameData === null) {
-            $sampleList = $this->getGamesList();
-            foreach ($sampleList as $g) {
-                if ((int)$g['id'] === $id) {
-                    $gameData = $g;
-                    $gameData['description'] = $g['summary'] . "\n\nDetailed pediatric diagnostic protocol and cognitive training specification.";
-                    $gameData['curriculum']  = 'Primary Dyslexia Remediation Curriculum';
-                    $gameData['updatedOn']   = date('Y-m-d H:i:s');
-                    break;
-                }
-            }
-            if ($gameData === null && !empty($sampleList)) {
-                $gameData = $sampleList[0];
-            }
-        }
-
         $viewModel = new ViewModel([
             'activeNav'   => 'games',
             'currentUser' => $this->getActiveUser(),
@@ -482,8 +468,6 @@ class GameManageController extends AbstractActionController
                             'createdOn'        => $g->getCreatedOn() ? $g->getCreatedOn()->format('Y-m-d H:i') : date('Y-m-d H:i'),
                             'gameAbsoluteUrl'  => $g->getGameAbsoluteUrl(),
                             'status'           => 'Active',
-                            'playsCount'       => rand(1200, 8500),
-                            'rating'           => number_format(4.2 + (rand(0, 7) / 10), 1),
                         ];
                     }
                     return $games;
@@ -493,82 +477,11 @@ class GameManageController extends AbstractActionController
             }
         }
 
-        return [
-            [
-                'id' => 1,
-                'uuid' => 'g-101-alpha',
-                'uniqueIdentifier' => 'game_word_quest',
-                'title' => 'Word Quest Odyssey',
-                'summary' => 'Interactive phonics and dyslexia reading comprehension challenge.',
-                'tags' => 'early-childhood-education, dyslexia, phonics, reading',
-                'gameType' => 'Phonics & Reading',
-                'createdOn' => '2026-01-15 10:30',
-                'gameAbsoluteUrl' => '/games/word-quest',
-                'status' => 'Active',
-                'playsCount' => 14250,
-                'rating' => '4.9',
-            ],
-            [
-                'id' => 2,
-                'uuid' => 'g-102-beta',
-                'uniqueIdentifier' => 'game_num_blaster',
-                'title' => 'Number Blaster 3D',
-                'summary' => 'Fast-paced spatial math training for dyscalculia intervention.',
-                'tags' => 'dyscalculia, math, spatial-logic, counting',
-                'gameType' => 'Math & Logic',
-                'createdOn' => '2026-02-04 14:15',
-                'gameAbsoluteUrl' => '/games/number-blaster',
-                'status' => 'Active',
-                'playsCount' => 9820,
-                'rating' => '4.7',
-            ],
-            [
-                'id' => 3,
-                'uuid' => 'g-103-gamma',
-                'uniqueIdentifier' => 'game_focus_realm',
-                'title' => 'Focus Realm RPG',
-                'summary' => 'Sustained attention and executive function booster game for ADHD.',
-                'tags' => 'adhd, executive-function, focus, attention',
-                'gameType' => 'Executive Function',
-                'createdOn' => '2026-02-20 09:00',
-                'gameAbsoluteUrl' => '/games/focus-realm',
-                'status' => 'Active',
-                'playsCount' => 18400,
-                'rating' => '4.8',
-            ],
-            [
-                'id' => 4,
-                'uuid' => 'g-104-delta',
-                'uniqueIdentifier' => 'game_memory_matrix',
-                'title' => 'Memory Matrix Sprint',
-                'summary' => 'Working memory pattern recognition challenge.',
-                'tags' => 'working-memory, cognitive, pattern-recognition',
-                'gameType' => 'Cognitive Memory',
-                'createdOn' => '2026-03-10 16:45',
-                'gameAbsoluteUrl' => '/games/memory-matrix',
-                'status' => 'Maintenance',
-                'playsCount' => 6100,
-                'rating' => '4.5',
-            ],
-            [
-                'id' => 5,
-                'uuid' => 'g-105-epsilon',
-                'uniqueIdentifier' => 'game_phoneme_runner',
-                'title' => 'Phoneme Runner',
-                'summary' => 'Auditory discrimination and speed phonetics gameplay.',
-                'tags' => 'phonics, early-childhood-education, auditory-processing',
-                'gameType' => 'Phonics & Reading',
-                'createdOn' => '2026-03-28 11:20',
-                'gameAbsoluteUrl' => '/games/phoneme-runner',
-                'status' => 'Active',
-                'playsCount' => 11300,
-                'rating' => '4.6',
-            ],
-        ];
+        return [];
     }
 
     /**
-     * Fetch GameType options array.
+     * Fetch GameType options array from database.
      */
     private function getGameTypeOptions(): array
     {
@@ -584,20 +497,11 @@ class GameManageController extends AbstractActionController
             }
         }
 
-        if (empty($options)) {
-            $options = [
-                '1' => 'Phonics & Reading (Dyslexia)',
-                '2' => 'Math & Spatial Logic (Dyscalculia)',
-                '3' => 'Executive Function & Focus (ADHD)',
-                '4' => 'Cognitive Memory Sprint',
-            ];
-        }
-
         return $options;
     }
 
     /**
-     * Fetch Curriculum options array.
+     * Fetch Curriculum options array from database.
      */
     private function getCurriculumOptions(): array
     {
@@ -613,12 +517,197 @@ class GameManageController extends AbstractActionController
             }
         }
 
-        if (empty($options)) {
-            $options = [
-                '1' => 'Primary Dyslexia Remediation Curriculum',
-                '2' => 'Early Dyscalculia Spatial Math Path',
-                '3' => 'Focus & Sustained Attention Track',
-            ];
+        return $options;
+    }
+
+    /**
+     * Renders Toddler Assessment List / Toddler Games List management view (/game-admin/toddler-assessment).
+     *
+     * @return ViewModel
+     */
+    public function toddlerAssessmentAction(): ViewModel
+    {
+        $toddlerList = [];
+        if ($this->entityManager !== null) {
+            try {
+                $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
+                $entities = $repo->findAll();
+                foreach ($entities as $tg) {
+                    $game = $tg->getGameId();
+                    $toddlerList[] = [
+                        'id'           => $tg->getId(),
+                        'uuid'         => $tg->getUuid(),
+                        'gameId'       => $game ? $game->getId() : null,
+                        'gameTitle'    => $game ? $game->getTitle() : 'Unmapped Game',
+                        'gameUrl'      => $game ? $game->getGameAbsoluteUrl() : '',
+                        'customConfig' => $tg->getCustomeConfig(),
+                        'isActive'     => $tg->getIsActive(),
+                        'createdOn'    => $tg->getCreatedOn() ? $tg->getCreatedOn()->format('Y-m-d H:i:s') : 'N/A',
+                        'updatedOn'    => $tg->getUpdatedOn() ? $tg->getUpdatedOn()->format('Y-m-d H:i:s') : 'N/A',
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
+
+        $form = new ToddlerAssessmentForm($this->getGameOptions());
+
+        $viewModel = new ViewModel([
+            'activeNav'   => 'toddler-assessment',
+            'currentUser' => $this->getActiveUser(),
+            'toddlerList' => $toddlerList,
+            'form'        => $form,
+        ]);
+
+        $viewModel->setTemplate('game-admin/game-admin/toddler-assessment');
+        return $viewModel;
+    }
+
+    /**
+     * Renders and processes the Toddler Assessment Entity Creation Form (/game-admin/toddler-assessment/create).
+     *
+     * @return ViewModel|\Laminas\Http\Response
+     */
+    public function createToddlerAssessmentAction()
+    {
+        $request        = $this->getRequest();
+        $form           = new ToddlerAssessmentForm($this->getGameOptions());
+        $successMessage = null;
+        $errorMessage   = null;
+
+        if ($request->isPost()) {
+            $form->setData($request->getPost()->toArray());
+
+            if ($form->isValid()) {
+                $data = $form->getData();
+
+                try {
+                    $game = null;
+                    if ($this->entityManager !== null && !empty($data['gameId'])) {
+                        $game = $this->entityManager->find(Game::class, (int)$data['gameId']);
+                    }
+
+                    if ($game === null) {
+                        throw new \Exception('Selected Game entity could not be found.');
+                    }
+
+                    $customConfig = null;
+                    if (!empty($data['customConfig'])) {
+                        $customConfig = json_decode($data['customConfig'], true);
+                    }
+
+                    $isActive = isset($data['isActive']) ? (bool)$data['isActive'] : true;
+
+                    if ($this->entityManager !== null) {
+                        if ($isActive) {
+                            // Deactivate all existing ToddlerGamesList entities to enforce SINGLE ACTIVE entity rule
+                            $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
+                            $activeEntries = $repo->findBy(['isActive' => true]);
+                            foreach ($activeEntries as $item) {
+                                $item->setIsActive(false);
+                                $item->setUpdatedOn(new \DateTime());
+                            }
+                        }
+
+                        $toddlerGame = new ToddlerGamesList();
+                        $toddlerGame->setUuid(Uuid::uuid4()->toString());
+                        $toddlerGame->setGameId($game);
+                        $toddlerGame->setCustomeConfig($customConfig);
+                        $toddlerGame->setIsActive($isActive);
+                        $toddlerGame->setCreatedOn(new \DateTime());
+                        $toddlerGame->setUpdatedOn(new \DateTime());
+
+                        $this->entityManager->persist($toddlerGame);
+                        $this->entityManager->flush();
+                    }
+
+                    $successMessage = sprintf('Toddler Assessment entry created successfully for game "%s"! (Active: %s)', $game->getTitle(), $isActive ? 'Yes' : 'No');
+                    $form = new ToddlerAssessmentForm($this->getGameOptions());
+                } catch (\Throwable $e) {
+                    $errorMessage = 'Failed to persist Toddler Assessment entry: ' . $e->getMessage();
+                }
+            } else {
+                $errorMessage = 'Validation failed. Please select a valid game.';
+            }
+        }
+
+        $viewModel = new ViewModel([
+            'activeNav'      => 'toddler-assessment',
+            'currentUser'    => $this->getActiveUser(),
+            'form'           => $form,
+            'successMessage' => $successMessage,
+            'errorMessage'   => $errorMessage,
+        ]);
+
+        $viewModel->setTemplate('game-admin/game-admin/create-toddler-assessment');
+        return $viewModel;
+    }
+
+    /**
+     * Activates a specific Toddler Assessment entity and deactivates all others (/game-admin/toddler-assessment/activate/:id).
+     *
+     * @return \Laminas\Http\Response
+     */
+    public function activateToddlerAssessmentAction()
+    {
+        $id = $this->params()->fromRoute('id');
+
+        if (!empty($id) && $this->entityManager !== null) {
+            try {
+                $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
+                $all = $repo->findAll();
+                foreach ($all as $item) {
+                    $item->setIsActive(false);
+                    $item->setUpdatedOn(new \DateTime());
+                }
+
+                $target = is_numeric($id) ? $repo->find((int)$id) : $repo->findOneBy(['uuid' => (string)$id]);
+                if ($target) {
+                    $target->setIsActive(true);
+                    $target->setUpdatedOn(new \DateTime());
+                }
+
+                $this->entityManager->flush();
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
+
+        return $this->redirect()->toRoute('game-admin-toddler-assessment');
+    }
+
+    /**
+     * Alias for toddlerAssessmentAction (/game-admin/toddler-nest).
+     */
+    public function toddlerNestAction(): ViewModel
+    {
+        return $this->toddlerAssessmentAction();
+    }
+
+    /**
+     * Alias for createToddlerAssessmentAction (/game-admin/toddler-nest/create).
+     */
+    public function createToddlerNestAction()
+    {
+        return $this->createToddlerAssessmentAction();
+    }
+
+    /**
+     * Fetch Game select options array for forms from database.
+     */
+    private function getGameOptions(): array
+    {
+        $options = [];
+        if ($this->entityManager !== null) {
+            try {
+                $games = $this->entityManager->getRepository(Game::class)->findAll();
+                foreach ($games as $g) {
+                    $options[(string)$g->getId()] = $g->getTitle() . ' (' . $g->getUniqueIdentifier() . ')';
+                }
+            } catch (\Throwable $e) {
+                // Ignore
+            }
         }
 
         return $options;

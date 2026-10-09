@@ -1,0 +1,99 @@
+<?php
+/**
+ * Toddler Assessment List Management View Template
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$toddlerList = $this->toddlerList ?? [];
+?>
+
+<div class="ga-page-title-bar">
+    <div>
+        <h1 class="ga-page-title"><i class="fa-solid fa-baby" style="color: var(--ga-primary); margin-right: 8px;"></i> Toddler Assessment Games List</h1>
+        <p class="ga-page-subtitle">Manage early childhood development games. <strong>Strict Rule: Only ONE Toddler Assessment game can be ACTIVE at any time.</strong></p>
+    </div>
+    <div>
+        <a href="<?= $this->url('game-admin-toddler-assessment-create') ?>" class="ga-btn-primary">
+            <i class="fa-solid fa-plus"></i> Add Game to Toddler Assessment
+        </a>
+    </div>
+</div>
+
+<div class="ga-panel">
+    <div class="ga-panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-list-check" style="color: var(--ga-accent-emerald);"></i>
+            Registered Toddler Assessment Entities (<?= count($toddlerList) ?>)
+        </h2>
+    </div>
+
+    <?php if (empty($toddlerList)): ?>
+        <div style="padding: 40px; text-align: center; color: var(--ga-text-muted);">
+            <i class="fa-solid fa-baby-carriage" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 16px;"></i>
+            <p style="font-size: 1.1rem; font-weight: 500;">No games added to Toddler Assessment yet.</p>
+            <p style="font-size: 0.9rem; margin-bottom: 20px;">Use the form below or click "Add Game to Toddler Assessment" to assign early childhood games.</p>
+            <a href="<?= $this->url('game-admin-toddler-assessment-create') ?>" class="ga-btn-primary">
+                <i class="fa-solid fa-plus"></i> Add First Toddler Game
+            </a>
+        </div>
+    <?php else: ?>
+        <div style="overflow-x: auto;">
+            <table class="ga-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--ga-border-color); text-align: left;">
+                        <th style="padding: 12px 16px;">ID / UUID</th>
+                        <th style="padding: 12px 16px;">Target Game Title</th>
+                        <th style="padding: 12px 16px;">Launch Endpoint</th>
+                        <th style="padding: 12px 16px;">Status</th>
+                        <th style="padding: 12px 16px;">Custom Config (JSON)</th>
+                        <th style="padding: 12px 16px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($toddlerList as $item): ?>
+                        <tr style="border-bottom: 1px solid var(--ga-border-color); <?= !empty($item['isActive']) ? 'background: #f0fdf4;' : '' ?>">
+                            <td style="padding: 12px 16px;">
+                                <div style="font-weight: 600; color: var(--ga-text-primary);">#<?= (int)$item['id'] ?></div>
+                                <div style="font-family: monospace; font-size: 0.75rem; color: var(--ga-text-muted);"><?= $this->escapeHtml($item['uuid']) ?></div>
+                            </td>
+                            <td style="padding: 12px 16px; font-weight: 600; color: var(--ga-text-primary);">
+                                <?= $this->escapeHtml($item['gameTitle']) ?>
+                            </td>
+                            <td style="padding: 12px 16px; font-family: monospace; font-size: 0.85rem; color: var(--ga-accent-blue);">
+                                <?= $this->escapeHtml($item['gameUrl'] ?: 'N/A') ?>
+                            </td>
+                            <td style="padding: 12px 16px;">
+                                <?php if (!empty($item['isActive'])): ?>
+                                    <span style="background: #10b981; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="fa-solid fa-circle-check"></i> ACTIVE
+                                    </span>
+                                <?php else: ?>
+                                    <span style="background: #94a3b8; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                        Inactive
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 12px 16px;">
+                                <?php if (!empty($item['customConfig'])): ?>
+                                    <code style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #475569;">
+                                        <?= $this->escapeHtml(json_encode($item['customConfig'])) ?>
+                                    </code>
+                                <?php else: ?>
+                                    <span style="color: var(--ga-text-muted); font-style: italic;">Standard Config</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 12px 16px;">
+                                <?php if (empty($item['isActive'])): ?>
+                                    <a href="<?= $this->url('game-admin-toddler-assessment-activate', ['id' => $item['id']]) ?>" class="ga-btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; background: #e0f2fe; color: #0284c7; border-color: #bae6fd;">
+                                        <i class="fa-solid fa-bolt"></i> Set Active
+                                    </a>
+                                <?php else: ?>
+                                    <span style="font-size: 0.8rem; color: #059669; font-weight: 600;"><i class="fa-solid fa-star"></i> Currently Active</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</div>

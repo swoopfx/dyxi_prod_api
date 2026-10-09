@@ -4,6 +4,7 @@ namespace Game\Service;
 
 use Doctrine\ORM\EntityManager;
 use Game\Entity\Curriculum;
+use Game\Entity\ToddlerGamesList;
 use General\Service\RedisCacheService;
 use Ramsey\Uuid\Uuid;
 use Ward\Entity\Ward;
@@ -469,4 +470,203 @@ class CurriculumService
             $this->redisCacheService->clearNamespace(self::CURRICULUM_CACHE_NAMESPACE);
         }
     }
+
+    /**
+     * Retrieves all ToddlerGamesList / Toddler Nest / Toddler Assessment entities.
+     *
+     * @return ToddlerGamesList[] Array of ToddlerGamesList entity instances.
+     */
+    public function getToddlerNestList(): array
+    {
+        return $this->entityManager->getRepository(ToddlerGamesList::class)->findAll();
+    }
+
+    /**
+     * Alias for getToddlerNestList.
+     *
+     * @return ToddlerGamesList[]
+     */
+    public function getToddlerAssessmentList(): array
+    {
+        return $this->getToddlerNestList();
+    }
+
+    /**
+     * Deactivates all existing ToddlerGamesList entities.
+     *
+     * @return void
+     */
+    public function deactivateAllToddlerGames(): void
+    {
+        $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
+        $activeEntries = $repo->findBy(['isActive' => true]);
+        foreach ($activeEntries as $item) {
+            $item->setIsActive(false);
+            $item->setUpdatedOn(new \DateTime());
+        }
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Retrieves the single active ToddlerGamesList / Toddler Assessment entity.
+     * Falls back to the latest created entity if no entity is marked active.
+     *
+     * @return ToddlerGamesList|null The active ToddlerGamesList entity or null if none exist.
+     */
+    public function getActiveToddlerAssessment(): ?ToddlerGamesList
+    {
+        $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
+        $active = $repo->findOneBy(['isActive' => true], ['id' => 'DESC']);
+        if (!$active) {
+            $active = $repo->findOneBy([], ['id' => 'DESC']);
+        }
+        return $active;
+    }
+
+    /**
+     * Sets a specific ToddlerGamesList entity as active and deactivates all others.
+     *
+     * @param int|string $idOrUuid Database ID or UUID string.
+     * @return ToddlerGamesList The updated active entity.
+     * @throws \Exception If entity is not found.
+     */
+    public function setActiveToddlerAssessment($idOrUuid): ToddlerGamesList
+    {
+        $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
+        $target = is_numeric($idOrUuid) ? $repo->find((int) $idOrUuid) : $repo->findOneBy(['uuid' => (string) $idOrUuid]);
+        if (!$target) {
+            throw new \Exception('Toddler Assessment entity not found.');
+        }
+
+        $this->deactivateAllToddlerGames();
+
+        $target->setIsActive(true);
+        $target->setUpdatedOn(new \DateTime());
+        $this->entityManager->flush();
+
+        return $target;
+    }
+
+    /**
+     * Creates and persists a new ToddlerGamesList entity.
+     * Ensures only ONE entity is active if 'is_active' is true (default true).
+     *
+     * @param array $data Input payload containing 'game_id', optional 'custom_config', and 'is_active'.
+     * @return ToddlerGamesList The created entity.
+     * @throws \Exception If game is not found.
+     */
+    public function createToddlerNestEntry(array $data): ToddlerGamesList
+    {
+        $gameId = $data['game_id'] ?? $data['gameId'] ?? null;
+        if (empty($gameId)) {
+            throw new \Exception("Parameter 'game_id' is required.");
+        }
+
+        $gameRepo = $this->entityManager->getRepository(\Game\Entity\Game::class);
+        $game = is_numeric($gameId) ? $gameRepo->find((int) $gameId) : $gameRepo->findOneBy(['uuid' => (string) $gameId]);
+        if (!$game) {
+            $game = $gameRepo->findOneBy(['uniqueIdentifier' => (string) $gameId]);
+        }
+
+        if (!$game) {
+            throw new \Exception("Game entity not found with identifier: " . $gameId);
+        }
+
+        $customConfig = null;
+        if (!empty($data['custom_config'])) {
+            $customConfig = is_array($data['custom_config']) ? $data['custom_config'] : json_decode($data['custom_config'], true);
+        } elseif (!empty($data['customConfig'])) {
+            $customConfig = is_array($data['customConfig']) ? $data['customConfig'] : json_decode($data['customConfig'], true);
+        }
+
+        $isActive = isset($data['is_active']) ? (bool) $data['is_active'] : (isset($data['isActive']) ? (bool) $data['isActive'] : true);
+        if ($isActive) {
+            $this->deactivateAllToddlerGames();
+        }
+
+        $toddlerGame = new ToddlerGamesList();
+        $toddlerGame->setUuid(Uuid::uuid4()->toString());
+        $toddlerGame->setGameId($game);
+        $toddlerGame->setCustomeConfig($customConfig);
+        $toddlerGame->setIsActive($isActive);
+        $toddlerGame->setCreatedOn(new \DateTime());
+        $toddlerGame->setUpdatedOn(new \DateTime());
+
+        $this->entityManager->persist($toddlerGame);
+        $this->entityManager->flush();
+
+        return $toddlerGame;
+    }
+
+    /**
+     * Alias for createToddlerNestEntry.
+     *
+     * @param array $data
+     * @return ToddlerGamesList
+     */
+    public function createToddlerAssessmentEntry(array $data): ToddlerGamesList
+    {
+        return $this->createToddlerNestEntry($data);
+    }
+
+    /**
+     * Retrieves the count of active concurrent players for a unique identifier directly from Redis cache.
+     * Purely interacts with Redis cache without modifying or querying the database.
+     *
+     * @param string $identifier Unique identifier string (e.g. game unique_identifier, uuid, or custom name)
+     * @return int Active concurrent players count
+     */
+    public function getActiveConcurrentPlayers(string $identifier = 'toddler_assessment'): int
+    {
+        if (!$this->redisCacheService) {
+            return 0;
+        }
+        $key = 'active_concurrent_players_' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', $identifier);
+        $val = $this->redisCacheService->get($key, 'dyxi_active_players');
+        return is_numeric($val) ? (int) $val : 0;
+    }
+
+    /**
+     * Updates (increments, decrements, sets, or gets) active concurrent player stats in Redis cache.
+     * Purely interacts with Redis cache without affecting the relational database.
+     *
+     * @param string $identifier Unique identifier string
+     * @param string $action 'get', 'increment', 'decrement', 'set', 'join', 'leave'
+     * @param int $count Value/amount to modify or set
+     * @return int Updated active concurrent player count
+     */
+    public function updateActiveConcurrentPlayers(string $identifier = 'toddler_assessment', string $action = 'get', int $count = 1): int
+    {
+        $current = $this->getActiveConcurrentPlayers($identifier);
+        $action = strtolower(trim($action));
+
+        switch ($action) {
+            case 'increment':
+            case 'join':
+            case 'add':
+                $newCount = max(0, $current + max(1, $count));
+                break;
+            case 'decrement':
+            case 'leave':
+            case 'remove':
+            case 'sub':
+                $newCount = max(0, $current - max(1, $count));
+                break;
+            case 'set':
+                $newCount = max(0, $count);
+                break;
+            case 'get':
+            default:
+                $newCount = $current;
+                break;
+        }
+
+        if ($this->redisCacheService && $action !== 'get') {
+            $key = 'active_concurrent_players_' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', $identifier);
+            $this->redisCacheService->set($key, $newCount, 86400, 'dyxi_active_players');
+        }
+
+        return $newCount;
+    }
 }
+

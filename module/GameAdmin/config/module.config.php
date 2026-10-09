@@ -117,6 +117,62 @@ return [
                     ],
                 ],
             ],
+            // Toddler Nest / Assessment: Toddler Games List Management (/game-admin/toddler-nest & /game-admin/toddler-assessment)
+            'game-admin-toddler-nest' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/game-admin/toddler-nest',
+                    'defaults' => [
+                        'controller' => GameManageController::class,
+                        'action'     => 'toddlerNest',
+                    ],
+                ],
+            ],
+            'game-admin-toddler-assessment' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/game-admin/toddler-assessment',
+                    'defaults' => [
+                        'controller' => GameManageController::class,
+                        'action'     => 'toddlerAssessment',
+                    ],
+                ],
+            ],
+            // Toddler Nest / Assessment: Create Form (/game-admin/toddler-nest/create & /game-admin/toddler-assessment/create)
+            'game-admin-toddler-nest-create' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/game-admin/toddler-nest/create',
+                    'defaults' => [
+                        'controller' => GameManageController::class,
+                        'action'     => 'createToddlerNest',
+                    ],
+                ],
+            ],
+            'game-admin-toddler-assessment-create' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/game-admin/toddler-assessment/create',
+                    'defaults' => [
+                        'controller' => GameManageController::class,
+                        'action'     => 'createToddlerAssessment',
+                    ],
+                ],
+            ],
+            // Toddler Assessment: Activate Endpoint (/game-admin/toddler-assessment/activate/:id)
+            'game-admin-toddler-assessment-activate' => [
+                'type'    => Segment::class,
+                'options' => [
+                    'route'    => '/game-admin/toddler-assessment/activate/:id',
+                    'constraints' => [
+                        'id' => '[a-zA-Z0-9_-]+',
+                    ],
+                    'defaults' => [
+                        'controller' => GameManageController::class,
+                        'action'     => 'activateToddlerAssessment',
+                    ],
+                ],
+            ],
             // Analytics: Telemetry & Performance Dashboard (/game-admin/analytics)
             'game-admin-analytics' => [
                 'type'    => Literal::class,

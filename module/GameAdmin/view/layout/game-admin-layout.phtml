@@ -5,7 +5,44 @@
  */
 use Laminas\Session\Container;
 
-$activeNav = $this->activeNav ?? 'dashboard';
+$activeNav = $this->activeNav;
+if (empty($activeNav)) {
+    $rootModel = $this->viewModel()->getRoot();
+    if ($rootModel && $rootModel->hasChildren()) {
+        foreach ($rootModel->getChildren() as $childModel) {
+            if ($childModel->getVariable('activeNav')) {
+                $activeNav = $childModel->getVariable('activeNav');
+                break;
+            }
+        }
+    }
+}
+if (empty($activeNav)) {
+    try {
+        $urlPlugin = $this->plugin('url');
+        $routeMatch = method_exists($urlPlugin, 'getRouteMatch') ? $urlPlugin->getRouteMatch() : null;
+        if ($routeMatch) {
+            $routeName = (string) $routeMatch->getMatchedRouteName();
+            if (str_contains($routeName, 'toddler')) {
+                $activeNav = 'toddler-assessment';
+            } elseif (str_contains($routeName, 'games') || str_contains($routeName, 'game-')) {
+                $activeNav = 'games';
+            } elseif (str_contains($routeName, 'analytics')) {
+                $activeNav = 'analytics';
+            } elseif (str_contains($routeName, 'settings')) {
+                $activeNav = 'settings';
+            } else {
+                $activeNav = 'dashboard';
+            }
+        }
+    } catch (\Throwable $e) {
+        $activeNav = 'dashboard';
+    }
+}
+if (empty($activeNav)) {
+    $activeNav = 'dashboard';
+}
+
 $session = new Container('GameAdmin');
 $user = $this->currentUser ?? ($session->user ?? [
     'username'  => 'Admin User',
@@ -59,6 +96,10 @@ $avatarInitials = strtoupper(substr($username, 0, 2));
                     <span class="ga-nav-icon"><i class="fa-solid fa-layer-group"></i></span>
                     <span>Game Catalog</span>
                 </a>
+                <a href="<?= $this->url('game-admin-toddler-assessment') ?>" class="ga-nav-item <?= $activeNav === 'toddler-assessment' ? 'active' : '' ?>">
+                    <span class="ga-nav-icon"><i class="fa-solid fa-baby"></i></span>
+                    <span>Toddler Assessment</span>
+                </a>
 
                 <div class="ga-nav-section-title">Insights & System</div>
                 <a href="<?= $this->url('game-admin-analytics') ?>" class="ga-nav-item <?= $activeNav === 'analytics' ? 'active' : '' ?>">
@@ -111,10 +152,6 @@ $avatarInitials = strtoupper(substr($username, 0, 2));
                         <span class="ga-pulse-dot"></span>
                         <span>Live Session: <strong id="ga-live-players">1,482</strong> players</span>
                     </div>
-
-                    <button class="ga-btn-primary" id="ga-btn-create-game">
-                        <i class="fa-solid fa-plus"></i> New Game
-                    </button>
 
                     <a href="<?= $this->url('game-admin-logout') ?>" class="ga-btn-secondary" title="Log out of GameAdmin" style="padding: 8px 12px;">
                         <i class="fa-solid fa-power-off" style="color: var(--ga-accent-rose);"></i>

@@ -1,0 +1,78 @@
+<?php
+/**
+ * Toddler Nest List Management View Template
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ */
+$toddlerList = $this->toddlerList ?? [];
+?>
+
+<div class="ga-page-title-bar">
+    <div>
+        <h1 class="ga-page-title"><i class="fa-solid fa-baby" style="color: var(--ga-primary); margin-right: 8px;"></i> Toddler Nest Games List</h1>
+        <p class="ga-page-subtitle">Manage early childhood development games, custom configurations, and curriculum bindings.</p>
+    </div>
+    <div>
+        <a href="<?= $this->url('game-admin-toddler-nest-create') ?>" class="ga-btn-primary">
+            <i class="fa-solid fa-plus"></i> Add Game to Toddler Nest
+        </a>
+    </div>
+</div>
+
+<div class="ga-panel">
+    <div class="ga-panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="ga-panel-title">
+            <i class="fa-solid fa-list-check" style="color: var(--ga-accent-emerald);"></i>
+            Registered Toddler Nest Entities (<?= count($toddlerList) ?>)
+        </h2>
+    </div>
+
+    <?php if (empty($toddlerList)): ?>
+        <div style="padding: 40px; text-align: center; color: var(--ga-text-muted);">
+            <i class="fa-solid fa-baby-carriage" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 16px;"></i>
+            <p style="font-size: 1.1rem; font-weight: 500;">No games added to Toddler Nest yet.</p>
+            <p style="font-size: 0.9rem; margin-bottom: 20px;">Use the form below or click "Add Game to Toddler Nest" to assign early childhood games.</p>
+            <a href="<?= $this->url('game-admin-toddler-nest-create') ?>" class="ga-btn-primary">
+                <i class="fa-solid fa-plus"></i> Add First Toddler Game
+            </a>
+        </div>
+    <?php else: ?>
+        <div style="overflow-x: auto;">
+            <table class="ga-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--ga-border-color); text-align: left;">
+                        <th style="padding: 12px 16px;">ID</th>
+                        <th style="padding: 12px 16px;">Target Game Title</th>
+                        <th style="padding: 12px 16px;">Launch Endpoint</th>
+                        <th style="padding: 12px 16px;">Custom Config (JSON)</th>
+                        <th style="padding: 12px 16px;">Created Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($toddlerList as $item): ?>
+                        <tr style="border-bottom: 1px solid var(--ga-border-color);">
+                            <td style="padding: 12px 16px; font-weight: 600;">#<?= (int)$item['id'] ?></td>
+                            <td style="padding: 12px 16px; font-weight: 600; color: var(--ga-text-primary);">
+                                <?= $this->escapeHtml($item['gameTitle']) ?>
+                            </td>
+                            <td style="padding: 12px 16px; font-family: monospace; font-size: 0.85rem; color: var(--ga-accent-blue);">
+                                <?= $this->escapeHtml($item['gameUrl'] ?: 'N/A') ?>
+                            </td>
+                            <td style="padding: 12px 16px;">
+                                <?php if (!empty($item['customConfig'])): ?>
+                                    <code style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: #475569;">
+                                        <?= $this->escapeHtml(json_encode($item['customConfig'])) ?>
+                                    </code>
+                                <?php else: ?>
+                                    <span style="color: var(--ga-text-muted); font-style: italic;">Standard Config</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 12px 16px; font-size: 0.85rem; color: var(--ga-text-muted);">
+                                <?= $this->escapeHtml($item['createdOn']) ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</div>

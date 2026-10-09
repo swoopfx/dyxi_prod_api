@@ -7,6 +7,7 @@ use Laminas\View\Model\JsonModel;
 use Authentication\Service\ApiAuthenticateService;
 use Game\Service\CurriculumService;
 use Game\Entity\Curriculum;
+use Game\Entity\ToddlerGamesList;
 
 class CurriculumController extends AbstractActionController
 {
@@ -757,6 +758,311 @@ class CurriculumController extends AbstractActionController
         return $jsonModel;
     }
 
+    /**
+     * Retrieve Toddler Assessment Details / Toddler Games List.
+     *
+     * @OA\Get(
+     *     path="/api/game/curriculum/toddler-assessment",
+     *     tags={"Games"},
+     *     summary="Retrieve Toddler Assessment / Toddler Games List details",
+     *     description="Retrieves the detailed list of ToddlerGamesList entities including mapped Game data and custom configurations.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response="200",
+     *         description="Success",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(
+     *                         property="data",
+     *                         type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="id", type="integer", example=1),
+     *                             @OA\Property(property="uuid", type="string", format="uuid", example="e25f828a-784c-47eb-ba68-c1a7428807d4"),
+     *                             @OA\Property(
+     *                                 property="game",
+     *                                 type="object",
+     *                                 nullable=true,
+     *                                 @OA\Property(property="id", type="integer", example=1),
+     *                                 @OA\Property(property="uuid", type="string", example="game-uuid-12345"),
+     *                                 @OA\Property(property="unique_identifier", type="string", example="game_word_quest"),
+     *                                 @OA\Property(property="title", type="string", example="Word Quest Odyssey"),
+     *                                 @OA\Property(property="summary", type="string", example="Phonics reading challenge."),
+     *                                 @OA\Property(property="description", type="string", example="Detailed description text."),
+     *                                 @OA\Property(property="tags", type="string", example="dyslexia, phonics"),
+     *                                 @OA\Property(property="game_absolute_url", type="string", example="/games/word-quest")
+     *                             ),
+     *                             @OA\Property(property="game_config", type="object", nullable=true, description="Configuration JSON stored on the linked Game entity."),
+     *                             @OA\Property(property="toddler_config", type="object", nullable=true, description="Configuration JSON stored on the ToddlerGamesList entity."),
+     *                             @OA\Property(property="custom_config", type="object", nullable=true, description="Alias for toddler_config."),
+     *                             @OA\Property(property="created_on", type="string", example="2026-10-09 05:00:00"),
+     *                             @OA\Property(property="updated_on", type="string", example="2026-10-09 05:00:00")
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="405", description="Method Not Allowed")
+     * )
+     */
+    public function toddlerAssessmentAction()
+    {
+        $jsonModel = new JsonModel();
+        $request = $this->getRequest();
+        $response = $this->getResponse();
+
+        if (!$request->isGet()) {
+            $response->setStatusCode(405);
+            $jsonModel->setVariables([
+                "success"     => false,
+                "error"       => "MethodNotAllowed",
+                "description" => "Method Not Allowed. Use GET."
+            ]);
+            return $jsonModel;
+        }
+
+        try {
+            $identity = $this->apiAuthService->getContainerIdentity();
+            if (empty($identity)) {
+                $response->setStatusCode(401);
+                $jsonModel->setVariables([
+                    "success" => false,
+                    "error" => "Unauthorized",
+                    "description" => "User identity not found in request context."
+                ]);
+                return $jsonModel;
+            }
+
+            $allParam = $this->params()->fromQuery('all') ?? $this->params()->fromQuery('list');
+            if (!empty($allParam)) {
+                $toddlerGames = $this->curriculumService->getToddlerNestList();
+                $data = [];
+                foreach ($toddlerGames as $tg) {
+                    $data[] = $this->mapToddlerGameToArray($tg);
+                }
+            } else {
+                $activeEntity = $this->curriculumService->getActiveToddlerAssessment();
+                $data = $activeEntity ? $this->mapToddlerGameToArray($activeEntity) : null;
+            }
+
+            $response->setStatusCode(200);
+            $jsonModel->setVariables([
+                "success" => true,
+                "data" => $data
+            ]);
+
+        } catch (\Throwable $th) {
+            $response->setStatusCode(400);
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "ToddlerAssessmentError",
+                "description" => $th->getMessage()
+            ]);
+        }
+
+        return $jsonModel;
+    }
+
+    /**
+     * Alias for toddlerAssessmentAction (/api/game/curriculum/toddler-nest-list).
+     */
+    public function toddlerNestListAction()
+    {
+        return $this->toddlerAssessmentAction();
+    }
+
+    /**
+     * Alias for toddlerAssessmentAction (/api/game/curriculum/toddler-assessment-list).
+     */
+    public function toddlerAssessmentListAction()
+    {
+        return $this->toddlerAssessmentAction();
+    }
+
+    /**
+     * Retrieve or update active concurrent player count in Redis cache using a single unique identifier.
+     * Purely Redis cache based - zero relational database interaction.
+     *
+     * @OA\Get(
+     *     path="/api/game/curriculum/active-players",
+     *     tags={"Games"},
+     *     summary="Retrieve Active Concurrent Players count from Redis Cache",
+     *     description="Returns the active concurrent player count for a single unique identifier directly from Redis cache. Does NOT query or modify the database.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="identifier",
+     *         in="query",
+     *         required=false,
+     *         description="Single unique identifier string (e.g. game unique_identifier, uuid, or toddler_assessment).",
+     *         @OA\Schema(type="string", example="toddler_assessment")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Success",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="success", type="boolean", example=true),
+     *                     @OA\Property(property="identifier", type="string", example="toddler_assessment"),
+     *                     @OA\Property(property="active_concurrent_players", type="integer", example=12),
+     *                     @OA\Property(property="source", type="string", example="redis_cache"),
+     *                     @OA\Property(property="description", type="string", example="Retrieved active concurrent player count from Redis cache without database interaction.")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(response="401", description="Unauthorized")
+     * )
+     *
+     * @OA\Post(
+     *     path="/api/game/curriculum/active-players",
+     *     tags={"Games"},
+     *     summary="Update Active Concurrent Players in Redis Cache",
+     *     description="Increments, decrements, or sets active concurrent player count for a single unique identifier in Redis cache without affecting the database.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Payload containing unique identifier and action.",
+     *         content={
+     *             @OA\MediaType(
+     *                 mediaType="application/json",
+     *                 @OA\Schema(
+     *                     @OA\Property(property="identifier", type="string", example="toddler_assessment", description="[REQUIRED] Single unique identifier."),
+     *                     @OA\Property(property="action", type="string", example="increment", enum={"increment", "decrement", "set", "get", "join", "leave"}, description="Action to perform on Redis cache counter."),
+     *                     @OA\Property(property="count", type="integer", example=1, description="Delta amount or fixed set count.")
+     *                 )
+     *             )
+     *         }
+     *     ),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="400", description="Bad Request"),
+     *     @OA\Response(response="401", description="Unauthorized")
+     * )
+     */
+    public function activePlayersAction()
+    {
+        $jsonModel = new JsonModel();
+        $request = $this->getRequest();
+        $response = $this->getResponse();
+
+        try {
+            $identity = $this->apiAuthService->getContainerIdentity();
+            if (empty($identity)) {
+                $response->setStatusCode(401);
+                $jsonModel->setVariables([
+                    "success" => false,
+                    "error" => "Unauthorized",
+                    "description" => "User identity not found in request context."
+                ]);
+                return $jsonModel;
+            }
+
+            $identifier = $this->params()->fromRoute('id');
+            if (empty($identifier)) {
+                $identifier = $this->params()->fromQuery('identifier') 
+                    ?? $this->params()->fromQuery('unique_identifier')
+                    ?? $this->params()->fromQuery('id');
+            }
+
+            $action = $this->params()->fromQuery('action', 'get');
+            $count = (int) $this->params()->fromQuery('count', 1);
+
+            if ($request->isPost() || $request->isPut()) {
+                $json = $request->getContent();
+                $postData = json_decode((string) $json, true);
+                if (is_array($postData)) {
+                    if (empty($identifier)) {
+                        $identifier = $postData['identifier'] ?? $postData['unique_identifier'] ?? $postData['id'] ?? $postData['game_id'] ?? $postData['uuid'] ?? null;
+                    }
+                    if (isset($postData['action'])) {
+                        $action = (string) $postData['action'];
+                    }
+                    if (isset($postData['count'])) {
+                        $count = (int) $postData['count'];
+                    }
+                }
+            }
+
+            if (empty($identifier)) {
+                $identifier = 'toddler_assessment';
+            }
+
+            $activeCount = $this->curriculumService->updateActiveConcurrentPlayers((string) $identifier, (string) $action, $count);
+
+            $response->setStatusCode(200);
+            $jsonModel->setVariables([
+                "success" => true,
+                "identifier" => $identifier,
+                "active_concurrent_players" => $activeCount,
+                "action" => $action,
+                "source" => "redis_cache",
+                "description" => "Processed active concurrent players statistics via Redis cache without database interaction."
+            ]);
+
+        } catch (\Throwable $th) {
+            $response->setStatusCode(400);
+            $jsonModel->setVariables([
+                "success" => false,
+                "error" => "ActivePlayersError",
+                "description" => $th->getMessage()
+            ]);
+        }
+
+        return $jsonModel;
+    }
+
+    /**
+     * Alias for activePlayersAction (/api/game/curriculum/active-concurrent-players).
+     */
+    public function activeConcurrentPlayersAction()
+    {
+        return $this->activePlayersAction();
+    }
+
+    private function mapToddlerGameToArray(ToddlerGamesList $toddlerGame): array
+    {
+        $gameData = null;
+        $gameConfig = null;
+        $game = $toddlerGame->getGameId();
+        if ($game instanceof \Game\Entity\Game) {
+            $gameConfig = $game->getCustomConfig();
+            $gameData = [
+                "id" => $game->getId(),
+                "uuid" => $game->getUuid(),
+                "unique_identifier" => $game->getUniqueIdentifier(),
+                "title" => $game->getTitle(),
+                "summary" => $game->getSummary(),
+                "description" => $game->getDescription(),
+                "tags" => $game->getTags(),
+                "game_absolute_url" => $game->getGameAbsoluteUrl(),
+                "game_config" => $gameConfig,
+                "custom_config" => $gameConfig,
+                "created_on" => $game->getCreatedOn() ? $game->getCreatedOn()->format('Y-m-d H:i:s') : null,
+                "updated_on" => $game->getUpdatedOn() ? $game->getUpdatedOn()->format('Y-m-d H:i:s') : null,
+            ];
+        }
+
+        $toddlerConfig = $toddlerGame->getCustomeConfig();
+
+        return [
+            "id" => $toddlerGame->getId(),
+            "uuid" => $toddlerGame->getUuid(),
+            "is_active" => $toddlerGame->getIsActive(),
+            "game" => $gameData,
+            "game_config" => $gameConfig,
+            "toddler_config" => $toddlerConfig,
+            "custom_config" => $toddlerConfig,
+            "created_on" => $toddlerGame->getCreatedOn() ? $toddlerGame->getCreatedOn()->format('Y-m-d H:i:s') : null,
+            "updated_on" => $toddlerGame->getUpdatedOn() ? $toddlerGame->getUpdatedOn()->format('Y-m-d H:i:s') : null,
+        ];
+    }
+
     private function mapEntityToArray(Curriculum $curriculum): array
     {
         return [
@@ -778,4 +1084,5 @@ class CurriculumController extends AbstractActionController
         ];
     }
 }
+
 

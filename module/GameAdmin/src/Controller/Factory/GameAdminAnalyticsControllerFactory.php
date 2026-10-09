@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace GameAdmin\Controller\Factory;
 
 use Doctrine\ORM\EntityManager;
+use Game\Service\CurriculumService;
 use GameAdmin\Controller\GameAdminAnalyticsController;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Psr\Container\ContainerInterface;
@@ -38,6 +39,10 @@ class GameAdminAnalyticsControllerFactory implements FactoryInterface
             ? $container->get(EntityManager::class)
             : null;
 
-        return new GameAdminAnalyticsController($entityManager);
+        $curriculumService = $container->has(CurriculumService::class)
+            ? $container->get(CurriculumService::class)
+            : null;
+
+        return new GameAdminAnalyticsController($entityManager, $curriculumService);
     }
 }

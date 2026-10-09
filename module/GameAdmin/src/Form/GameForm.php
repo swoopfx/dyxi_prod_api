@@ -91,12 +91,7 @@ class GameForm extends Form
             'type' => Element\Select::class,
             'options' => [
                 'label'         => 'Game Category / Intervention Type',
-                'value_options' => $this->gameTypeOptions ?: [
-                    '1' => 'Phonics & Reading (Dyslexia)',
-                    '2' => 'Math & Spatial Logic (Dyscalculia)',
-                    '3' => 'Executive Function & Focus (ADHD)',
-                    '4' => 'Cognitive Memory Sprint',
-                ],
+                'value_options' => $this->gameTypeOptions,
                 'empty_option'  => '-- Select Game Category --',
             ],
             'attributes' => [
@@ -111,11 +106,7 @@ class GameForm extends Form
             'type' => Element\Select::class,
             'options' => [
                 'label'         => 'Target Curriculum (Optional)',
-                'value_options' => $this->curriculumOptions ?: [
-                    '1' => 'Primary Dyslexia Remediation Curriculum',
-                    '2' => 'Early Dyscalculia Spatial Math Path',
-                    '3' => 'Focus & Sustained Attention Track',
-                ],
+                'value_options' => $this->curriculumOptions,
                 'empty_option'  => '-- None / General Curriculum --',
             ],
             'attributes' => [

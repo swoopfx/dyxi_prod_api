@@ -33,9 +33,9 @@ if ($form) {
                 <i class="fa-solid fa-gamepad"></i>
             </div>
         </div>
-        <div class="ga-stat-value"><?= $this->stats['total_games'] ?></div>
+        <div class="ga-stat-value"><?= (int)$this->stats['total_games'] ?></div>
         <div class="ga-stat-trend ga-trend-up">
-            <i class="fa-solid fa-arrow-trend-up"></i> +2 new this month
+            <i class="fa-solid fa-layer-group"></i> Active Catalog
         </div>
     </div>
 
@@ -46,9 +46,9 @@ if ($form) {
                 <i class="fa-solid fa-users"></i>
             </div>
         </div>
-        <div class="ga-stat-value" id="ga-live-players-card"><?= number_format($this->stats['active_players']) ?></div>
+        <div class="ga-stat-value" id="ga-live-players-card"><?= number_format((int)($this->stats['active_players'] ?? 0)) ?></div>
         <div class="ga-stat-trend ga-trend-up">
-            <i class="fa-solid fa-circle-bolt"></i> Peak activity period
+            <i class="fa-solid fa-bolt"></i> Live Redis Cache Metric
         </div>
     </div>
 
@@ -61,20 +61,7 @@ if ($form) {
         </div>
         <div class="ga-stat-value"><?= $this->stats['total_plays'] ?></div>
         <div class="ga-stat-trend ga-trend-up">
-            <i class="fa-solid fa-arrow-trend-up"></i> +14.2% vs last week
-        </div>
-    </div>
-
-    <div class="ga-stat-card">
-        <div class="ga-stat-card-header">
-            <span class="ga-stat-label">Avg Session Duration</span>
-            <div class="ga-stat-icon-wrapper ga-stat-icon-amber">
-                <i class="fa-solid fa-stopwatch"></i>
-            </div>
-        </div>
-        <div class="ga-stat-value"><?= $this->stats['avg_session_min'] ?></div>
-        <div class="ga-stat-trend ga-trend-neutral">
-            <i class="fa-solid fa-minus"></i> Optimal engagement
+            <i class="fa-solid fa-chart-line"></i> Recorded Plays
         </div>
     </div>
 </div>

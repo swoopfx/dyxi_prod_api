@@ -16,6 +16,7 @@ namespace GameAdmin\Controller;
 
 use Doctrine\ORM\EntityManager;
 use Game\Entity\Game;
+use Game\Service\CurriculumService;
 use GameAdmin\Form\GameForm;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Session\Container;
@@ -32,13 +33,20 @@ class GameAdminDashboardController extends AbstractActionController
     private ?EntityManager $entityManager;
 
     /**
+     * Curriculum Service instance.
+     */
+    private ?CurriculumService $curriculumService;
+
+    /**
      * GameAdminDashboardController Constructor.
      *
      * @param EntityManager|null $entityManager
+     * @param CurriculumService|null $curriculumService
      */
-    public function __construct(?EntityManager $entityManager = null)
+    public function __construct(?EntityManager $entityManager = null, ?CurriculumService $curriculumService = null)
     {
         $this->entityManager = $entityManager;
+        $this->curriculumService = $curriculumService;
     }
 
     /**
@@ -52,6 +60,8 @@ class GameAdminDashboardController extends AbstractActionController
         $totalGames = count($games);
         $totalPlays = array_sum(array_column($games, 'playsCount'));
 
+        $activePlayers = $this->curriculumService ? $this->curriculumService->getActiveConcurrentPlayers('global') : 0;
+
         // Prepare modal game form
         $form = new GameForm($this->getGameTypeOptions(), $this->getCurriculumOptions());
 
@@ -61,11 +71,10 @@ class GameAdminDashboardController extends AbstractActionController
             'games'       => $games,
             'form'        => $form,
             'stats'       => [
-                'total_games'     => $totalGames,
-                'active_players'  => 1482,
-                'total_plays'     => number_format($totalPlays),
-                'avg_session_min' => '18.4 min',
-                'system_health'   => '99.98%',
+                'total_games'    => $totalGames,
+                'active_players' => $activePlayers,
+                'total_plays'    => number_format($totalPlays),
+                'system_health'  => '99.98%',
             ],
         ]);
 
@@ -89,9 +98,9 @@ class GameAdminDashboardController extends AbstractActionController
     }
 
     /**
-     * Helper method to fetch registered games from Doctrine ORM or fallback mock list.
+     * Helper method to fetch registered games directly from Doctrine ORM database.
      *
-     * @return array Array of game entities or fallback data.
+     * @return array Array of game entity data from DB.
      */
     private function getGamesList(): array
     {
@@ -99,99 +108,65 @@ class GameAdminDashboardController extends AbstractActionController
             try {
                 $gameRepo = $this->entityManager->getRepository(Game::class);
                 $entities = $gameRepo->findAll();
-                if (!empty($entities)) {
-                    $games = [];
-                    foreach ($entities as $g) {
-                        $games[] = [
-                            'id'               => $g->getId(),
-                            'uuid'             => $g->getUuid(),
-                            'uniqueIdentifier' => $g->getUniqueIdentifier(),
-                            'title'            => $g->getTitle(),
-                            'summary'          => $g->getSummary(),
-                            'tags'             => $g->getTags(),
-                            'gameType'         => $g->getGameType() ? $g->getGameType()->getName() : 'Interactive',
-                            'createdOn'        => $g->getCreatedOn() ? $g->getCreatedOn()->format('Y-m-d H:i') : date('Y-m-d H:i'),
-                            'gameAbsoluteUrl'  => $g->getGameAbsoluteUrl(),
-                            'status'           => 'Active',
-                            'playsCount'       => rand(1200, 8500),
-                            'rating'           => number_format(4.2 + (rand(0, 7) / 10), 1),
-                        ];
-                    }
-                    return $games;
+                $games = [];
+                foreach ($entities as $g) {
+                    $games[] = [
+                        'id'               => $g->getId(),
+                        'uuid'             => $g->getUuid(),
+                        'uniqueIdentifier' => $g->getUniqueIdentifier(),
+                        'title'            => $g->getTitle(),
+                        'summary'          => $g->getSummary(),
+                        'tags'             => $g->getTags(),
+                        'gameType'         => $g->getGameType() ? $g->getGameType()->getName() : 'Interactive',
+                        'createdOn'        => $g->getCreatedOn() ? $g->getCreatedOn()->format('Y-m-d H:i') : date('Y-m-d H:i'),
+                        'gameAbsoluteUrl'  => $g->getGameAbsoluteUrl(),
+                        'status'           => 'Active',
+                    ];
                 }
+                return $games;
             } catch (\Throwable $e) {
-                // Ignore exception and return fallback games list
+                // Return empty list on failure
             }
         }
 
-        return [
-            [
-                'id' => 1,
-                'uuid' => 'g-101-alpha',
-                'uniqueIdentifier' => 'game_word_quest',
-                'title' => 'Word Quest Odyssey',
-                'summary' => 'Interactive phonics and dyslexia reading comprehension challenge.',
-                'tags' => 'early-childhood-education, dyslexia, phonics, reading',
-                'gameType' => 'Phonics & Reading',
-                'createdOn' => '2026-01-15 10:30',
-                'gameAbsoluteUrl' => '/games/word-quest',
-                'status' => 'Active',
-                'playsCount' => 14250,
-                'rating' => '4.9',
-            ],
-            [
-                'id' => 2,
-                'uuid' => 'g-102-beta',
-                'uniqueIdentifier' => 'game_num_blaster',
-                'title' => 'Number Blaster 3D',
-                'summary' => 'Fast-paced spatial math training for dyscalculia intervention.',
-                'tags' => 'dyscalculia, math, spatial-logic, counting',
-                'gameType' => 'Math & Logic',
-                'createdOn' => '2026-02-04 14:15',
-                'gameAbsoluteUrl' => '/games/number-blaster',
-                'status' => 'Active',
-                'playsCount' => 9820,
-                'rating' => '4.7',
-            ],
-            [
-                'id' => 3,
-                'uuid' => 'g-103-gamma',
-                'uniqueIdentifier' => 'game_focus_realm',
-                'title' => 'Focus Realm RPG',
-                'summary' => 'Sustained attention and executive function booster game for ADHD.',
-                'tags' => 'adhd, executive-function, focus, attention',
-                'gameType' => 'Executive Function',
-                'createdOn' => '2026-02-20 09:00',
-                'gameAbsoluteUrl' => '/games/focus-realm',
-                'status' => 'Active',
-                'playsCount' => 18400,
-                'rating' => '4.8',
-            ],
-        ];
+        return [];
     }
 
     /**
-     * Fetch GameType options array.
+     * Fetch GameType options array from database.
      */
     private function getGameTypeOptions(): array
     {
-        return [
-            '1' => 'Phonics & Reading (Dyslexia)',
-            '2' => 'Math & Spatial Logic (Dyscalculia)',
-            '3' => 'Executive Function & Focus (ADHD)',
-            '4' => 'Cognitive Memory Sprint',
-        ];
+        $options = [];
+        if ($this->entityManager !== null) {
+            try {
+                $gameTypes = $this->entityManager->getRepository(\Game\Entity\GameType::class)->findAll();
+                foreach ($gameTypes as $gt) {
+                    $options[(string)$gt->getId()] = $gt->getName();
+                }
+            } catch (\Throwable $e) {
+                // Return empty options on failure
+            }
+        }
+        return $options;
     }
 
     /**
-     * Fetch Curriculum options array.
+     * Fetch Curriculum options array from database.
      */
     private function getCurriculumOptions(): array
     {
-        return [
-            '1' => 'Primary Dyslexia Remediation Curriculum',
-            '2' => 'Early Dyscalculia Spatial Math Path',
-            '3' => 'Focus & Sustained Attention Track',
-        ];
+        $options = [];
+        if ($this->entityManager !== null) {
+            try {
+                $curriculums = $this->entityManager->getRepository(\Game\Entity\Curriculum::class)->findAll();
+                foreach ($curriculums as $c) {
+                    $options[(string)$c->getId()] = $c->getName();
+                }
+            } catch (\Throwable $e) {
+                // Return empty options on failure
+            }
+        }
+        return $options;
     }
 }
