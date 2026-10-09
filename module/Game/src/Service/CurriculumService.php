@@ -610,8 +610,13 @@ class CurriculumService
     }
 
     /**
+     * Redis Cache Namespace for Analytics services.
+     */
+    const ANALYTICS_CACHE_NAMESPACE = 'dyxi_analytics';
+
+    /**
      * Retrieves the count of active concurrent players for a unique identifier directly from Redis cache.
-     * Purely interacts with Redis cache without modifying or querying the database.
+     * Purely interacts with Redis cache under the 'dyxi_analytics' namespace without modifying or querying the database.
      *
      * @param string $identifier Unique identifier string (e.g. game unique_identifier, uuid, or custom name)
      * @return int Active concurrent players count
@@ -622,13 +627,13 @@ class CurriculumService
             return 0;
         }
         $key = 'active_concurrent_players_' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', $identifier);
-        $val = $this->redisCacheService->get($key, 'dyxi_active_players');
+        $val = $this->redisCacheService->get($key, self::ANALYTICS_CACHE_NAMESPACE);
         return is_numeric($val) ? (int) $val : 0;
     }
 
     /**
      * Updates (increments, decrements, sets, or gets) active concurrent player stats in Redis cache.
-     * Purely interacts with Redis cache without affecting the relational database.
+     * Purely interacts with Redis cache under the 'dyxi_analytics' namespace without affecting the relational database.
      *
      * @param string $identifier Unique identifier string
      * @param string $action 'get', 'increment', 'decrement', 'set', 'join', 'leave'
@@ -663,10 +668,24 @@ class CurriculumService
 
         if ($this->redisCacheService && $action !== 'get') {
             $key = 'active_concurrent_players_' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', $identifier);
-            $this->redisCacheService->set($key, $newCount, 86400, 'dyxi_active_players');
+            $this->redisCacheService->set($key, $newCount, 86400, self::ANALYTICS_CACHE_NAMESPACE);
         }
 
         return $newCount;
+    }
+
+    /**
+     * Flushes and invalidates all cached metrics and counters stored under the 'dyxi_analytics' Redis namespace.
+     * Can be executed at any instance to restart or reset analytics without affecting other namespaces (dyxi_curriculum, dyxi_general, etc.).
+     *
+     * @return bool True if flushed successfully.
+     */
+    public function clearAnalyticsCache(): bool
+    {
+        if ($this->redisCacheService) {
+            return $this->redisCacheService->clearNamespace(self::ANALYTICS_CACHE_NAMESPACE);
+        }
+        return false;
     }
 }
 

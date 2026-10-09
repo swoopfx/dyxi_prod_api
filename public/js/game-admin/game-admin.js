@@ -29,9 +29,12 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 if (data.success && data.metrics) {
                     if (livePlayersEl) {
-                        livePlayersEl.textContent = data.metrics.active_players.toLocaleString();
+                        const count = data.metrics.active_players !== undefined 
+                            ? data.metrics.active_players 
+                            : (data.metrics.global_active_players || 0);
+                        livePlayersEl.textContent = Number(count).toLocaleString();
                     }
-                    if (liveLatencyEl) {
+                    if (liveLatencyEl && data.metrics.server_latency_ms !== undefined) {
                         liveLatencyEl.textContent = data.metrics.server_latency_ms + ' ms';
                     }
                 }
@@ -41,8 +44,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    // Poll live stats every 8 seconds if elements exist on page
+    // Trigger immediate fetch and poll live stats every 8 seconds
     if (document.getElementById('ga-live-players')) {
+        fetchLiveStats();
         setInterval(fetchLiveStats, 8000);
     }
 

@@ -184,6 +184,16 @@ return [
                     ],
                 ],
             ],
+            'game-admin-analytics-reset' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/game-admin/analytics/reset-cache',
+                    'defaults' => [
+                        'controller' => GameAdminAnalyticsController::class,
+                        'action'     => 'resetCache',
+                    ],
+                ],
+            ],
             // Settings: Game Engine Runtime Options (/game-admin/settings)
             'game-admin-settings' => [
                 'type'    => Literal::class,
@@ -195,7 +205,7 @@ return [
                     ],
                 ],
             ],
-            // API: Live Real-time Polling Metrics (/api/game-admin/stats)
+            // API: Live Real-time Polling Metrics (/api/game-admin/stats and /api/get-admin/stats)
             'api-game-admin-stats' => [
                 'type'    => Literal::class,
                 'options' => [
@@ -203,6 +213,26 @@ return [
                     'defaults' => [
                         'controller' => GameAdminAnalyticsController::class,
                         'action'     => 'statsApi',
+                    ],
+                ],
+            ],
+            'api-get-admin-stats' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/api/get-admin/stats',
+                    'defaults' => [
+                        'controller' => GameAdminAnalyticsController::class,
+                        'action'     => 'statsApi',
+                    ],
+                ],
+            ],
+            'api-game-admin-analytics-reset' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/api/game-admin/analytics/reset',
+                    'defaults' => [
+                        'controller' => GameAdminAnalyticsController::class,
+                        'action'     => 'resetCacheApi',
                     ],
                 ],
             ],

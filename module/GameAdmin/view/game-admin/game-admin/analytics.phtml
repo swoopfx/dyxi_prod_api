@@ -7,56 +7,110 @@
 
 <div class="ga-page-title-bar">
     <div>
-        <h1 class="ga-page-title">Analytics & Telemetry</h1>
-        <p class="ga-page-subtitle">Real-time performance telemetry, session engagement metrics, and intervention success rates.</p>
+        <h1 class="ga-page-title">Analytics & Real-time Metrics</h1>
+        <p class="ga-page-subtitle">Real-time player concurrency tracking, database system counts, and Redis analytics namespace management.</p>
+    </div>
+    <div>
+        <a href="<?= $this->url('game-admin-analytics-reset') ?>" class="ga-btn-secondary" style="border-color: #ef4444; color: #ef4444;" onclick="return confirm('Are you sure you want to reset and flush the Redis analytics cache namespace (dyxi_analytics)? Other namespaces will not be affected.');">
+            <i class="fa-solid fa-rotate-left"></i> Reset Analytics Cache
+        </a>
     </div>
 </div>
+
+<?php if (!empty($this->isReset)): ?>
+    <div style="background: #f0fdf4; border: 1px solid #86efac; color: #166534; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;">
+        <i class="fa-solid fa-circle-check"></i> Redis analytics cache namespace <code><?= $this->escapeHtml($this->metrics['cache_namespace']) ?></code> has been successfully reset and flushed! Other cache namespaces remain intact.
+    </div>
+<?php endif; ?>
 
 <div class="ga-stats-grid">
     <div class="ga-stat-card">
         <div class="ga-stat-card-header">
-            <span class="ga-stat-label">Daily Active Users</span>
-            <div class="ga-stat-icon-wrapper ga-stat-icon-cyan"><i class="fa-solid fa-chart-line"></i></div>
+            <span class="ga-stat-label">Global Active Concurrent Players</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-cyan"><i class="fa-solid fa-users"></i></div>
         </div>
-        <div class="ga-stat-value"><?= number_format($this->metrics['daily_active_users']) ?></div>
+        <div class="ga-stat-value"><?= number_format((int)$this->metrics['global_active_players']) ?></div>
+        <div class="ga-stat-trend ga-trend-up">
+            <i class="fa-solid fa-bolt"></i> Redis Namespace: <code><?= $this->escapeHtml($this->metrics['cache_namespace']) ?></code>
+        </div>
     </div>
 
     <div class="ga-stat-card">
         <div class="ga-stat-card-header">
-            <span class="ga-stat-label">Session Completion Rate</span>
-            <div class="ga-stat-icon-wrapper ga-stat-icon-emerald"><i class="fa-solid fa-circle-check"></i></div>
+            <span class="ga-stat-label">Toddler Assessment Active Players</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-emerald"><i class="fa-solid fa-child-reaching"></i></div>
         </div>
-        <div class="ga-stat-value"><?= $this->metrics['completion_rate'] ?></div>
+        <div class="ga-stat-value"><?= number_format((int)$this->metrics['toddler_active_players']) ?></div>
+        <div class="ga-stat-trend ga-trend-up">
+            <i class="fa-solid fa-gamepad"></i> Active: <?= $this->escapeHtml($this->metrics['active_toddler_assessment']) ?>
+        </div>
     </div>
 
     <div class="ga-stat-card">
         <div class="ga-stat-card-header">
-            <span class="ga-stat-label">7-Day Retention</span>
-            <div class="ga-stat-icon-wrapper ga-stat-icon-purple"><i class="fa-solid fa-rotate"></i></div>
+            <span class="ga-stat-label">Total Registered Games</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-purple"><i class="fa-solid fa-cubes"></i></div>
         </div>
-        <div class="ga-stat-value"><?= $this->metrics['retention_rate_7d'] ?></div>
+        <div class="ga-stat-value"><?= number_format((int)$this->metrics['total_games']) ?></div>
+        <div class="ga-stat-trend ga-trend-neutral">
+            <i class="fa-solid fa-database"></i> Doctrine ORM Repository
+        </div>
     </div>
 
     <div class="ga-stat-card">
         <div class="ga-stat-card-header">
-            <span class="ga-stat-label">Avg Gameplay Score</span>
-            <div class="ga-stat-icon-wrapper ga-stat-icon-amber"><i class="fa-solid fa-trophy"></i></div>
+            <span class="ga-stat-label">Total Curriculums</span>
+            <div class="ga-stat-icon-wrapper ga-stat-icon-amber"><i class="fa-solid fa-book-bookmark"></i></div>
         </div>
-        <div class="ga-stat-value"><?= $this->metrics['avg_score'] ?></div>
+        <div class="ga-stat-value"><?= number_format((int)$this->metrics['total_curriculums']) ?></div>
+        <div class="ga-stat-trend ga-trend-neutral">
+            <i class="fa-solid fa-database"></i> Doctrine ORM Repository
+        </div>
     </div>
 </div>
 
-<div class="ga-panel">
+<div class="ga-panel" style="margin-top: 24px;">
     <div class="ga-panel-header">
         <h2 class="ga-panel-title">
-            <i class="fa-solid fa-tower-cell" style="color: var(--ga-accent-emerald);"></i>
-            Telemetry Stream Monitor
+            <i class="fa-solid fa-server" style="color: var(--ga-primary);"></i>
+            Redis Cache Namespace Details
         </h2>
     </div>
-    <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #10b981; line-height: 1.8;">
-        <div>[<?= date('H:i:s') ?>] TELEMETRY_STREAM_CONNECTED -> Listener active on port 9092</div>
-        <div>[<?= date('H:i:s') ?>] EVENT: session_start (user_uuid: 8f4a-9b12, game: game_word_quest)</div>
-        <div>[<?= date('H:i:s') ?>] METRIC: response_time_ms = 420ms | accuracy_rate = 94.5%</div>
-        <div>[<?= date('H:i:s') ?>] EVENT: level_complete (score: 950, errors: 0)</div>
+    <div style="padding: 20px;">
+        <table class="ga-table">
+            <thead>
+                <tr>
+                    <th>Cache Subsystem / Purpose</th>
+                    <th>Redis Storage Namespace</th>
+                    <th>Isolation Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Analytics & Concurrent Players</strong></td>
+                    <td><code><?= $this->escapeHtml($this->metrics['cache_namespace']) ?></code></td>
+                    <td><span class="ga-badge ga-badge-active"><i class="fa-solid fa-shield-halved"></i> Isolated Namespace</span></td>
+                    <td>
+                        <a href="<?= $this->url('game-admin-analytics-reset') ?>" class="ga-btn-secondary" style="font-size: 0.8rem; padding: 4px 10px; color: #ef4444; border-color: #fca5a5;" onclick="return confirm('Reset analytics namespace?');">
+                            <i class="fa-solid fa-trash-can"></i> Flush Namespace
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Curriculum Caching</strong></td>
+                    <td><code>dyxi_curriculum</code></td>
+                    <td><span class="ga-badge ga-badge-type"><i class="fa-solid fa-lock"></i> Protected</span></td>
+                    <td><span style="font-size: 0.85rem; color: var(--ga-text-secondary);">Unaffected by analytics resets</span></td>
+                </tr>
+                <tr>
+                    <td><strong>General Platform Caching</strong></td>
+                    <td><code>dyxi_general</code></td>
+                    <td><span class="ga-badge ga-badge-type"><i class="fa-solid fa-lock"></i> Protected</span></td>
+                    <td><span style="font-size: 0.85rem; color: var(--ga-text-secondary);">Unaffected by analytics resets</span></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
+

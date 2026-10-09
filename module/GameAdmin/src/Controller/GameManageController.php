@@ -50,52 +50,42 @@ class GameManageController extends AbstractActionController
     }
 
     /**
-     * Displays the game catalog with Search Filtering and Pagination (/game-admin/games).
+     * Displays the game catalog with database-level Search Filtering and Pagination (/game-admin/games).
      *
      * @return ViewModel
      */
     public function gamesAction(): ViewModel
     {
-        $request = $this->getRequest();
-        $q       = trim((string) $this->params()->fromQuery('q', ''));
-        $page    = max(1, (int) $this->params()->fromQuery('page', 1));
-        $limit   = max(1, min(50, (int) $this->params()->fromQuery('limit', 10)));
+        $request    = $this->getRequest();
+        $q          = trim((string) $this->params()->fromQuery('q', ''));
+        $column     = trim((string) $this->params()->fromQuery('column', 'all'));
+        $gameTypeId = trim((string) $this->params()->fromQuery('game_type_id', ''));
+        $page       = max(1, (int) $this->params()->fromQuery('page', 1));
+        $limit      = max(1, min(50, (int) $this->params()->fromQuery('limit', 10)));
 
-        $allGames = $this->getGamesList();
+        $result     = $this->getFilteredGamesFromDb($q, $column, $gameTypeId, $page, $limit);
+        $games      = $result['games'];
+        $total      = $result['total'];
 
-        // Apply Search Filter (Filter by Title, Identifier, Tags, or Category)
-        if (!empty($q)) {
-            $qLower   = strtolower($q);
-            $allGames = array_values(array_filter($allGames, function ($game) use ($qLower) {
-                $titleMatch      = str_contains(strtolower((string)$game['title']), $qLower);
-                $idMatch         = str_contains(strtolower((string)$game['uniqueIdentifier']), $qLower);
-                $typeMatch       = str_contains(strtolower((string)$game['gameType']), $qLower);
-                $tagsMatch       = str_contains(strtolower((string)($game['tags'] ?? '')), $qLower);
-                return $titleMatch || $idMatch || $typeMatch || $tagsMatch;
-            }));
-        }
-
-        $total      = count($allGames);
         $totalPages = max(1, (int) ceil($total / $limit));
         $page       = min($page, $totalPages);
-        $offset     = ($page - 1) * $limit;
-
-        // Slice games for current pagination page
-        $paginatedGames = array_slice($allGames, $offset, $limit);
 
         $form = new GameForm($this->getGameTypeOptions(), $this->getCurriculumOptions());
 
         $viewModel = new ViewModel([
-            'activeNav'   => 'games',
-            'currentUser' => $this->getActiveUser(),
-            'games'       => $paginatedGames,
-            'form'        => $form,
-            'pagination'  => [
-                'page'       => $page,
-                'limit'      => $limit,
-                'total'      => $total,
-                'totalPages' => $totalPages,
-                'q'          => $q,
+            'activeNav'       => 'games',
+            'currentUser'     => $this->getActiveUser(),
+            'games'           => $games,
+            'form'            => $form,
+            'gameTypeOptions' => $this->getGameTypeOptions(),
+            'pagination'      => [
+                'page'         => $page,
+                'limit'        => $limit,
+                'total'        => $total,
+                'totalPages'   => $totalPages,
+                'q'            => $q,
+                'column'       => $column,
+                'game_type_id' => $gameTypeId,
             ],
         ]);
 
@@ -441,6 +431,122 @@ class GameManageController extends AbstractActionController
             'email'     => 'admin@dyxi.internal',
             'role_name' => 'SuperAdmin',
         ];
+    }
+
+    /**
+     * Executes database-level QueryBuilder search filtering across searchable Game database columns.
+     *
+     * @param string|null $searchQuery Search term
+     * @param string|null $columnFilter Target database column ('title', 'unique_identifier', 'uuid', 'tags', 'summary', 'url', 'all')
+     * @param string|null $gameTypeId GameType ID filter
+     * @param int $page Active page number
+     * @param int $limit Items per page
+     * @return array Array containing 'games' list and 'total' count.
+     */
+    private function getFilteredGamesFromDb(?string $searchQuery, ?string $columnFilter, ?string $gameTypeId, int $page, int $limit): array
+    {
+        if ($this->entityManager === null) {
+            return ['games' => [], 'total' => 0];
+        }
+
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('g', 'gt')
+           ->from(Game::class, 'g')
+           ->leftJoin('g.gameType', 'gt')
+           ->orderBy('g.id', 'DESC');
+
+        $countQb = $this->entityManager->createQueryBuilder();
+        $countQb->select('COUNT(g.id)')
+                ->from(Game::class, 'g')
+                ->leftJoin('g.gameType', 'gt');
+
+        $whereConditions = [];
+        $parameters = [];
+
+        // Category / GameType ID filter
+        if (!empty($gameTypeId)) {
+            $whereConditions[] = 'g.gameType = :gameTypeId';
+            $parameters['gameTypeId'] = (int) $gameTypeId;
+        }
+
+        // Search Query Filter across specific searchable database columns
+        if (!empty($searchQuery)) {
+            $searchQueryLower = '%' . strtolower(trim($searchQuery)) . '%';
+            $col = strtolower(trim((string) $columnFilter));
+
+            switch ($col) {
+                case 'title':
+                    $whereConditions[] = 'LOWER(g.title) LIKE :q';
+                    break;
+                case 'unique_identifier':
+                case 'identifier':
+                    $whereConditions[] = 'LOWER(g.uniqueIdentifier) LIKE :q';
+                    break;
+                case 'uuid':
+                    $whereConditions[] = 'LOWER(g.uuid) LIKE :q';
+                    break;
+                case 'tags':
+                    $whereConditions[] = 'LOWER(g.tags) LIKE :q';
+                    break;
+                case 'url':
+                case 'game_absolute_url':
+                    $whereConditions[] = 'LOWER(g.gameAbsoluteUrl) LIKE :q';
+                    break;
+                case 'summary':
+                case 'description':
+                    $whereConditions[] = '(LOWER(g.summary) LIKE :q OR LOWER(g.description) LIKE :q)';
+                    break;
+                case 'all':
+                default:
+                    $whereConditions[] = '(LOWER(g.title) LIKE :q OR LOWER(g.uniqueIdentifier) LIKE :q OR LOWER(g.uuid) LIKE :q OR LOWER(g.tags) LIKE :q OR LOWER(g.summary) LIKE :q OR LOWER(g.description) LIKE :q OR LOWER(g.gameAbsoluteUrl) LIKE :q OR LOWER(gt.name) LIKE :q)';
+                    break;
+            }
+
+            $parameters['q'] = $searchQueryLower;
+        }
+
+        if (!empty($whereConditions)) {
+            $compositeWhere = implode(' AND ', $whereConditions);
+            $qb->where($compositeWhere);
+            $countQb->where($compositeWhere);
+        }
+
+        foreach ($parameters as $key => $val) {
+            $qb->setParameter($key, $val);
+            $countQb->setParameter($key, $val);
+        }
+
+        try {
+            $total = (int) $countQb->getQuery()->getSingleScalarResult();
+        } catch (\Throwable $e) {
+            $total = 0;
+        }
+
+        $offset = ($page - 1) * $limit;
+        $qb->setFirstResult($offset)->setMaxResults($limit);
+
+        try {
+            $entities = $qb->getQuery()->getResult();
+            $games = [];
+            foreach ($entities as $g) {
+                $games[] = [
+                    'id'               => $g->getId(),
+                    'uuid'             => $g->getUuid(),
+                    'uniqueIdentifier' => $g->getUniqueIdentifier(),
+                    'title'            => $g->getTitle(),
+                    'summary'          => $g->getSummary(),
+                    'tags'             => $g->getTags(),
+                    'gameType'         => $g->getGameType() ? $g->getGameType()->getName() : 'Interactive',
+                    'gameTypeId'       => $g->getGameType() ? $g->getGameType()->getId() : null,
+                    'createdOn'        => $g->getCreatedOn() ? $g->getCreatedOn()->format('Y-m-d H:i') : date('Y-m-d H:i'),
+                    'gameAbsoluteUrl'  => $g->getGameAbsoluteUrl(),
+                    'status'           => 'Active',
+                ];
+            }
+            return ['games' => $games, 'total' => $total];
+        } catch (\Throwable $e) {
+            return ['games' => [], 'total' => 0];
+        }
     }
 
     /**

@@ -56,19 +56,79 @@ class GameAdminAnalyticsController extends AbstractActionController
      */
     public function analyticsAction(): ViewModel
     {
+        $totalGames = 0;
+        $totalCurriculums = 0;
+        $activeToddlerAssessmentTitle = 'None';
+        $toddlerActive = null;
+
+        if ($this->entityManager !== null) {
+            try {
+                $totalGames = count($this->entityManager->getRepository(\Game\Entity\Game::class)->findAll());
+                $totalCurriculums = count($this->entityManager->getRepository(\Game\Entity\Curriculum::class)->findAll());
+            } catch (\Throwable $e) {}
+        }
+
+        if ($this->curriculumService) {
+            try {
+                $toddlerActive = $this->curriculumService->getActiveToddlerAssessment();
+                if ($toddlerActive && $toddlerActive->getGameId() instanceof \Game\Entity\Game) {
+                    $activeToddlerAssessmentTitle = $toddlerActive->getGameId()->getTitle();
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        $globalActivePlayers = $this->curriculumService ? $this->curriculumService->getActiveConcurrentPlayers('global') : 0;
+        $toddlerActivePlayers = $this->curriculumService ? $this->curriculumService->getActiveConcurrentPlayers('toddler_assessment') : 0;
+
+        $isReset = $this->params()->fromQuery('reset') === '1';
+
         $viewModel = new ViewModel([
-            'activeNav'   => 'analytics',
-            'currentUser' => $this->getActiveUser(),
-            'metrics'     => [
-                'daily_active_users' => 3420,
-                'completion_rate'    => '84.2%',
-                'retention_rate_7d'  => '71.5%',
-                'avg_score'          => '885 pts',
+            'activeNav'                     => 'analytics',
+            'currentUser'                   => $this->getActiveUser(),
+            'isReset'                       => $isReset,
+            'metrics'                       => [
+                'global_active_players'     => $globalActivePlayers,
+                'toddler_active_players'    => $toddlerActivePlayers,
+                'total_games'               => $totalGames,
+                'total_curriculums'         => $totalCurriculums,
+                'active_toddler_assessment' => $activeToddlerAssessmentTitle,
+                'cache_namespace'           => \Game\Service\CurriculumService::ANALYTICS_CACHE_NAMESPACE,
             ],
         ]);
 
         $viewModel->setTemplate('game-admin/game-admin/analytics');
         return $viewModel;
+    }
+
+    /**
+     * Action to reset/flush the Redis analytics cache namespace without affecting other namespaces (/game-admin/analytics/reset-cache).
+     */
+    public function resetCacheAction()
+    {
+        if ($this->curriculumService) {
+            $this->curriculumService->clearAnalyticsCache();
+        }
+        return $this->redirect()->toRoute('game-admin-analytics', [], ['query' => ['reset' => '1']]);
+    }
+
+    /**
+     * API endpoint to programmatically reset the Redis analytics cache namespace (/api/game-admin/analytics/reset).
+     *
+     * @return JsonModel
+     */
+    public function resetCacheApiAction(): JsonModel
+    {
+        $success = false;
+        if ($this->curriculumService) {
+            $success = $this->curriculumService->clearAnalyticsCache();
+        }
+
+        return new JsonModel([
+            'success'     => $success,
+            'namespace'   => \Game\Service\CurriculumService::ANALYTICS_CACHE_NAMESPACE,
+            'description' => 'Successfully cleared and reset analytics Redis cache namespace without affecting other namespaces.',
+            'timestamp'   => date('Y-m-d H:i:s'),
+        ]);
     }
 
     /**
@@ -79,22 +139,28 @@ class GameAdminAnalyticsController extends AbstractActionController
     public function statsApiAction(): JsonModel
     {
         $totalGames = 0;
+        $totalPlays = 0;
         if ($this->entityManager !== null) {
             try {
-                $totalGames = count($this->entityManager->getRepository(Game::class)->findAll());
+                $games = $this->entityManager->getRepository(\Game\Entity\Game::class)->findAll();
+                $totalGames = count($games);
             } catch (\Throwable $e) {
                 // Ignore exception
             }
         }
 
-        $activePlayers = $this->curriculumService ? $this->curriculumService->getActiveConcurrentPlayers('global') : 0;
+        $globalActivePlayers = $this->curriculumService ? $this->curriculumService->getActiveConcurrentPlayers('global') : 0;
+        $toddlerActivePlayers = $this->curriculumService ? $this->curriculumService->getActiveConcurrentPlayers('toddler_assessment') : 0;
 
         return new JsonModel([
             'success'   => true,
             'timestamp' => date('Y-m-d H:i:s'),
             'metrics'   => [
-                'active_players' => $activePlayers,
-                'total_games'    => $totalGames,
+                'active_players'         => $globalActivePlayers,
+                'global_active_players'  => $globalActivePlayers,
+                'toddler_active_players' => $toddlerActivePlayers,
+                'total_games'            => $totalGames,
+                'cache_namespace'        => \Game\Service\CurriculumService::ANALYTICS_CACHE_NAMESPACE,
             ],
         ]);
     }

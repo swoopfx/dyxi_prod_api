@@ -3,17 +3,27 @@
  * GameAdmin Catalog View Template
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
-$pagination = $this->pagination ?? ['page' => 1, 'limit' => 10, 'total' => count($this->games), 'totalPages' => 1, 'q' => ''];
-$page       = (int) $pagination['page'];
-$totalPages = (int) $pagination['totalPages'];
-$total      = (int) $pagination['total'];
-$q          = (string) $pagination['q'];
+$pagination = $this->pagination ?? ['page' => 1, 'limit' => 10, 'total' => count($this->games), 'totalPages' => 1, 'q' => '', 'column' => 'all', 'game_type_id' => ''];
+$page            = (int) $pagination['page'];
+$totalPages      = (int) $pagination['totalPages'];
+$total           = (int) $pagination['total'];
+$q               = (string) $pagination['q'];
+$column          = (string) ($pagination['column'] ?? 'all');
+$selectedTypeId  = (string) ($pagination['game_type_id'] ?? '');
+$gameTypeOptions = $this->gameTypeOptions ?? [];
+
+$queryString = http_build_query(array_filter([
+    'q'            => $q,
+    'column'       => $column !== 'all' ? $column : null,
+    'game_type_id' => $selectedTypeId ?: null,
+]));
+$queryParamsStr = !empty($queryString) ? '&' . $queryString : '';
 ?>
 
 <div class="ga-page-title-bar">
     <div>
         <h1 class="ga-page-title">Game Catalog Management</h1>
-        <p class="ga-page-subtitle">Search, filter, view specifications, edit parameters, and manage deployed game entities.</p>
+        <p class="ga-page-subtitle">Search, filter by database columns, view specifications, edit parameters, and manage deployed game entities.</p>
     </div>
     <div style="display: flex; gap: 12px;">
         <a href="<?= $this->url('game-admin-game-create') ?>" class="ga-btn-primary">
@@ -23,20 +33,47 @@ $q          = (string) $pagination['q'];
 </div>
 
 <!-- Search Filter Bar -->
-<div class="ga-panel" style="padding: 16px 24px; margin-bottom: 24px;">
+<div class="ga-panel" style="padding: 20px 24px; margin-bottom: 24px;">
     <form method="get" action="<?= $this->url('game-admin-games') ?>" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 260px; position: relative;">
+        <!-- Query Text Search -->
+        <div style="flex: 2; min-width: 240px; position: relative;">
             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ga-text-dim);"></i>
-            <input type="text" name="q" value="<?= $this->escapeHtmlAttr($q) ?>" class="ga-form-control" placeholder="Search by title, identifier, tags (e.g. dyslexia, phonics, adhd)..." style="padding-left: 40px;">
+            <input type="text" name="q" value="<?= $this->escapeHtmlAttr($q) ?>" class="ga-form-control" placeholder="Search database column..." style="padding-left: 40px;">
         </div>
 
+        <!-- Target Searchable Database Column Select -->
+        <div style="flex: 1; min-width: 180px;">
+            <select name="column" class="ga-form-control">
+                <option value="all" <?= $column === 'all' ? 'selected' : '' ?>>🔍 All Searchable DB Columns</option>
+                <option value="title" <?= $column === 'title' ? 'selected' : '' ?>>Title (title)</option>
+                <option value="unique_identifier" <?= ($column === 'unique_identifier' || $column === 'identifier') ? 'selected' : '' ?>>Unique Identifier (unique_identifier)</option>
+                <option value="uuid" <?= $column === 'uuid' ? 'selected' : '' ?>>UUID (uuid)</option>
+                <option value="tags" <?= $column === 'tags' ? 'selected' : '' ?>>Tags / Keywords (tags)</option>
+                <option value="summary" <?= ($column === 'summary' || $column === 'description') ? 'selected' : '' ?>>Summary & Description</option>
+                <option value="game_absolute_url" <?= ($column === 'game_absolute_url' || $column === 'url') ? 'selected' : '' ?>>Launch URL (game_absolute_url)</option>
+            </select>
+        </div>
+
+        <!-- Category / GameType Filter Select -->
+        <div style="flex: 1; min-width: 170px;">
+            <select name="game_type_id" class="ga-form-control">
+                <option value="">🏷️ All Categories</option>
+                <?php foreach ($gameTypeOptions as $typeId => $typeName): ?>
+                    <option value="<?= $this->escapeHtmlAttr($typeId) ?>" <?= (string)$typeId === $selectedTypeId ? 'selected' : '' ?>>
+                        <?= $this->escapeHtml($typeName) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <!-- Filter Submit Button -->
         <button type="submit" class="ga-btn-primary">
-            <i class="fa-solid fa-filter"></i> Apply Filter
+            <i class="fa-solid fa-filter"></i> Apply DB Filter
         </button>
 
-        <?php if (!empty($q)): ?>
-            <a href="<?= $this->url('game-admin-games') ?>" class="ga-btn-secondary">
-                <i class="fa-solid fa-xmark"></i> Clear Filter
+        <?php if (!empty($q) || $column !== 'all' || !empty($selectedTypeId)): ?>
+            <a href="<?= $this->url('game-admin-games') ?>" class="ga-btn-secondary" title="Reset filter criteria">
+                <i class="fa-solid fa-xmark"></i> Clear
             </a>
         <?php endif; ?>
     </form>
@@ -49,9 +86,17 @@ $q          = (string) $pagination['q'];
             <i class="fa-solid fa-layer-group" style="color: var(--ga-accent-cyan);"></i>
             Registered Games (<?= $total ?> total)
         </h2>
-        <?php if (!empty($q)): ?>
-            <span class="ga-badge ga-badge-type">Filter: "<?= $this->escapeHtml($q) ?>"</span>
-        <?php endif; ?>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <?php if (!empty($q)): ?>
+                <span class="ga-badge ga-badge-type"><i class="fa-solid fa-magnifying-glass"></i> Query: "<?= $this->escapeHtml($q) ?>"</span>
+            <?php endif; ?>
+            <?php if ($column !== 'all'): ?>
+                <span class="ga-badge ga-badge-active"><i class="fa-solid fa-table-columns"></i> Column: <?= $this->escapeHtml($column) ?></span>
+            <?php endif; ?>
+            <?php if (!empty($selectedTypeId) && isset($gameTypeOptions[$selectedTypeId])): ?>
+                <span class="ga-badge ga-badge-type"><i class="fa-solid fa-tag"></i> Category: <?= $this->escapeHtml($gameTypeOptions[$selectedTypeId]) ?></span>
+            <?php endif; ?>
+        </div>
     </div>
 
     <div class="ga-table-wrapper">
@@ -75,7 +120,7 @@ $q          = (string) $pagination['q'];
                         <td>
                             <div class="ga-game-title-cell">
                                 <span class="ga-game-name"><?= $this->escapeHtml($game['title']) ?></span>
-                                <span class="ga-game-id"><?= $this->escapeHtml($game['uniqueIdentifier']) ?></span>
+                                <span class="ga-game-id"><?= $this->escapeHtml($game['uniqueIdentifier']) ?> • <?= $this->escapeHtml($game['uuid']) ?></span>
                             </div>
                         </td>
                         <td><span class="ga-badge ga-badge-type"><?= $this->escapeHtml($game['gameType']) ?></span></td>
@@ -126,7 +171,7 @@ $q          = (string) $pagination['q'];
                     <tr>
                         <td colspan="7" style="text-align: center; padding: 32px; color: var(--ga-text-muted);">
                             <i class="fa-solid fa-folder-open" style="font-size: 2rem; margin-bottom: 12px; display: block; color: var(--ga-text-dim);"></i>
-                            No games match your search criteria. Try adjusting your query filter.
+                            No games match your database search criteria. Try adjusting your column filter or query terms.
                         </td>
                     </tr>
                 <?php endif; ?>
@@ -138,24 +183,24 @@ $q          = (string) $pagination['q'];
     <?php if ($totalPages > 1): ?>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--ga-border-color); font-size: 0.88rem; color: var(--ga-text-muted);">
             <div>
-                Showing Page <strong><?= $page ?></strong> of <strong><?= $totalPages ?></strong> (Total <?= $total ?> games)
+                Showing Page <strong><?= $page ?></strong> of <strong><?= $totalPages ?></strong> (Total <?= $total ?> games matching filter)
             </div>
 
             <div style="display: flex; gap: 8px;">
                 <?php if ($page > 1): ?>
-                    <a href="<?= $this->url('game-admin-games') ?>?q=<?= urlencode($q) ?>&page=<?= $page - 1 ?>" class="ga-btn-secondary" style="padding: 6px 12px;">
+                    <a href="<?= $this->url('game-admin-games') ?>?page=<?= $page - 1 ?><?= $queryParamsStr ?>" class="ga-btn-secondary" style="padding: 6px 12px;">
                         <i class="fa-solid fa-chevron-left"></i> Previous
                     </a>
                 <?php endif; ?>
 
                 <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-                    <a href="<?= $this->url('game-admin-games') ?>?q=<?= urlencode($q) ?>&page=<?= $p ?>" class="<?= $p === $page ? 'ga-btn-primary' : 'ga-btn-secondary' ?>" style="padding: 6px 12px; min-width: 36px; text-align: center;">
+                    <a href="<?= $this->url('game-admin-games') ?>?page=<?= $p ?><?= $queryParamsStr ?>" class="<?= $p === $page ? 'ga-btn-primary' : 'ga-btn-secondary' ?>" style="padding: 6px 12px; min-width: 36px; text-align: center;">
                         <?= $p ?>
                     </a>
                 <?php endfor; ?>
 
                 <?php if ($page < $totalPages): ?>
-                    <a href="<?= $this->url('game-admin-games') ?>?q=<?= urlencode($q) ?>&page=<?= $page + 1 ?>" class="ga-btn-secondary" style="padding: 6px 12px;">
+                    <a href="<?= $this->url('game-admin-games') ?>?page=<?= $page + 1 ?><?= $queryParamsStr ?>" class="ga-btn-secondary" style="padding: 6px 12px;">
                         Next <i class="fa-solid fa-chevron-right"></i>
                     </a>
                 <?php endif; ?>
@@ -163,3 +208,4 @@ $q          = (string) $pagination['q'];
         </div>
     <?php endif; ?>
 </div>
+
