@@ -32,7 +32,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/game/curriculum/create",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Create a new Curriculum",
      *     description="Creates a new Curriculum entity with selected games tracking (is_played, reason, custom_variables) and links to assigned ward.",
      *     security={{"bearerAuth":{}}},
@@ -182,7 +182,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/game/curriculum/recreate",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Recreate Curriculum for Ward",
      *     description="Re-generates or re-assigns a curriculum tailored to a specific ward.",
      *     security={{"bearerAuth":{}}},
@@ -286,7 +286,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/curriculum/list",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="List all Curriculums",
      *     description="Retrieve list of all registered Curriculums including selected games tracking.",
      *     security={{"bearerAuth":{}}},
@@ -384,7 +384,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/curriculum/info/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="View Curriculum details",
      *     description="Retrieve detailed info for a single Curriculum by ID or UUID.",
      *     security={{"bearerAuth":{}}},
@@ -475,7 +475,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Put(
      *     path="/api/game/curriculum/update/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Update a Curriculum",
      *     description="Update existing Curriculum attributes and selected games list by ID or UUID.",
      *     security={{"bearerAuth":{}}},
@@ -580,7 +580,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/game/curriculum/update-game-status",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Update Game Played Status & Custom Variables in Curriculum",
      *     description="Updates the is_played indicator, reason, and custom variables for a specific game within a curriculum (updated in DB & Redis).",
      *     security={{"bearerAuth":{}}},
@@ -688,7 +688,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Delete(
      *     path="/api/game/curriculum/delete/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Delete a Curriculum",
      *     description="Deletes a Curriculum record by integer ID or UUID.",
      *     security={{"bearerAuth":{}}},
@@ -763,7 +763,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/curriculum/toddler-assessment",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Retrieve Toddler Assessment / Toddler Games List details",
      *     description="Retrieves the detailed list of ToddlerGamesList entities including mapped Game data and custom configurations.",
      *     security={{"bearerAuth":{}}},
@@ -846,8 +846,11 @@ class CurriculumController extends AbstractActionController
                     $data[] = $this->mapToddlerGameToArray($tg);
                 }
             } else {
-                $activeEntity = $this->curriculumService->getActiveToddlerAssessment();
-                $data = $activeEntity ? $this->mapToddlerGameToArray($activeEntity) : null;
+                $activeEntities = $this->curriculumService->getActiveToddlerAssessments();
+                $data = [];
+                foreach ($activeEntities as $tg) {
+                    $data[] = $this->mapToddlerGameToArray($tg);
+                }
             }
 
             $response->setStatusCode(200);
@@ -890,7 +893,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/curriculum/active-players",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Retrieve Active Concurrent Players count from Redis Cache",
      *     description="Returns the active concurrent player count for a single unique identifier directly from Redis cache. Does NOT query or modify the database.",
      *     security={{"bearerAuth":{}}},
@@ -922,7 +925,7 @@ class CurriculumController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/game/curriculum/active-players",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Update Active Concurrent Players in Redis Cache",
      *     description="Increments, decrements, or sets active concurrent player count for a single unique identifier in Redis cache without affecting the database.",
      *     security={{"bearerAuth":{}}},

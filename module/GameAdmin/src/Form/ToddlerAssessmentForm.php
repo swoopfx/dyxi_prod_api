@@ -86,7 +86,7 @@ class ToddlerAssessmentForm extends Form
             'name' => 'isActive',
             'type' => Element\Checkbox::class,
             'options' => [
-                'label'              => 'Set as Active Toddler Assessment (Deactivates all other Toddler Assessment entries)',
+                'label'              => 'Set as Active Toddler Assessment',
                 'use_hidden_element' => true,
                 'checked_value'      => '1',
                 'unchecked_value'    => '0',

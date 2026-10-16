@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 return [
@@ -6,8 +7,8 @@ return [
         'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
         'port' => (int)(getenv('REDIS_PORT') ?: 6379),
         'database' => (int)(getenv('REDIS_DB') ?: 0),
-        'ttl' => 86400, // 24 hours default cache TTL
-        'namespace' => 'dyxi_general',
+        'ttl' => (int)(getenv('REDIS_TTL') ?: 86400),
+        'namespace' => getenv('REDIS_NAMESPACE') ?: 'dyxi_general',
     ],
     'caches' => [
         // Authorization RBAC Namespace
@@ -18,8 +19,8 @@ return [
                     'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
                     'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 ],
-                'ttl' => 86400,
-                'namespace' => 'dyxi_rbac',
+                'ttl' => (int)(getenv('REDIS_TTL') ?: 86400),
+                'namespace' => getenv('REDIS_AUTH_NAMESPACE') ?: 'dyxi_rbac',
             ],
             'plugins' => [
                 [
@@ -42,8 +43,8 @@ return [
                     'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
                     'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 ],
-                'ttl' => 0, // 0 = forever / no expiration
-                'namespace' => 'dyxi_curriculum',
+                'ttl' => (int)(getenv('REDIS_CURRICULUM_TTL') ?: 0),
+                'namespace' => getenv('REDIS_CURRICULUM_NAMESPACE') ?: 'dyxi_curriculum',
             ],
             'plugins' => [
                 [
@@ -66,8 +67,8 @@ return [
                     'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
                     'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 ],
-                'ttl' => 86400,
-                'namespace' => 'dyxi_general',
+                'ttl' => (int)(getenv('REDIS_TTL') ?: 86400),
+                'namespace' => getenv('REDIS_NAMESPACE') ?: 'dyxi_general',
             ],
             'plugins' => [
                 [
@@ -83,4 +84,3 @@ return [
         ],
     ],
 ];
-

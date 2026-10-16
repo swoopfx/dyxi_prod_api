@@ -12,7 +12,7 @@ class BillingController extends AbstractActionController
     /**
      * @OA\Get(
      *     path="/api/resources/billing",
-     *     tags={"Resources - Billing"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Billing"},
      *     description="Get a list of Billings",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
@@ -29,7 +29,7 @@ class BillingController extends AbstractActionController
     /**
      * @OA\Post(
      *     path="/api/resources/billing/create",
-     *     tags={"Resources - Billing"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Billing"},
      *     description="Create a new Billing",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
@@ -43,7 +43,7 @@ class BillingController extends AbstractActionController
     /**
      * @OA\Put(
      *     path="/api/resources/billing/update/{id}",
-     *     tags={"Resources - Billing"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Billing"},
      *     description="Update a Billing",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},
@@ -58,7 +58,7 @@ class BillingController extends AbstractActionController
     /**
      * @OA\Delete(
      *     path="/api/resources/billing/delete/{id}",
-     *     tags={"Resources - Billing"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Billing"},
      *     description="Delete a Billing",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},

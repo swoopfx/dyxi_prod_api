@@ -39,7 +39,7 @@ class ConsultantController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/consultant/create",
-     *     tags={"Consultant"},
+     *     tags={"User Interface - Resources & Bookings", "Consultant"},
      *     summary="Create a new Consultant profile",
      *     description="Creates a new professional consultant, doctor, or psychologist profile on the platform.",
      *     @OA\RequestBody(
@@ -178,7 +178,7 @@ class ConsultantController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/consultant/categories",
-     *     tags={"Consultant"},
+     *     tags={"User Interface - Resources & Bookings", "Consultant"},
      *     summary="List all Consultant Categories",
      *     description="Retrieve all available consultant categories (e.g. Doctor, Consultant, Psychologist).",
      *     @OA\Response(
@@ -234,7 +234,7 @@ class ConsultantController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/consultant/list",
-     *     tags={"Consultant"},
+     *     tags={"User Interface - Resources & Bookings", "Consultant"},
      *     summary="List Consultants with searchable filters",
      *     description="Retrieve list of consultants filtered by category (ID, UUID, or name), speciality, title, or search keyword.",
      *     @OA\Parameter(
@@ -355,7 +355,7 @@ class ConsultantController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/consultant/view/{id}",
-     *     tags={"Consultant"},
+     *     tags={"User Interface - Resources & Bookings", "Consultant"},
      *     summary="View Consultant details",
      *     description="Retrieve details of a single consultant profile by integer ID or UUID string.",
      *     @OA\Parameter(
@@ -455,7 +455,7 @@ class ConsultantController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/consultant/book",
-     *     tags={"Consultant"},
+     *     tags={"User Interface - Resources & Bookings", "Consultant"},
      *     summary="Book a Consultant appointment",
      *     description="Books an appointment with a consultant, creates a booking record with status 'initiated', and dispatches email notifications to both the consultant and the booking parent.",
      *     security={{"bearerAuth":{}}},

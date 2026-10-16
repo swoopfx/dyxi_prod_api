@@ -36,7 +36,7 @@ class DyslexiaController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/dyslexia/register",
-     *     tags={"Dyslexia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyslexia"},
      *     description="Registers a new Dyslexia assessment for a ward.",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
@@ -125,7 +125,7 @@ class DyslexiaController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/dyslexia/list-assessments",
-     *     tags={"Dyslexia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyslexia"},
      *     description="Retrieve a list of all Dyslexia assessments for the authenticated user's wards.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success"),
@@ -191,7 +191,7 @@ class DyslexiaController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/dyslexia/assessment-info/{id}",
-     *     tags={"Dyslexia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyslexia"},
      *     description="Retrieve details of a specific Dyslexia assessment by ID, UUID, or unique identifier.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
@@ -273,7 +273,7 @@ class DyslexiaController extends AbstractActionController
      *
      * @OA\Put(
      *     path="/api/dyslexia/update/{id}",
-     *     tags={"Dyslexia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyslexia"},
      *     description="Update an existing Dyslexia assessment.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
@@ -371,7 +371,7 @@ class DyslexiaController extends AbstractActionController
      *
      * @OA\Delete(
      *     path="/api/dyslexia/delete/{id}",
-     *     tags={"Dyslexia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyslexia"},
      *     description="Delete an existing Dyslexia assessment.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(

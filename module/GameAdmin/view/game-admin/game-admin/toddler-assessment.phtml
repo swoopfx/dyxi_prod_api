@@ -9,7 +9,7 @@ $toddlerList = $this->toddlerList ?? [];
 <div class="ga-page-title-bar">
     <div>
         <h1 class="ga-page-title"><i class="fa-solid fa-baby" style="color: var(--ga-primary); margin-right: 8px;"></i> Toddler Assessment Games List</h1>
-        <p class="ga-page-subtitle">Manage early childhood development games. <strong>Strict Rule: Only ONE Toddler Assessment game can be ACTIVE at any time.</strong></p>
+        <p class="ga-page-subtitle">Manage early childhood development games and active Toddler Assessment configurations.</p>
     </div>
     <div>
         <a href="<?= $this->url('game-admin-toddler-assessment-create') ?>" class="ga-btn-primary">
@@ -84,10 +84,12 @@ $toddlerList = $this->toddlerList ?? [];
                             <td style="padding: 12px 16px;">
                                 <?php if (empty($item['isActive'])): ?>
                                     <a href="<?= $this->url('game-admin-toddler-assessment-activate', ['id' => $item['id']]) ?>" class="ga-btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; background: #e0f2fe; color: #0284c7; border-color: #bae6fd;">
-                                        <i class="fa-solid fa-bolt"></i> Set Active
+                                        <i class="fa-solid fa-bolt"></i> Activate
                                     </a>
                                 <?php else: ?>
-                                    <span style="font-size: 0.8rem; color: #059669; font-weight: 600;"><i class="fa-solid fa-star"></i> Currently Active</span>
+                                    <a href="<?= $this->url('game-admin-toddler-assessment-deactivate', ['id' => $item['id']]) ?>" class="ga-btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; background: #fef2f2; color: #dc2626; border-color: #fecdd3;">
+                                        <i class="fa-solid fa-power-off"></i> Deactivate
+                                    </a>
                                 <?php endif; ?>
                             </td>
                         </tr>

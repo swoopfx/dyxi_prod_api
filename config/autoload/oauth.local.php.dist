@@ -2,17 +2,59 @@
 
 return [
     'google_oauth' => [
-        'client_id' => 'dummy-google-client-id.apps.googleusercontent.com',
-        'client_secret' => 'dummy-google-client-secret',
-        'redirect_uri' => 'https://your-domain.com/auth/ipa/google-callback',
-        'scope' => 'openid email profile',
-        'frontend_redirect_url' => 'https://your-domain.com/auth/redirect',
+        'client_id' => getenv('GOOGLE_CLIENT_ID') ?: 'dummy-google-client-id.apps.googleusercontent.com',
+        'client_secret' => getenv('GOOGLE_CLIENT_SECRET') ?: 'dummy-google-client-secret',
+        'redirect_uri' => getenv('GOOGLE_REDIRECT_URI') ?: 'https://your-domain.com/auth/ipa/google-callback',
+        'allowed_redirect_uris' => getenv('GOOGLE_ALLOWED_REDIRECT_URIS') ?: 'https://your-domain.com/auth/ipa/google-callback',
+        'token_url' => getenv('GOOGLE_TOKEN_URL') ?: 'https://oauth2.googleapis.com/token',
+        'scope' => getenv('GOOGLE_OAUTH_SCOPE') ?: 'openid email profile',
+        'frontend_redirect_url' => getenv('GOOGLE_FRONTEND_REDIRECT_URL') ?: 'https://your-domain.com/auth/redirect',
+        'userinfo_url' => getenv('GOOGLE_USERINFO_URL') ?: 'https://openidconnect.googleapis.com/v1/userinfo',
+
+        /*
+         * Google issuers allowed for ID tokens.
+         */
+        'allowed_issuers' => [
+            'https://accounts.google.com',
+            'accounts.google.com',
+        ],
+
+        /*
+         * Optional. Keep null unless you intentionally restrict
+         * login to a Google Workspace domain.
+         */
+        'hosted_domain' => getenv('GOOGLE_HOSTED_DOMAIN') ?: null,
     ],
     'apple_oauth' => [
-        'client_id' => 'dummy-apple-client-id',
-        'redirect_uri' => 'https://your-domain.com/auth/ipa/apple-initiate',
-        'scope' => 'name email',
-        'response_mode' => 'form_post',
-        'frontend_redirect_url' => 'https://your-domain.com/auth/redirect',
+        'client_id' => getenv('APPLE_CLIENT_ID') ?: 'dummy-apple-client-id',
+        'redirect_uri' => getenv('APPLE_REDIRECT_URI') ?: 'https://your-domain.com/auth/ipa/apple-initiate',
+        'scope' => getenv('APPLE_OAUTH_SCOPE') ?: 'name email',
+        'response_mode' => getenv('APPLE_RESPONSE_MODE') ?: 'form_post',
+        'frontend_redirect_url' => getenv('APPLE_FRONTEND_REDIRECT_URL') ?: 'https://your-domain.com/auth/redirect',
     ],
+    'security' => [
+        /*
+         * Maximum request size for auth endpoints.
+         */
+        'max_body_bytes' =>
+            (int)(getenv('SECURITY_MAX_BODY_BYTES') ?: 8192),
+
+        /*
+         * Maximum sizes for OAuth values.
+         */
+        'max_code_length' =>
+            (int)(getenv('SECURITY_MAX_CODE_LENGTH') ?: 2048),
+        'max_verifier_length' =>
+            (int)(getenv('SECURITY_MAX_VERIFIER_LENGTH') ?: 128),
+        'max_nonce_length' =>
+            (int)(getenv('SECURITY_MAX_NONCE_LENGTH') ?: 255),
+        'max_redirect_uri_length' =>
+            (int)(getenv('SECURITY_MAX_REDIRECT_URI_LENGTH') ?: 2048),
+
+        /*
+         * Require a verified Google email.
+         */
+        'require_verified_email' =>
+            filter_var(getenv('SECURITY_REQUIRE_VERIFIED_EMAIL') ?: true, FILTER_VALIDATE_BOOLEAN),
+    ]
 ];

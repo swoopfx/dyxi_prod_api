@@ -31,7 +31,7 @@ class GameTypeController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/game/game-type/create",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Create a new GameType",
      *     description="Creates a new GameType entry.",
      *     security={{"bearerAuth":{}}},
@@ -147,7 +147,7 @@ class GameTypeController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/game-type/list",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="List all GameTypes",
      *     description="Retrieve list of all registered GameTypes.",
      *     security={{"bearerAuth":{}}},
@@ -235,7 +235,7 @@ class GameTypeController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/game-type/info/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="View GameType details",
      *     description="Retrieve details of a single GameType by integer ID, UUID, or name.",
      *     security={{"bearerAuth":{}}},
@@ -333,7 +333,7 @@ class GameTypeController extends AbstractActionController
      *
      * @OA\Put(
      *     path="/api/game/game-type/update/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Update a GameType",
      *     description="Update existing GameType details by integer ID or UUID.",
      *     security={{"bearerAuth":{}}},
@@ -425,7 +425,7 @@ class GameTypeController extends AbstractActionController
      *
      * @OA\Delete(
      *     path="/api/game/game-type/delete/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Delete a GameType",
      *     description="Deletes a GameType record by integer ID or UUID.",
      *     security={{"bearerAuth":{}}},

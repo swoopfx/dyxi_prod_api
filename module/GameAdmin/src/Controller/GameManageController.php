@@ -706,16 +706,6 @@ class GameManageController extends AbstractActionController
                     $isActive = isset($data['isActive']) ? (bool)$data['isActive'] : true;
 
                     if ($this->entityManager !== null) {
-                        if ($isActive) {
-                            // Deactivate all existing ToddlerGamesList entities to enforce SINGLE ACTIVE entity rule
-                            $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
-                            $activeEntries = $repo->findBy(['isActive' => true]);
-                            foreach ($activeEntries as $item) {
-                                $item->setIsActive(false);
-                                $item->setUpdatedOn(new \DateTime());
-                            }
-                        }
-
                         $toddlerGame = new ToddlerGamesList();
                         $toddlerGame->setUuid(Uuid::uuid4()->toString());
                         $toddlerGame->setGameId($game);
@@ -751,7 +741,7 @@ class GameManageController extends AbstractActionController
     }
 
     /**
-     * Activates a specific Toddler Assessment entity and deactivates all others (/game-admin/toddler-assessment/activate/:id).
+     * Activates a specific Toddler Assessment entity without deactivating others (/game-admin/toddler-assessment/activate/:id).
      *
      * @return \Laminas\Http\Response
      */
@@ -762,19 +752,38 @@ class GameManageController extends AbstractActionController
         if (!empty($id) && $this->entityManager !== null) {
             try {
                 $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
-                $all = $repo->findAll();
-                foreach ($all as $item) {
-                    $item->setIsActive(false);
-                    $item->setUpdatedOn(new \DateTime());
-                }
-
                 $target = is_numeric($id) ? $repo->find((int)$id) : $repo->findOneBy(['uuid' => (string)$id]);
                 if ($target) {
                     $target->setIsActive(true);
                     $target->setUpdatedOn(new \DateTime());
+                    $this->entityManager->flush();
                 }
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
 
-                $this->entityManager->flush();
+        return $this->redirect()->toRoute('game-admin-toddler-assessment');
+    }
+
+    /**
+     * Deactivates a specific Toddler Assessment entity (/game-admin/toddler-assessment/deactivate/:id).
+     *
+     * @return \Laminas\Http\Response
+     */
+    public function deactivateToddlerAssessmentAction()
+    {
+        $id = $this->params()->fromRoute('id');
+
+        if (!empty($id) && $this->entityManager !== null) {
+            try {
+                $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
+                $target = is_numeric($id) ? $repo->find((int)$id) : $repo->findOneBy(['uuid' => (string)$id]);
+                if ($target) {
+                    $target->setIsActive(false);
+                    $target->setUpdatedOn(new \DateTime());
+                    $this->entityManager->flush();
+                }
             } catch (\Throwable $e) {
                 // Ignore
             }

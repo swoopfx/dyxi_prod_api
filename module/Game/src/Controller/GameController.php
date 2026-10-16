@@ -37,7 +37,7 @@ class GameController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/game/game/create",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Create a new Game",
      *     description="Creates a new Game entry with game type, optional curriculum, summary, description, and target tags.",
      *     security={{"bearerAuth":{}}},
@@ -185,7 +185,7 @@ class GameController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/game/list",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="List all Games",
      *     description="Retrieve list of all registered games.",
      *     security={{"bearerAuth":{}}},
@@ -277,7 +277,7 @@ class GameController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/game/info/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="View Game details",
      *     description="Retrieve details of a single Game by integer ID, UUID, or unique_identifier.",
      *     security={{"bearerAuth":{}}},
@@ -379,7 +379,7 @@ class GameController extends AbstractActionController
      *
      * @OA\Put(
      *     path="/api/game/game/update/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Update a Game",
      *     description="Update existing Game details by integer ID or UUID.",
      *     security={{"bearerAuth":{}}},
@@ -475,7 +475,7 @@ class GameController extends AbstractActionController
      *
      * @OA\Delete(
      *     path="/api/game/game/delete/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Delete a Game",
      *     description="Deletes a Game record by integer ID or UUID.",
      *     security={{"bearerAuth":{}}},

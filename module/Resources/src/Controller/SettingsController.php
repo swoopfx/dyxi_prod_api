@@ -12,7 +12,7 @@ class SettingsController extends AbstractActionController
     /**
      * @OA\Get(
      *     path="/api/resources/settings",
-     *     tags={"Resources - Settings"},
+     *     tags={"General - Platform Utilities", "Resources - Settings"},
      *     description="Get Settings",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
@@ -29,7 +29,7 @@ class SettingsController extends AbstractActionController
     /**
      * @OA\Post(
      *     path="/api/resources/settings/create",
-     *     tags={"Resources - Settings"},
+     *     tags={"General - Platform Utilities", "Resources - Settings"},
      *     description="Create a new Setting",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
@@ -43,7 +43,7 @@ class SettingsController extends AbstractActionController
     /**
      * @OA\Put(
      *     path="/api/resources/settings/update/{id}",
-     *     tags={"Resources - Settings"},
+     *     tags={"General - Platform Utilities", "Resources - Settings"},
      *     description="Update a Setting",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},
@@ -58,7 +58,7 @@ class SettingsController extends AbstractActionController
     /**
      * @OA\Delete(
      *     path="/api/resources/settings/delete/{id}",
-     *     tags={"Resources - Settings"},
+     *     tags={"General - Platform Utilities", "Resources - Settings"},
      *     description="Delete a Setting",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},

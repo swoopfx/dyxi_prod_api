@@ -12,7 +12,7 @@ class ProfessionalsController extends AbstractActionController
     /**
      * @OA\Get(
      *     path="/api/resources/professionals",
-     *     tags={"Resources - Professionals"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Professionals"},
      *     description="Get a list of Professionals",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
@@ -29,7 +29,7 @@ class ProfessionalsController extends AbstractActionController
     /**
      * @OA\Post(
      *     path="/api/resources/professionals/create",
-     *     tags={"Resources - Professionals"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Professionals"},
      *     description="Create a new Professional",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
@@ -43,7 +43,7 @@ class ProfessionalsController extends AbstractActionController
     /**
      * @OA\Put(
      *     path="/api/resources/professionals/update/{id}",
-     *     tags={"Resources - Professionals"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Professionals"},
      *     description="Update a Professional",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},
@@ -58,7 +58,7 @@ class ProfessionalsController extends AbstractActionController
     /**
      * @OA\Delete(
      *     path="/api/resources/professionals/delete/{id}",
-     *     tags={"Resources - Professionals"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Professionals"},
      *     description="Delete a Professional",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},

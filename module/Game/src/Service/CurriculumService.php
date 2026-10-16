@@ -508,7 +508,18 @@ class CurriculumService
     }
 
     /**
-     * Retrieves the single active ToddlerGamesList / Toddler Assessment entity.
+     * Retrieves all active ToddlerGamesList / Toddler Assessment entities.
+     *
+     * @return ToddlerGamesList[] Array of active ToddlerGamesList entities.
+     */
+    public function getActiveToddlerAssessments(): array
+    {
+        $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
+        return $repo->findBy(['isActive' => true], ['id' => 'DESC']);
+    }
+
+    /**
+     * Retrieves the latest active ToddlerGamesList / Toddler Assessment entity.
      * Falls back to the latest created entity if no entity is marked active.
      *
      * @return ToddlerGamesList|null The active ToddlerGamesList entity or null if none exist.
@@ -524,7 +535,7 @@ class CurriculumService
     }
 
     /**
-     * Sets a specific ToddlerGamesList entity as active and deactivates all others.
+     * Sets a specific ToddlerGamesList entity as active without deactivating other entities.
      *
      * @param int|string $idOrUuid Database ID or UUID string.
      * @return ToddlerGamesList The updated active entity.
@@ -538,8 +549,6 @@ class CurriculumService
             throw new \Exception('Toddler Assessment entity not found.');
         }
 
-        $this->deactivateAllToddlerGames();
-
         $target->setIsActive(true);
         $target->setUpdatedOn(new \DateTime());
         $this->entityManager->flush();
@@ -548,8 +557,30 @@ class CurriculumService
     }
 
     /**
+     * Deactivates a specific ToddlerGamesList entity.
+     *
+     * @param int|string $idOrUuid Database ID or UUID string.
+     * @return ToddlerGamesList The updated entity.
+     * @throws \Exception If entity is not found.
+     */
+    public function deactivateToddlerAssessment($idOrUuid): ToddlerGamesList
+    {
+        $repo = $this->entityManager->getRepository(ToddlerGamesList::class);
+        $target = is_numeric($idOrUuid) ? $repo->find((int) $idOrUuid) : $repo->findOneBy(['uuid' => (string) $idOrUuid]);
+        if (!$target) {
+            throw new \Exception('Toddler Assessment entity not found.');
+        }
+
+        $target->setIsActive(false);
+        $target->setUpdatedOn(new \DateTime());
+        $this->entityManager->flush();
+
+        return $target;
+    }
+
+    /**
      * Creates and persists a new ToddlerGamesList entity.
-     * Ensures only ONE entity is active if 'is_active' is true (default true).
+     * Multiple active entities can coexist simultaneously.
      *
      * @param array $data Input payload containing 'game_id', optional 'custom_config', and 'is_active'.
      * @return ToddlerGamesList The created entity.
@@ -580,9 +611,6 @@ class CurriculumService
         }
 
         $isActive = isset($data['is_active']) ? (bool) $data['is_active'] : (isset($data['isActive']) ? (bool) $data['isActive'] : true);
-        if ($isActive) {
-            $this->deactivateAllToddlerGames();
-        }
 
         $toddlerGame = new ToddlerGamesList();
         $toddlerGame->setUuid(Uuid::uuid4()->toString());

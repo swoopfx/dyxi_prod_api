@@ -49,7 +49,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Used to retrieve list of gender
-     * @OA\Get(path="/general/api/get-gender", tags={"General"},
+     * @OA\Get(path="/general/api/get-gender", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),
@@ -87,7 +87,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Used to retrieve The Users Profile
-     * @OA\Get( path="/general/api/get-user-profile", tags={"General"},
+     * @OA\Get( path="/general/api/get-user-profile", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),
@@ -146,7 +146,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Used to retirve a list of waste Type
-     * @OA\Get( path="/general/api/get-waste-type", tags={"General"},
+     * @OA\Get( path="/general/api/get-waste-type", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),
@@ -183,7 +183,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Used to retirve a list of waste Type
-     * @OA\Get( path="/general/api/get-waste-collection-type", tags={"General"},
+     * @OA\Get( path="/general/api/get-waste-collection-type", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="403", description="Error"),
@@ -219,7 +219,7 @@ class GeneralController extends AbstractActionController
     }
 
     /**
-     * @OA\Get( path="/general/api/get-waste-request-type", tags={"General"},
+     * @OA\Get( path="/general/api/get-waste-request-type", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
@@ -257,7 +257,7 @@ class GeneralController extends AbstractActionController
     }
 
     /**
-     * @OA\Get( path="/general/api/get-estimated-weight", tags={"General"}, description="get Estimted weight parameters",
+     * @OA\Get( path="/general/api/get-estimated-weight", tags={"General - Platform Utilities", "General"}, description="get Estimted weight parameters",
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
@@ -295,7 +295,7 @@ class GeneralController extends AbstractActionController
     }
 
     /**
-     * @OA\Get( path="/general/api/get-post-waste-status", tags={"General"},
+     * @OA\Get( path="/general/api/get-post-waste-status", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
@@ -334,7 +334,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Used to retirve pusher real time configuration parameter
-     * @OA\Get( path="/general/api/get-pusher-config", tags={"General"},
+     * @OA\Get( path="/general/api/get-pusher-config", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
@@ -367,7 +367,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Reteieves all events registered for real time communication
-     * @OA\Get( path="/general/api/get-pusher-events", tags={"General"},
+     * @OA\Get( path="/general/api/get-pusher-events", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
@@ -400,7 +400,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Reteieves all AWS credentials
-     * @OA\Get( path="/general/api/get-aws-credentials", tags={"General"},
+     * @OA\Get( path="/general/api/get-aws-credentials", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
@@ -466,7 +466,7 @@ class GeneralController extends AbstractActionController
 
     /**
      * Reteieves all Banks
-     * @OA\Get( path="/general/api/get-banks", tags={"General"},
+     * @OA\Get( path="/general/api/get-banks", tags={"General - Platform Utilities", "General"},
      * security={{"bearerAuth":{}}},
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
@@ -496,7 +496,7 @@ class GeneralController extends AbstractActionController
      * Get Legal Information (Privacy Policy and Terms & Conditions)
      * @OA\Get(
      *     path="/general/api/legal-info",
-     *     tags={"General"},
+     *     tags={"General - Platform Utilities", "General"},
      *     description="Returns the Privacy Policy and Terms & Conditions for Dyxi educational app, compliant with Google and Apple Store deployment guidelines.",
      *     @OA\Response(
      *         response="200",

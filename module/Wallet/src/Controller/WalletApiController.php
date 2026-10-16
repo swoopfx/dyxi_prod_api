@@ -43,7 +43,7 @@ class WalletApiController extends AbstractActionController
 
     /**
      * Used to retrieve list of gender
-     * @OA\GET( path="/wallet/api/get-wallet", tags={"Wallet"}, description="retrives wallet",
+     * @OA\GET( path="/wallet/api/get-wallet", tags={"User Interface - Wallet & Transactions", "Wallet"}, description="retrives wallet",
      *
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),
@@ -74,7 +74,7 @@ class WalletApiController extends AbstractActionController
 
     /**
      * Gets the balance of an active user
-     * @OA\GET( path="/wallet/api/get-balance", tags={"Wallet"}, description="retrives wallet",
+     * @OA\GET( path="/wallet/api/get-balance", tags={"User Interface - Wallet & Transactions", "Wallet"}, description="retrives wallet",
      *
      * @OA\Response(response="200", description="Success"),
      * @OA\Response(response="400", description="Bad Request"),

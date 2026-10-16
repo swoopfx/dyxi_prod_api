@@ -31,7 +31,7 @@ class CollectionController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/game/collection/create",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Create a new GamesCollection",
      *     description="Creates a new GamesCollection and optionally links games to it.",
      *     security={{"bearerAuth":{}}},
@@ -155,7 +155,7 @@ class CollectionController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/collection/list",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="List all GamesCollections",
      *     description="Retrieve list of all registered GamesCollections.",
      *     security={{"bearerAuth":{}}},
@@ -242,7 +242,7 @@ class CollectionController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/game/collection/info/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="View GamesCollection details",
      *     description="Retrieve details of a single GamesCollection by ID or UUID.",
      *     security={{"bearerAuth":{}}},
@@ -333,7 +333,7 @@ class CollectionController extends AbstractActionController
      *
      * @OA\Put(
      *     path="/api/game/collection/update/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Update a GamesCollection",
      *     description="Update existing GamesCollection details by ID or UUID.",
      *     security={{"bearerAuth":{}}},
@@ -426,7 +426,7 @@ class CollectionController extends AbstractActionController
      *
      * @OA\Delete(
      *     path="/api/game/collection/delete/{id}",
-     *     tags={"Games"},
+     *     tags={"User Interface - Learning & Games", "Admin Interface - Catalog & Toddler Management", "Games"},
      *     summary="Delete a GamesCollection",
      *     description="Deletes a GamesCollection record by integer ID or UUID.",
      *     security={{"bearerAuth":{}}},

@@ -12,7 +12,7 @@ class NeuroDiversityScaleController extends AbstractActionController
     /**
      * @OA\Get(
      *     path="/api/evaluation/neuro-diversity-scale",
-     *     tags={"Evaluation - NeuroDiversityScale"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Evaluation - NeuroDiversityScale"},
      *     description="Get a list of NeuroDiversityScale records",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
@@ -26,7 +26,7 @@ class NeuroDiversityScaleController extends AbstractActionController
     /**
      * @OA\Post(
      *     path="/api/evaluation/neuro-diversity-scale/create",
-     *     tags={"Evaluation - NeuroDiversityScale"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Evaluation - NeuroDiversityScale"},
      *     description="Create a new NeuroDiversityScale record",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
@@ -40,7 +40,7 @@ class NeuroDiversityScaleController extends AbstractActionController
     /**
      * @OA\Put(
      *     path="/api/evaluation/neuro-diversity-scale/update/{id}",
-     *     tags={"Evaluation - NeuroDiversityScale"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Evaluation - NeuroDiversityScale"},
      *     description="Update a NeuroDiversityScale record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},
@@ -55,7 +55,7 @@ class NeuroDiversityScaleController extends AbstractActionController
     /**
      * @OA\Delete(
      *     path="/api/evaluation/neuro-diversity-scale/delete/{id}",
-     *     tags={"Evaluation - NeuroDiversityScale"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Evaluation - NeuroDiversityScale"},
      *     description="Delete a NeuroDiversityScale record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},

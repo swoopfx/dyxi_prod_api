@@ -70,9 +70,17 @@ class GameAdminAnalyticsController extends AbstractActionController
 
         if ($this->curriculumService) {
             try {
-                $toddlerActive = $this->curriculumService->getActiveToddlerAssessment();
-                if ($toddlerActive && $toddlerActive->getGameId() instanceof \Game\Entity\Game) {
-                    $activeToddlerAssessmentTitle = $toddlerActive->getGameId()->getTitle();
+                $toddlerActiveList = $this->curriculumService->getActiveToddlerAssessments();
+                if (!empty($toddlerActiveList)) {
+                    $titles = [];
+                    foreach ($toddlerActiveList as $toddlerActive) {
+                        if ($toddlerActive->getGameId() instanceof \Game\Entity\Game) {
+                            $titles[] = $toddlerActive->getGameId()->getTitle();
+                        }
+                    }
+                    if (!empty($titles)) {
+                        $activeToddlerAssessmentTitle = implode(', ', array_unique($titles));
+                    }
                 }
             } catch (\Throwable $e) {}
         }
@@ -114,6 +122,16 @@ class GameAdminAnalyticsController extends AbstractActionController
     /**
      * API endpoint to programmatically reset the Redis analytics cache namespace (/api/game-admin/analytics/reset).
      *
+     * @OA\Post(
+     *     path="/api/game-admin/analytics/reset",
+     *     tags={"Admin Interface - Telemetry & Analytics"},
+     *     summary="Reset Analytics Redis Cache Namespace",
+     *     description="Flushes and invalidates all cached metrics and counters under the dyxi_analytics Redis namespace without affecting other namespaces.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(response="200", description="Analytics cache reset successfully"),
+     *     @OA\Response(response="401", description="Unauthorized")
+     * )
+     *
      * @return JsonModel
      */
     public function resetCacheApiAction(): JsonModel
@@ -133,6 +151,16 @@ class GameAdminAnalyticsController extends AbstractActionController
 
     /**
      * API endpoint returning live system stats for AJAX dashboard polling (/api/game-admin/stats).
+     *
+     * @OA\Get(
+     *     path="/api/game-admin/stats",
+     *     tags={"Admin Interface - Telemetry & Analytics"},
+     *     summary="Retrieve Admin Dashboard Live Telemetry Stats",
+     *     description="Returns real-time active concurrent players, global active sessions, and registered game catalog totals from Redis and database.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="401", description="Unauthorized")
+     * )
      *
      * @return JsonModel
      */

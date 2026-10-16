@@ -24,9 +24,9 @@ use Laminas\View\Model\JsonModel;
 
 /**
  * @OA\Info(
- *     title="Dyxi API",
+ *     title="Dyxi Platform API",
  *     version="1.0.0",
- *     description="API documentation for Dyxi API"
+ *     description="API documentation for Dyxi Platform. Endpoints are organized into three primary interface namespaces: User Interface, Admin Interface, and General, with Authentication functionality available across all interfaces."
  * )
  * @OA\Server(
  *     url="/",
@@ -41,6 +41,51 @@ use Laminas\View\Model\JsonModel;
  *     type="http",
  *     scheme="bearer",
  *     bearerFormat="JWT"
+ * )
+ *
+ * @OA\Tag(
+ *     name="User Interface - Authentication",
+ *     description="User Interface Authentication, Login, Registration, Token Refresh, and Security"
+ * )
+ * @OA\Tag(
+ *     name="User Interface - Learning & Games",
+ *     description="User Interface Learning Games, Curriculums, Game Collections, and Runtime Telemetry"
+ * )
+ * @OA\Tag(
+ *     name="User Interface - Diagnostic Evaluations",
+ *     description="User Interface Clinical Diagnostics (ADHD, WIAT-4, CTOOP-2, Kaufman, Dyscalculia, Neurodiversity)"
+ * )
+ * @OA\Tag(
+ *     name="User Interface - Wards & Guardians",
+ *     description="User Interface Ward Management, Child Profiles, and Guardian Relationships"
+ * )
+ * @OA\Tag(
+ *     name="User Interface - Wallet & Transactions",
+ *     description="User Interface Digital Wallet, Balance Inquiries, and Financial Services"
+ * )
+ * @OA\Tag(
+ *     name="User Interface - Resources & Bookings",
+ *     description="User Interface Professional Consultation, Bookings, Resources, and Billing"
+ * )
+ * @OA\Tag(
+ *     name="Admin Interface - Authentication",
+ *     description="Admin Interface Authentication, Session Management, and Authorization"
+ * )
+ * @OA\Tag(
+ *     name="Admin Interface - Telemetry & Analytics",
+ *     description="Admin Interface Live System Metrics, Active Players, Analytics, and Cache Operations"
+ * )
+ * @OA\Tag(
+ *     name="Admin Interface - Catalog & Toddler Management",
+ *     description="Admin Interface Game Catalog Management and Toddler Assessment Entity Specifications"
+ * )
+ * @OA\Tag(
+ *     name="General - Authentication",
+ *     description="General Platform Authentication, Access Verification, and Bearer Token Security"
+ * )
+ * @OA\Tag(
+ *     name="General - Platform Utilities",
+ *     description="General Platform Parameters, AWS Credentials, Pusher Events, Bank Records, and Lookup Data"
  * )
  */
 class ApiauthenticateController extends AbstractActionController
@@ -117,7 +162,7 @@ class ApiauthenticateController extends AbstractActionController
      * This API is used to authenticate the user and retrieve a JWT bearer token.
      * @OA\Post(
      *     path="/auth/ipa/login",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Authenticates client credentials (email or username, and password). On success, returns a JWT access token and user profile. If client is 'web', sets an HttpOnly cookie with the rotated refresh token; if client is 'mobile', returns the refresh token directly in the response body.",
      *     @OA\RequestBody(
      *         required=true,
@@ -310,7 +355,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/auth/ipa/refresh",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Exchange a valid refresh token for a new access token and a rotated refresh token. The old refresh token is immediately invalidated (token rotation). Send the refresh token in the Authorization header as `Bearer <refresh_token>`, or pass it in the JSON body.",
      *     @OA\RequestBody(
      *         required=false,
@@ -467,7 +512,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * @OA\POST(
      *     path="/auth/ipa/logout",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Revokes the supplied refresh token so it can never be used again, logging out the user device session. Send the refresh token in the Authorization header as `Bearer <refresh_token>`, or pass it in the JSON body.",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
@@ -586,7 +631,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * @OA\POST(
      *     path="/auth/ipa/register",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Registers a new customer account in the system and triggers an email confirmation flow.",
      *     @OA\RequestBody(
      *         required=true,
@@ -708,7 +753,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * @OA\POST(
      *     path="/auth/ipa/verify",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Verifies the user's email address using a verification code sent during registration. On successful verification, the account state is set to Enabled.",
      *     @OA\RequestBody(
      *         required=true,
@@ -875,7 +920,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * @OA\POST(
      *     path="/auth/ipa/resend-mobile-code",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Generates a new verification code and resends it to the user's registered email or phone.",
      *     @OA\RequestBody(
      *         required=true,
@@ -1146,7 +1191,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * @OA\POST(
      *     path="/auth/ipa/initiate-change-password",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Initiates a password reset flow for the user with the given email address. A numeric reset code is generated, stored, and sent to the user's email.",
      *     @OA\RequestBody(
      *         required=true,
@@ -1302,7 +1347,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * @OA\POST(
      *     path="/auth/ipa/confirm-reset-code",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Validates the password reset code sent to the user's email. On successful validation, returns the confirmed code to be used in the password update step.",
      *     @OA\RequestBody(
      *         required=true,
@@ -1478,7 +1523,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * @OA\POST(
      *     path="/auth/ipa/update-password",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Updates user password to the new value. Requires the confirmed reset_code generated in the verify step, email address, password, and confirmation password.",
      *     @OA\RequestBody(
      *         required=true,
@@ -1960,7 +2005,7 @@ class ApiauthenticateController extends AbstractActionController
      * Social Authentication
      * @OA\POST(
      *     path="/auth/ipa/social-login",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Authenticate user with social provider (Google or Apple). Validates the ID token directly with the provider, logs in or auto-registers the user. If client is 'web', sets an HttpOnly cookie with the rotated refresh token; if client is 'mobile', returns the refresh token directly in the response body.",
      *     @OA\RequestBody(
      *         required=true,
@@ -2139,7 +2184,7 @@ class ApiauthenticateController extends AbstractActionController
      * Google OAuth (Initiate or Callback)
      * @OA\GET(
      *     path="/auth/ipa/google-initiate",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Handles Google OAuth. If the 'code' parameter is absent, redirects the user to Google. If present, processes the callback to authenticate the user.",
      *     @OA\Parameter(name="code", in="query", required=false, description="Authorization code returned by Google", @OA\Schema(type="string")),
      *     @OA\Parameter(name="state", in="query", required=false, description="Stateless HMAC-signed anti-forgery token", @OA\Schema(type="string")),
@@ -2180,7 +2225,7 @@ class ApiauthenticateController extends AbstractActionController
      * Google OAuth Initiate
      * @OA\GET(
      *     path="/auth/ipa/google-initiate",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Generates a stateless HMAC-signed anti-forgery state token and redirects to Google's authorization URL.",
      *     @OA\Response(response="302", description="Redirect to Google authorization page"),
      *     @OA\Response(response="500", description="Server configuration error")
@@ -2250,7 +2295,7 @@ class ApiauthenticateController extends AbstractActionController
      * Google Sign-In via Authorization Code
      * @OA\POST(
      *     path="/auth/ipa/google-oauth",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Authenticates a user via Google OAuth2. Exchanges the authorization code, verifies the ID Token signature/claims/nonce, finds or creates the local user. If client is 'web', sets an HttpOnly cookie with the rotated refresh token; if client is 'mobile', returns the refresh token directly in the response body.",
      *     @OA\RequestBody(
      *         required=true,
@@ -2404,7 +2449,7 @@ class ApiauthenticateController extends AbstractActionController
      * Google OAuth Callback Action (Handles redirect callback)
      * @OA\GET(
      *     path="/auth/ipa/google-callback",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Handles Google OAuth callback. Exchanges redirect code for an ID Token, validates it, logs in/registers user, and redirects to frontend. Supports client='web' (sets HttpOnly cookie) and client='mobile' (passes refresh_token in redirect query params or JSON body).",
      *     @OA\Parameter(name="code", in="query", required=true, description="Authorization code from Google", @OA\Schema(type="string")),
      *     @OA\Parameter(name="state", in="query", required=true, description="CSRF state token", @OA\Schema(type="string")),
@@ -2557,7 +2602,7 @@ class ApiauthenticateController extends AbstractActionController
      * Apple Sign-In (Initiate or Callback)
      * @OA\POST(
      *     path="/auth/ipa/apple-initiate",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Handles Apple OAuth. If parameters (code or id_token) are absent, redirects to Apple's authorization page. If present, processes the callback to authenticate the user. Supports client='web' (sets HttpOnly cookie) and client='mobile' (passes refresh_token in response JSON body).",
      *     @OA\RequestBody(
      *         required=false,
@@ -2607,7 +2652,7 @@ class ApiauthenticateController extends AbstractActionController
      * )
      * @OA\GET(
      *     path="/auth/ipa/apple-initiate",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Apple OAuth redirect callback endpoint (GET backup/initiate)",
      *     @OA\Parameter(name="code", in="query", required=false, description="Authorization code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="id_token", in="query", required=false, description="Identity Token (JWT)", @OA\Schema(type="string")),
@@ -2752,7 +2797,7 @@ class ApiauthenticateController extends AbstractActionController
      *
      * @OA\DELETE(
      *     path="/auth/ipa/delete-user",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Deactivates the authenticated user account and anonymizes personal data. All active sessions (refresh tokens) are immediately deleted.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Response(
@@ -2799,7 +2844,7 @@ class ApiauthenticateController extends AbstractActionController
      * )
      * @OA\POST(
      *     path="/auth/ipa/delete-user",
-     *     tags={"Authentication"},
+     *     tags={"User Interface - Authentication", "Admin Interface - Authentication", "General - Authentication", "Authentication"},
      *     description="Deactivates the authenticated user account (POST alternative)",
      *     security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Account successfully deleted"),

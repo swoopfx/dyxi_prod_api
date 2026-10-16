@@ -36,7 +36,7 @@ class WardController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/ward/register",
-     *     tags={"Ward"},
+     *     tags={"User Interface - Wards & Guardians", "Ward"},
      *     description="Registers a new ward for the authenticated user.",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
@@ -198,7 +198,7 @@ class WardController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/ward/list-ward",
-     *     tags={"Ward"},
+     *     tags={"User Interface - Wards & Guardians", "Ward"},
      *     description="Retrieve a list of all wards registered under the authenticated user.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Response(
@@ -306,7 +306,7 @@ class WardController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/ward/ward-info/{id}",
-     *     tags={"Ward"},
+     *     tags={"User Interface - Wards & Guardians", "Ward"},
      *     description="Retrieve details of a specific ward by ID, UUID, or unique identifier.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
@@ -427,7 +427,7 @@ class WardController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/ward/edit-ward/{id}",
-     *     tags={"Ward"},
+     *     tags={"User Interface - Wards & Guardians", "Ward"},
      *     description="Updates/edits details of an existing ward (fullname, date_of_birth, gender, status). Accepts POST, PUT, or PATCH requests.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
@@ -530,7 +530,7 @@ class WardController extends AbstractActionController
      *
      * @OA\Put(
      *     path="/api/ward/edit-ward/{id}",
-     *     tags={"Ward"},
+     *     tags={"User Interface - Wards & Guardians", "Ward"},
      *     description="Updates/edits details of an existing ward (PUT method alternative).",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(

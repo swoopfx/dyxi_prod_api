@@ -36,7 +36,7 @@ class DyscalculiaController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/dyscalculia/register",
-     *     tags={"Dyscalculia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyscalculia"},
      *     description="Registers a new Dyscalculia assessment for a ward.",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
@@ -125,7 +125,7 @@ class DyscalculiaController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/dyscalculia/list-assessments",
-     *     tags={"Dyscalculia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyscalculia"},
      *     description="Retrieve a list of all Dyscalculia assessments for the authenticated user's wards.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success"),
@@ -191,7 +191,7 @@ class DyscalculiaController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/dyscalculia/assessment-info/{id}",
-     *     tags={"Dyscalculia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyscalculia"},
      *     description="Retrieve details of a specific Dyscalculia assessment by ID, UUID, or unique identifier.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
@@ -273,7 +273,7 @@ class DyscalculiaController extends AbstractActionController
      *
      * @OA\Put(
      *     path="/api/dyscalculia/update/{id}",
-     *     tags={"Dyscalculia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyscalculia"},
      *     description="Update an existing Dyscalculia assessment.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
@@ -371,7 +371,7 @@ class DyscalculiaController extends AbstractActionController
      *
      * @OA\Delete(
      *     path="/api/dyscalculia/delete/{id}",
-     *     tags={"Dyscalculia"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Dyscalculia"},
      *     description="Delete an existing Dyscalculia assessment.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(

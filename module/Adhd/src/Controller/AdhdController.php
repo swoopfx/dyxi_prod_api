@@ -36,7 +36,7 @@ class AdhdController extends AbstractActionController
      *
      * @OA\Post(
      *     path="/api/adhd/register",
-     *     tags={"ADHD"},
+     *     tags={"User Interface - Diagnostic Evaluations", "ADHD"},
      *     description="Registers a new ADHD assessment for a ward.",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
@@ -124,7 +124,7 @@ class AdhdController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/adhd/list-assessments",
-     *     tags={"ADHD"},
+     *     tags={"User Interface - Diagnostic Evaluations", "ADHD"},
      *     description="Retrieve a list of all ADHD assessments for the authenticated user's wards.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success"),
@@ -190,7 +190,7 @@ class AdhdController extends AbstractActionController
      *
      * @OA\Get(
      *     path="/api/adhd/assessment-info/{id}",
-     *     tags={"ADHD"},
+     *     tags={"User Interface - Diagnostic Evaluations", "ADHD"},
      *     description="Retrieve details of a specific ADHD assessment by ID, UUID, or unique identifier.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
@@ -272,7 +272,7 @@ class AdhdController extends AbstractActionController
      *
      * @OA\Put(
      *     path="/api/adhd/update/{id}",
-     *     tags={"ADHD"},
+     *     tags={"User Interface - Diagnostic Evaluations", "ADHD"},
      *     description="Update an existing ADHD assessment.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
@@ -369,7 +369,7 @@ class AdhdController extends AbstractActionController
      *
      * @OA\Delete(
      *     path="/api/adhd/delete/{id}",
-     *     tags={"ADHD"},
+     *     tags={"User Interface - Diagnostic Evaluations", "ADHD"},
      *     description="Delete an existing ADHD assessment.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(

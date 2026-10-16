@@ -12,7 +12,7 @@ class BookingController extends AbstractActionController
     /**
      * @OA\Get(
      *     path="/api/resources/booking",
-     *     tags={"Resources - Booking"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Booking"},
      *     description="Get a list of Bookings",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
@@ -29,7 +29,7 @@ class BookingController extends AbstractActionController
     /**
      * @OA\Post(
      *     path="/api/resources/booking/create",
-     *     tags={"Resources - Booking"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Booking"},
      *     description="Create a new Booking",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
@@ -43,7 +43,7 @@ class BookingController extends AbstractActionController
     /**
      * @OA\Put(
      *     path="/api/resources/booking/update/{id}",
-     *     tags={"Resources - Booking"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Booking"},
      *     description="Update a Booking",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},
@@ -58,7 +58,7 @@ class BookingController extends AbstractActionController
     /**
      * @OA\Delete(
      *     path="/api/resources/booking/delete/{id}",
-     *     tags={"Resources - Booking"},
+     *     tags={"User Interface - Resources & Bookings", "Resources - Booking"},
      *     description="Delete a Booking",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},

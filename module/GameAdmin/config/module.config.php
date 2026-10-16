@@ -173,6 +173,20 @@ return [
                     ],
                 ],
             ],
+            // Toddler Assessment: Deactivate Endpoint (/game-admin/toddler-assessment/deactivate/:id)
+            'game-admin-toddler-assessment-deactivate' => [
+                'type'    => Segment::class,
+                'options' => [
+                    'route'    => '/game-admin/toddler-assessment/deactivate/:id',
+                    'constraints' => [
+                        'id' => '[a-zA-Z0-9_-]+',
+                    ],
+                    'defaults' => [
+                        'controller' => GameManageController::class,
+                        'action'     => 'deactivateToddlerAssessment',
+                    ],
+                ],
+            ],
             // Analytics: Telemetry & Performance Dashboard (/game-admin/analytics)
             'game-admin-analytics' => [
                 'type'    => Literal::class,

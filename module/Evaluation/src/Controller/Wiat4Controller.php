@@ -12,7 +12,7 @@ class Wiat4Controller extends AbstractActionController
     /**
      * @OA\Get(
      *     path="/api/evaluation/wiat4",
-     *     tags={"Evaluation - Wiat4"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Evaluation - Wiat4"},
      *     description="Get a list of Wiat4 records",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="200", description="Success")
@@ -26,7 +26,7 @@ class Wiat4Controller extends AbstractActionController
     /**
      * @OA\Post(
      *     path="/api/evaluation/wiat4/create",
-     *     tags={"Evaluation - Wiat4"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Evaluation - Wiat4"},
      *     description="Create a new Wiat4 record",
      * security={{"bearerAuth":{}}},
      *     @OA\Response(response="201", description="Created")
@@ -40,7 +40,7 @@ class Wiat4Controller extends AbstractActionController
     /**
      * @OA\Put(
      *     path="/api/evaluation/wiat4/update/{id}",
-     *     tags={"Evaluation - Wiat4"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Evaluation - Wiat4"},
      *     description="Update a Wiat4 record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},
@@ -55,7 +55,7 @@ class Wiat4Controller extends AbstractActionController
     /**
      * @OA\Delete(
      *     path="/api/evaluation/wiat4/delete/{id}",
-     *     tags={"Evaluation - Wiat4"},
+     *     tags={"User Interface - Diagnostic Evaluations", "Evaluation - Wiat4"},
      *     description="Delete a Wiat4 record",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
      * security={{"bearerAuth":{}}},
