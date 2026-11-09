@@ -557,79 +557,42 @@ class GameController extends AbstractActionController
     }
 
     /**
-     * Post Game Telemetry and Assessment Data into Google BigQuery.
+     * Post Generic Telemetry and Data into Google BigQuery.
      *
      * @OA\Post(
      *     path="/api/game/game/post-bigquery",
      *     tags={"Games", "Analytics & BigQuery"},
-     *     summary="Stream Game Telemetry and Assessment Data into Google BigQuery",
-     *     description="Generic streaming endpoint that validates and ingests arbitrary game telemetry, assessment records, or events into any target Google BigQuery table. Request parameters can be supplied via 'table_name' (or 'table'), optional 'dataset_id' (or 'dataset', default: 'dyxi_api_pre_prod'), and 'data' (or 'rows' - single record object or array of objects for batch streaming). Ingestion and table-specific transformations are decoupled and delegated to GameService and GameBigQueryService. Every record MUST contain non-empty 'age' and either non-empty 'user_id' or 'user_uuid'. Specific tables (recog_shape_recog, game_session_telemetry, toddler_assessment, dyslexia_assessment, adhd_assessment, dyscalculia_assessment) are handled via dedicated routines, and any other table is seamlessly handled via dynamic schema alignment.",
+     *     summary="Stream Generic Data into Google BigQuery",
+     *     description="Generic endpoint that validates and ingests arbitrary telemetry, assessment records, or events into any target Google BigQuery table. Accepts only 'tableName', 'rawData', and optional 'dataset'. Every record in rawData must contain non-empty 'age' and either non-empty 'user_id' or 'user_uuid'. Ingestion and table-specific transformations are decoupled and delegated to GameService and GameBigQueryService.",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
-     *         description="BigQuery Ingestion Payload containing table name, optional dataset ID, and record data (single record object or batch array).",
+     *         description="Generic BigQuery Ingestion Payload containing tableName, rawData, and optional dataset.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
-     *                     required={"table_name", "data"},
+     *                     required={"tableName", "rawData"},
      *                     description="Generic BigQuery Ingestion Payload Schema",
      *                     @OA\Property(
-     *                         property="table_name",
+     *                         property="tableName",
      *                         type="string",
      *                         example="recog_shape_recog",
-     *                         description="[REQUIRED] Target BigQuery table name. Supports specific game assessment tables (e.g., 'recog_shape_recog', 'game_session_telemetry', 'toddler_assessment', 'dyslexia_assessment', 'adhd_assessment', 'dyscalculia_assessment') or any arbitrary custom table name (accepted via 'table_name' or alias 'table')."
+     *                         description="[REQUIRED] Target BigQuery table name."
      *                     ),
      *                     @OA\Property(
-     *                         property="dataset_id",
-     *                         type="string",
-     *                         example="dyxi_api_pre_prod",
-     *                         description="[OPTIONAL] Target BigQuery dataset ID. Defaults to configured environment dataset ('dyxi_api_pre_prod') if omitted (accepted via 'dataset_id' or alias 'dataset')."
-     *                     ),
-     *                     @OA\Property(
-     *                         property="data",
+     *                         property="rawData",
      *                         type="object",
-     *                         description="[REQUIRED] Ingestion record payload: single object or array of objects for batch streaming (accepted via 'data' or alias 'rows'). Every record MUST contain non-empty 'age' and either non-empty 'user_id' or 'user_uuid'.",
+     *                         description="[REQUIRED] Ingestion data payload: single record object or array of objects for batch streaming. Can contain any arbitrary key-value pairs matching the target table schema. Every record MUST contain non-empty 'age' and either non-empty 'user_id' or 'user_uuid'.",
      *                         @OA\Property(property="age", type="number", example=5, description="[REQUIRED] Age of the user/ward. Cannot be empty or null."),
      *                         @OA\Property(property="user_id", type="string", example="usr_7f8d9b1a-3c4e-4e6f-8a12-9c2b4d6e8f10", description="[REQUIRED if user_uuid omitted] Target user identifier. Cannot be empty."),
-     *                         @OA\Property(property="user_uuid", type="string", example="7f8d9b1a-3c4e-4e6f-8a12-9c2b4d6e8f10", description="[REQUIRED if user_id omitted] Target user UUID. Cannot be empty."),
-     *                         @OA\Property(property="game_id", type="string", example="game_shape_sorter_01", description="[OPTIONAL] Unique Game identifier."),
-     *                         @OA\Property(property="session_id", type="string", format="uuid", example="a9f24e10-9b3c-4d5e-8f12-0c3b5d7e9f20", description="[OPTIONAL] Session UUID. Auto-generated if omitted."),
-     *                         @OA\Property(property="game_type", type="string", example="toddler_assessment", description="[OPTIONAL] Game category type."),
-     *                         @OA\Property(property="game_category", type="string", example="shape_recognition", description="[OPTIONAL] Specific game category."),
-     *                         @OA\Property(property="game_program", type="string", example="early_intervention_v1", description="[OPTIONAL] Cognitive program name."),
-     *                         @OA\Property(property="problem_solving_index", type="number", format="float", example=87.5, description="[OPTIONAL] Problem solving cognitive index (0.0 - 100.0)."),
-     *                         @OA\Property(property="creative_index", type="number", format="float", example=65.2, description="[OPTIONAL] Creativity exploration index (0.0 - 100.0)."),
-     *                         @OA\Property(property="average_time_correct", type="number", format="float", example=2.34, description="[OPTIONAL] Mean correct answer reaction time in seconds."),
-     *                         @OA\Property(property="average_time_failed", type="number", format="float", example=4.12, description="[OPTIONAL] Mean incorrect answer reaction time in seconds."),
-     *                         @OA\Property(property="total_game_time", type="number", format="float", example=45.8, description="[OPTIONAL] Total game duration in seconds."),
-     *                         @OA\Property(property="total_correct", type="integer", example=8, description="[OPTIONAL] Number of correct matches."),
-     *                         @OA\Property(property="total_failed", type="integer", example=2, description="[OPTIONAL] Number of failed attempts."),
-     *                         @OA\Property(property="start_time", type="string", format="date-time", example="2026-11-09T14:30:00Z", description="[OPTIONAL] ISO-8601 UTC timestamp. Defaults to UTC now if omitted."),
-     *                         @OA\Property(
-     *                             property="input_events",
-     *                             type="array",
-     *                             description="[OPTIONAL] Touch/gesture events array or JSON string.",
-     *                             @OA\Items(
-     *                                 type="object",
-     *                                 @OA\Property(property="timestamp", type="integer", example=1714567890123),
-     *                                 @OA\Property(property="type", type="string", example="touch_down"),
-     *                                 @OA\Property(property="x", type="number", example=120.5),
-     *                                 @OA\Property(property="y", type="number", example=340.2)
-     *                             )
-     *                         ),
-     *                         @OA\Property(
-     *                             property="match_events",
-     *                             type="array",
-     *                             description="[OPTIONAL] Shape match attempts array or JSON string.",
-     *                             @OA\Items(
-     *                                 type="object",
-     *                                 @OA\Property(property="target", type="string", example="circle"),
-     *                                 @OA\Property(property="selected", type="string", example="circle"),
-     *                                 @OA\Property(property="correct", type="boolean", example=true),
-     *                                 @OA\Property(property="reaction_time_ms", type="integer", example=1250)
-     *                             )
-     *                         )
+     *                         @OA\Property(property="user_uuid", type="string", example="7f8d9b1a-3c4e-4e6f-8a12-9c2b4d6e8f10", description="[REQUIRED if user_id omitted] Target user UUID. Cannot be empty.")
+     *                     ),
+     *                     @OA\Property(
+     *                         property="dataset",
+     *                         type="string",
+     *                         example="dyxi_api_pre_prod",
+     *                         description="[OPTIONAL] Target BigQuery dataset ID. Defaults to configured environment dataset ('dyxi_api_pre_prod') if omitted."
      *                     )
      *                 )
      *             )
@@ -637,7 +600,7 @@ class GameController extends AbstractActionController
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Telemetry successfully ingested into BigQuery",
+     *         description="Data successfully ingested into BigQuery",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
@@ -660,14 +623,14 @@ class GameController extends AbstractActionController
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Bad Request - Validation failure (missing table_name, missing/empty age or user identifier, malformed JSON, or missing data)",
+     *         description="Bad Request - Validation failure (missing tableName, missing/empty age or user identifier, malformed JSON, or missing rawData)",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
      *                 @OA\Schema(
      *                     @OA\Property(property="success", type="boolean", example=false),
      *                     @OA\Property(property="error", type="string", example="ValidationFailed"),
-     *                     @OA\Property(property="description", type="string", example="Validation failed: Record at index 0 is missing required field 'age' or it is empty.")
+     *                     @OA\Property(property="description", type="string", example="The 'tableName' parameter is required and must be a string.")
      *                 )
      *             )
      *         }
@@ -772,27 +735,27 @@ class GameController extends AbstractActionController
                 return $jsonModel;
             }
 
-            // 4. Extract table name (conforms to any table name sent)
-            $rawTable = $postData['table_name'] ?? $postData['table'] ?? $postData['tableName'] ?? null;
+            // 4. Extract table name: accepts tableName, table_name, table
+            $rawTable = $postData['tableName'] ?? $postData['table_name'] ?? $postData['table'] ?? null;
             if (empty($rawTable) || !is_string($rawTable)) {
                 $response->setStatusCode(400);
                 $jsonModel->setVariables([
                     "success"     => false,
                     "error"       => "ValidationFailed",
-                    "description" => "The 'table_name' (or 'table') parameter is required and must be a string."
+                    "description" => "The 'tableName' parameter is required and must be a string."
                 ]);
                 return $jsonModel;
             }
 
             $tableName = trim($rawTable);
 
-            // 5. Extract optional dataset ID
-            $datasetId = $postData['dataset_id'] ?? $postData['dataset'] ?? $postData['datasetId'] ?? null;
+            // 5. Extract optional dataset ID: accepts dataset, dataset_id, datasetId
+            $datasetId = $postData['dataset'] ?? $postData['dataset_id'] ?? $postData['datasetId'] ?? null;
 
-            // 6. Extract data payload (nested in 'data'/'rows' or remaining root fields)
-            $rawData = $postData['data'] ?? $postData['rows'] ?? null;
+            // 6. Extract data payload: accepts rawData, data, rows, or root fields
+            $rawData = $postData['rawData'] ?? $postData['data'] ?? $postData['rows'] ?? null;
             if ($rawData === null) {
-                $reservedKeys = ['table_name', 'table', 'tableName', 'dataset_id', 'dataset', 'datasetId'];
+                $reservedKeys = ['tableName', 'table_name', 'table', 'dataset', 'dataset_id', 'datasetId', 'rawData', 'data', 'rows'];
                 $dataFields = array_diff_key($postData, array_flip($reservedKeys));
                 if (!empty($dataFields)) {
                     $rawData = $dataFields;
@@ -804,7 +767,7 @@ class GameController extends AbstractActionController
                 $jsonModel->setVariables([
                     "success"     => false,
                     "error"       => "MissingDataPayload",
-                    "description" => "The 'data' parameter is required and must be an object or array of objects."
+                    "description" => "The 'rawData' parameter is required and must be an object or array of objects."
                 ]);
                 return $jsonModel;
             }
