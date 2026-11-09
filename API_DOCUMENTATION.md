@@ -448,6 +448,102 @@ Removes a game from the database.
   }
   ```
 
+#### Stream Game Telemetry to BigQuery
+
+Ingests and streams real-time game assessment telemetry, cognitive metrics, and touch/event data directly into a Google BigQuery table.
+
+* **URL**: `/api/game/game/post-bigquery` OR `/api/game/game/bigquery`
+* **Method**: `POST`
+* **Headers**:
+  * `Content-Type: application/json`
+  * `Authorization: Bearer <token>`
+* **Request Body**:
+  | Field | Type | Required | Description |
+  | :--- | :--- | :--- | :--- |
+  | `table_name` | `string` | **Yes** | BigQuery target table name (letters, numbers, underscores). |
+  | `dataset_id` | `string` | No | Target BigQuery dataset ID. Defaults to `'dyxi_api_pre_prod'`. |
+  | `data` | `object`\|`array` | **Yes** | Telemetry record object, or array of objects for batch streaming insert. |
+
+  **Supported Record Fields (`data`)**:
+  | Field | Type | Required | Description |
+  | :--- | :--- | :--- | :--- |
+  | `game_id` | `string` | **Yes** | Identifier of the game played. |
+  | `session_id` | `string` | No | UUID for session. Auto-generated if omitted. |
+  | `user_id` | `string` | No | Ward/User UUID. Auto-populated from authenticated token if omitted. |
+  | `game_type` | `string` | No | Category (e.g. `toddler_assessment`, `dyslexia`). |
+  | `game_category` | `string` | No | Subcategory (e.g. `shape_recognition`). |
+  | `game_program` | `string` | No | Program version (e.g. `early_intervention_v1`). |
+  | `problem_solving_index` | `float` | No | Normalized cognitive score (0.0 to 100.0). |
+  | `creative_index` | `float` | No | Creativity metric score (0.0 to 100.0). |
+  | `average_time_correct` | `float` | No | Average correct reaction time in seconds. |
+  | `average_time_failed` | `float` | No | Average failed reaction time in seconds. |
+  | `total_game_time` | `float` | No | Duration of game session in seconds. |
+  | `total_correct` | `int` | No | Total count of correct matches. |
+  | `total_failed` | `int` | No | Total count of incorrect attempts. |
+  | `start_time` | `string` | No | UTC start timestamp. Defaults to UTC now (`Y-m-d\TH:i:s\Z`). |
+  | `input_events` | `array`\|`string` | No | Touch gesture events (serialized to JSON). |
+  | `match_events` | `array`\|`string` | No | Shape matching attempts (serialized to JSON). |
+
+* **Example Request**:
+  ```json
+  {
+    "table_name": "recog_shape_recog",
+    "dataset_id": "dyxi_api_pre_prod",
+    "data": {
+      "game_id": "game_shape_sorter_01",
+      "game_type": "toddler_assessment",
+      "game_category": "shape_recognition",
+      "game_program": "early_intervention_v1",
+      "problem_solving_index": 88.5,
+      "creative_index": 72.0,
+      "average_time_correct": 2.15,
+      "average_time_failed": 3.80,
+      "total_game_time": 42.5,
+      "total_correct": 9,
+      "total_failed": 1,
+      "input_events": [
+        {"timestamp": 1714567890123, "type": "touch_down", "x": 100.5, "y": 200.0}
+      ],
+      "match_events": [
+        {"target": "circle", "selected": "circle", "correct": true, "reaction_time_ms": 1250}
+      ]
+    }
+  }
+  ```
+
+* **Example Response (201 Created)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "table": "recog_shape_recog",
+      "dataset": "dyxi_api_pre_prod",
+      "inserted_count": 1,
+      "method": "rest_streaming_insert",
+      "session_id": "2aa6f829-167f-4f54-aa23-38e6bb557572",
+      "records": {
+        "game_id": "game_shape_sorter_01",
+        "game_type": "toddler_assessment",
+        "game_category": "shape_recognition",
+        "game_program": "early_intervention_v1",
+        "problem_solving_index": 88.5,
+        "creative_index": 72.0,
+        "average_time_correct": 2.15,
+        "average_time_failed": 3.80,
+        "total_game_time": 42.5,
+        "total_correct": 9,
+        "total_failed": 1,
+        "input_events": "[{\"timestamp\":1714567890123,\"type\":\"touch_down\",\"x\":100.5,\"y\":200.0}]",
+        "match_events": "[{\"target\":\"circle\",\"selected\":\"circle\",\"correct\":true,\"reaction_time_ms\":1250}]",
+        "session_id": "2aa6f829-167f-4f54-aa23-38e6bb557572",
+        "user_id": "usr_7f8d9b1a-3c4e-4e6f-8a12-9c2b4d6e8f10",
+        "start_time": "2026-11-09T15:56:02Z"
+      }
+    },
+    "description": "Successfully posted 1 record(s) into BigQuery table 'recog_shape_recog' (dataset: 'dyxi_api_pre_prod')."
+  }
+  ```
+
 ---
 
 ### Game Types

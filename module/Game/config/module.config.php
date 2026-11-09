@@ -14,7 +14,9 @@ use Game\Controller\Factory\CurriculumControllerFactory;
 use Game\Controller\Factory\GameControllerFactory;
 use Game\Controller\Factory\CollectionControllerFactory;
 use Game\Service\GameService;
+use Game\Service\GameBigQueryService;
 use Game\Service\Factory\GameServiceFactory;
+use Game\Service\Factory\GameBigQueryServiceFactory;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 
 return [
@@ -93,10 +95,12 @@ return [
     'service_manager' => [
         'factories' => [
             GameService::class => GameServiceFactory::class,
+            GameBigQueryService::class => GameBigQueryServiceFactory::class,
             \Game\Service\CurriculumService::class => \Game\Service\Factory\CurriculumServiceFactory::class,
         ],
         'aliases' => [
-            'curriculum_service' => \Game\Service\CurriculumService::class,
+            'curriculum_service'    => \Game\Service\CurriculumService::class,
+            'game_bigquery_service' => GameBigQueryService::class,
         ],
     ],
     'view_manager' => [

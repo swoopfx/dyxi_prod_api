@@ -6,6 +6,7 @@ use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Game\Service\GameService;
 use Authentication\Service\ApiAuthenticateService;
+use General\Service\BigQueryService;
 use Game\Controller\GameController;
 
 class GameControllerFactory implements FactoryInterface
@@ -14,6 +15,11 @@ class GameControllerFactory implements FactoryInterface
     {
         $gameService = $container->get(GameService::class);
         $apiAuthService = $container->get(ApiAuthenticateService::class);
-        return new GameController($gameService, $apiAuthService);
+        /** @var BigQueryService|null $bigQueryService */
+        $bigQueryService = $container->has(BigQueryService::class)
+            ? $container->get(BigQueryService::class)
+            : ($container->has('bigquery_service') ? $container->get('bigquery_service') : null);
+
+        return new GameController($gameService, $apiAuthService, $bigQueryService);
     }
 }

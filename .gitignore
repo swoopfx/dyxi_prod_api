@@ -6,6 +6,7 @@ config/development.config.php
 config/autoload/*.local.php
 data/cache/*
 data/keys/*
+data/*.json
 !data/cache/.gitkeep
 phpunit.xml
 .env
