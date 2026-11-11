@@ -554,16 +554,35 @@ class BigQueryService
     public function getTable(string $tableName, ?string $datasetId = null): ?array
     {
         $targetDataset = !empty($datasetId) ? $datasetId : $this->datasetId;
-        $path = sprintf(
-            'projects/%s/datasets/%s/tables/%s',
-            rawurlencode($this->projectId),
-            rawurlencode($targetDataset),
-            rawurlencode($tableName)
-        );
-        $response = $this->callRestApi('GET', $path);
-        if (($response['__http_code'] ?? 0) === 200) {
-            return $response;
+        $client = $this->getClient();
+
+        if ($client instanceof BigQueryClient) {
+            try {
+                $dataset = $client->dataset($targetDataset);
+                $table = $dataset->table($tableName);
+                if ($table->exists()) {
+                    return $table->info();
+                }
+            } catch (\Throwable $e) {
+                // fall through to REST
+            }
         }
+
+        try {
+            $path = sprintf(
+                'projects/%s/datasets/%s/tables/%s',
+                rawurlencode($this->projectId),
+                rawurlencode($targetDataset),
+                rawurlencode($tableName)
+            );
+            $response = $this->callRestApi('GET', $path);
+            if (($response['__http_code'] ?? 0) === 200) {
+                return $response;
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+
         return null;
     }
 

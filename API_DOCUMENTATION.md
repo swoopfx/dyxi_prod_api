@@ -450,7 +450,7 @@ Removes a game from the database.
 
 #### Stream Generic Data to BigQuery
 
-Ingests and streams real-time telemetry, assessment records, or custom metrics directly into any Google BigQuery table.
+Ingests and streams real-time telemetry, assessment records, or custom metrics directly into any Google BigQuery table. Accepts dynamic raw JSON payloads whose schema changes based on the target `tableName`. The JSON payload is parsed/extracted, and only the relevant fields corresponding to the target BigQuery table schema are inserted. Every ingestion payload MUST always be accompanied by non-empty `age` (numeric and non-negative) and `user_id` (string), validated as required fields.
 
 * **URL**: `/api/game/game/post-bigquery` OR `/api/game/game/bigquery`
 * **Method**: `POST`
@@ -460,20 +460,21 @@ Ingests and streams real-time telemetry, assessment records, or custom metrics d
 * **Request Body**:
   | Field | Type | Required | Description |
   | :--- | :--- | :--- | :--- |
-  | `tableName` | `string` | **Yes** | BigQuery target table name (letters, numbers, underscores). |
-  | `rawData` | `object`\|`array` | **Yes** | Ingestion data payload: single record object or array of objects for batch streaming. |
+  | `tableName` | `string` | **Yes** | BigQuery target table name (alphanumeric and underscores). |
+  | `rawData` | `object`\|`array`\|`string` | **Yes** | Ingestion data payload: raw JSON object, array of objects, or raw JSON-encoded string. Structure varies dynamically by `tableName`. Extracted and filtered against target BigQuery table schema. |
+  | `age` | `number` | **Yes\*** | Age of the user/ward. Must be numeric and `>= 0`. (*Required if omitted inside `rawData` records). |
+  | `user_id` | `string` | **Yes\*** | Target user identifier. Non-empty string. (*Required if omitted inside `rawData` records). |
   | `dataset` | `string` | No | Target BigQuery dataset ID. Defaults to `'dyxi_api_pre_prod'`. |
 
-  **Mandatory Record Constraints (`rawData`)**:
+  **Mandatory Payload Constraints (`age` & `user_id`)**:
   | Field | Type | Required | Description |
   | :--- | :--- | :--- | :--- |
-  | `age` | `int`\|`float`\|`string` | **Yes** | Age of the user/ward. Cannot be empty or null. |
-  | `user_id` | `string`\|`int` | **Yes\*** | Target user identifier. Non-empty. (*Required if `user_uuid` is omitted). |
-  | `user_uuid` | `string` | **Yes\*** | Target user UUID. Non-empty. (*Required if `user_id` is omitted). |
+  | `age` | `int`\|`float` | **Yes** | Age of the user/ward. Must be numeric and non-negative (`age >= 0`). Cannot be null or empty. |
+  | `user_id` | `string` | **Yes** | Target user identifier. Cannot be null or empty string. Harmonized automatically if `user_uuid` is provided. |
 
-  *Note: Any additional custom key-value pairs corresponding to the target table schema may be freely included in `rawData`.*
+  *Note: Any additional custom key-value pairs corresponding to the target table schema may be freely included in `rawData`. Only fields declared in the target BigQuery table schema are inserted into the database; extra undeclared fields are automatically filtered out to ensure streaming insert reliability.*
 
-* **Example Request**:
+* **Example Request 1 (Standard JSON Object with Embedded `age` and `user_id`)**:
   ```json
   {
     "tableName": "recog_shape_recog",
@@ -490,6 +491,35 @@ Ingests and streams real-time telemetry, assessment records, or custom metrics d
   }
   ```
 
+* **Example Request 2 (Raw JSON String with Root-Level `age` and `user_id`)**:
+  ```json
+  {
+    "tableName": "recog_shape_recog",
+    "age": 5,
+    "user_id": "usr_7f8d9b1a-3c4e-4e6f-8a12-9c2b4d6e8f10",
+    "rawData": "{\"game_id\":\"game_shape_sorter_01\",\"problem_solving_index\":88.5,\"creative_index\":72.0,\"total_correct\":9,\"total_failed\":1}"
+  }
+  ```
+
+* **Example Request 3 (Dynamic Game Session Telemetry Table)**:
+  ```json
+  {
+    "tableName": "game_session_telemetry",
+    "rawData": {
+      "age": 6.5,
+      "user_id": "usr_7f8d9b1a-3c4e-4e6f-8a12-9c2b4d6e8f10",
+      "game_id": "dyslexia_phonics_01",
+      "game_type": "dyslexia_assessment",
+      "score": 94.2,
+      "duration": 180.5,
+      "events": [
+        {"action": "tap_letter", "letter": "b", "latency_ms": 320},
+        {"action": "tap_letter", "letter": "d", "latency_ms": 410}
+      ]
+    }
+  }
+  ```
+
 * **Example Response (201 Created)**:
   ```json
   {
@@ -498,7 +528,7 @@ Ingests and streams real-time telemetry, assessment records, or custom metrics d
       "table": "recog_shape_recog",
       "dataset": "dyxi_api_pre_prod",
       "inserted_count": 1,
-      "method": "rest_streaming_insert",
+      "method": "streaming_insert",
       "session_id": "2aa6f829-167f-4f54-aa23-38e6bb557572",
       "records": {
         "game_id": "game_shape_sorter_01",
@@ -521,6 +551,7 @@ Ingests and streams real-time telemetry, assessment records, or custom metrics d
     },
     "description": "Successfully posted 1 record(s) into BigQuery table 'recog_shape_recog' (dataset: 'dyxi_api_pre_prod')."
   }
+  ```
   ```
 
 ---

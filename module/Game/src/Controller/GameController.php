@@ -557,17 +557,17 @@ class GameController extends AbstractActionController
     }
 
     /**
-     * Post Generic Telemetry and Data into Google BigQuery.
+     * Post Generic Telemetry and Assessment Data into Google BigQuery.
      *
      * @OA\Post(
      *     path="/api/game/game/post-bigquery",
      *     tags={"Games", "Analytics & BigQuery"},
      *     summary="Stream Generic Data into Google BigQuery",
-     *     description="Generic endpoint that validates and ingests arbitrary telemetry, assessment records, or events into any target Google BigQuery table. Accepts only 'tableName', 'rawData', and optional 'dataset'. Every record in rawData must contain non-empty 'age' and either non-empty 'user_id' or 'user_uuid'. Ingestion and table-specific transformations are decoupled and delegated to GameService and GameBigQueryService.",
+     *     description="Dynamic ingestion endpoint that receives raw JSON payload in 'rawData' (object, array of objects, or raw JSON string) that varies depending on the target 'tableName'. The JSON payload is parsed/extracted and only the relevant fields matching the target BigQuery table's schema are inserted into the database. Every payload MUST always be accompanied by non-empty 'age' (numeric and non-negative) and 'user_id' (string), which are validated as required fields (either embedded in rawData records or supplied at root).",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
-     *         description="Generic BigQuery Ingestion Payload containing tableName, rawData, and optional dataset.",
+     *         description="Generic BigQuery Ingestion Payload containing tableName, rawData (varying raw JSON payload), optional dataset, and required age and user_id.",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
@@ -582,11 +582,24 @@ class GameController extends AbstractActionController
      *                     ),
      *                     @OA\Property(
      *                         property="rawData",
-     *                         type="object",
-     *                         description="[REQUIRED] Ingestion data payload: single record object or array of objects for batch streaming. Can contain any arbitrary key-value pairs matching the target table schema. Every record MUST contain non-empty 'age' and either non-empty 'user_id' or 'user_uuid'.",
-     *                         @OA\Property(property="age", type="number", example=5, description="[REQUIRED] Age of the user/ward. Cannot be empty or null."),
-     *                         @OA\Property(property="user_id", type="string", example="usr_7f8d9b1a-3c4e-4e6f-8a12-9c2b4d6e8f10", description="[REQUIRED if user_uuid omitted] Target user identifier. Cannot be empty."),
-     *                         @OA\Property(property="user_uuid", type="string", example="7f8d9b1a-3c4e-4e6f-8a12-9c2b4d6e8f10", description="[REQUIRED if user_id omitted] Target user UUID. Cannot be empty.")
+     *                         description="[REQUIRED] Ingestion data payload: raw JSON object, array of objects, or raw JSON string whose dynamic fields change depending on the defined 'tableName'. The payload is extracted and only relevant schema fields are inserted into BigQuery. Must be accompanied by required 'age' and 'user_id' (which can be provided inside rawData or at the root request level).",
+     *                         oneOf={
+     *                             @OA\Schema(type="object"),
+     *                             @OA\Schema(type="array", @OA\Items(type="object")),
+     *                             @OA\Schema(type="string")
+     *                         }
+     *                     ),
+     *                     @OA\Property(
+     *                         property="age",
+     *                         type="number",
+     *                         example=5,
+     *                         description="[REQUIRED] Age of the user/ward. Must be numeric and non-negative. Required in all ingestion payloads (can accompany at root or inside rawData records)."
+     *                     ),
+     *                     @OA\Property(
+     *                         property="user_id",
+     *                         type="string",
+     *                         example="usr_7f8d9b1a-3c4e-4e6f-8a12-9c2b4d6e8f10",
+     *                         description="[REQUIRED] Target user identifier. Cannot be empty. Required in all ingestion payloads (can accompany at root or inside rawData records)."
      *                     ),
      *                     @OA\Property(
      *                         property="dataset",
@@ -623,7 +636,7 @@ class GameController extends AbstractActionController
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Bad Request - Validation failure (missing tableName, missing/empty age or user identifier, malformed JSON, or missing rawData)",
+     *         description="Bad Request - Validation failure (missing tableName, missing/invalid age, missing/empty user_id, malformed JSON, or missing rawData)",
      *         content={
      *             @OA\MediaType(
      *                 mediaType="application/json",
@@ -755,10 +768,39 @@ class GameController extends AbstractActionController
             // 6. Extract data payload: accepts rawData, data, rows, or root fields
             $rawData = $postData['rawData'] ?? $postData['data'] ?? $postData['rows'] ?? null;
             if ($rawData === null) {
-                $reservedKeys = ['tableName', 'table_name', 'table', 'dataset', 'dataset_id', 'datasetId', 'rawData', 'data', 'rows'];
+                $reservedKeys = ['tableName', 'table_name', 'table', 'dataset', 'dataset_id', 'datasetId', 'rawData', 'data', 'rows', 'age', 'user_id', 'user_uuid'];
                 $dataFields = array_diff_key($postData, array_flip($reservedKeys));
                 if (!empty($dataFields)) {
                     $rawData = $dataFields;
+                }
+            }
+
+            // If rawData is sent as a JSON string, extract/decode it
+            if (is_string($rawData)) {
+                $trimmed = trim($rawData);
+                $decodedRaw = json_decode($trimmed, true);
+                if (json_last_error() === JSON_ERROR_NONE && (is_array($decodedRaw) || is_object($decodedRaw))) {
+                    $rawData = (array) $decodedRaw;
+                } else {
+                    $response->setStatusCode(400);
+                    $jsonModel->setVariables([
+                        "success"     => false,
+                        "error"       => "InvalidRawDataJson",
+                        "description" => "The 'rawData' JSON string is invalid or malformed: " . json_last_error_msg()
+                    ]);
+                    return $jsonModel;
+                }
+            }
+
+            // If rawData is an array containing JSON string items, decode each item
+            if (is_array($rawData)) {
+                foreach ($rawData as $k => $item) {
+                    if (is_string($item)) {
+                        $decodedItem = json_decode(trim($item), true);
+                        if (json_last_error() === JSON_ERROR_NONE && (is_array($decodedItem) || is_object($decodedItem))) {
+                            $rawData[$k] = (array) $decodedItem;
+                        }
+                    }
                 }
             }
 
@@ -767,9 +809,65 @@ class GameController extends AbstractActionController
                 $jsonModel->setVariables([
                     "success"     => false,
                     "error"       => "MissingDataPayload",
-                    "description" => "The 'rawData' parameter is required and must be an object or array of objects."
+                    "description" => "The 'rawData' parameter is required and must be an object, array of objects, or valid JSON string."
                 ]);
                 return $jsonModel;
+            }
+
+            // 7. Ensure age and user_id accompany the payload (propagate root-level values if present)
+            $rootAge = $postData['age'] ?? null;
+            $rootUserId = $postData['user_id'] ?? $postData['user_uuid'] ?? null;
+
+            $isBatch = isset($rawData[0]) && is_array($rawData[0]);
+            if (!$isBatch) {
+                if ($rootAge !== null && (!isset($rawData['age']) || $rawData['age'] === '')) {
+                    $rawData['age'] = $rootAge;
+                }
+                if ($rootUserId !== null && (!isset($rawData['user_id']) || $rawData['user_id'] === '') && (!isset($rawData['user_uuid']) || $rawData['user_uuid'] === '')) {
+                    $rawData['user_id'] = $rootUserId;
+                }
+            } else {
+                foreach ($rawData as &$record) {
+                    if (is_array($record)) {
+                        if ($rootAge !== null && (!isset($record['age']) || $record['age'] === '')) {
+                            $record['age'] = $rootAge;
+                        }
+                        if ($rootUserId !== null && (!isset($record['user_id']) || $record['user_id'] === '') && (!isset($record['user_uuid']) || $record['user_uuid'] === '')) {
+                            $record['user_id'] = $rootUserId;
+                        }
+                    }
+                }
+                unset($record);
+            }
+
+            // 8. Validate that age and user_id are present and valid for every record
+            $recordsToValidate = $isBatch ? $rawData : [$rawData];
+            foreach ($recordsToValidate as $idx => $record) {
+                if (!is_array($record)) {
+                    throw new \InvalidArgumentException(sprintf("Record at index %d must be an object/associative array.", $idx));
+                }
+
+                if (!array_key_exists('age', $record) || $record['age'] === null || $record['age'] === '' || (is_string($record['age']) && trim((string) $record['age']) === '')) {
+                    throw new \InvalidArgumentException(sprintf(
+                        "Validation failed: Record at index %d is missing required field 'age' or it is empty.",
+                        $idx
+                    ));
+                }
+
+                if (!is_numeric($record['age']) || (float) $record['age'] < 0) {
+                    throw new \InvalidArgumentException(sprintf(
+                        "Validation failed: Record at index %d field 'age' must be a valid positive number.",
+                        $idx
+                    ));
+                }
+
+                $userId = $record['user_id'] ?? $record['user_uuid'] ?? null;
+                if ($userId === null || trim((string) $userId) === '') {
+                    throw new \InvalidArgumentException(sprintf(
+                        "Validation failed: Record at index %d is missing required field 'user_id' or it is empty.",
+                        $idx
+                    ));
+                }
             }
 
             // Ensure GameService has BigQueryService available
@@ -777,7 +875,7 @@ class GameController extends AbstractActionController
                 $this->gameService->setBigQueryService($this->bigQueryService);
             }
 
-            // 7. Generic delegation to GameService (actual implementation handled by switch condition in GameService)
+            // 9. Generic delegation to GameService (actual extraction and insertion handled according to table schema)
             $result = $this->gameService->postBigQueryData($tableName, $rawData, $datasetId, $identity);
 
             $response->setStatusCode(201);

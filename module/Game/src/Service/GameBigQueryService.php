@@ -21,6 +21,41 @@ class GameBigQueryService
     private ?BigQueryService $bigQueryService;
 
     /**
+     * Predefined schemas for known BigQuery game telemetry and assessment tables.
+     */
+    private const KNOWN_TABLE_SCHEMAS = [
+        'recog_shape_recog' => [
+            'session_id'            => 'STRING',
+            'game_id'               => 'STRING',
+            'game_type'             => 'STRING',
+            'game_category'         => 'STRING',
+            'game_program'          => 'STRING',
+            'user_id'               => 'STRING',
+            'problem_solving_index' => 'FLOAT',
+            'creative_index'        => 'FLOAT',
+            'average_time_correct'  => 'FLOAT',
+            'average_time_failed'   => 'FLOAT',
+            'total_game_time'       => 'FLOAT',
+            'total_correct'         => 'INTEGER',
+            'total_failed'          => 'INTEGER',
+            'start_time'            => 'STRING',
+            'input_events'          => 'JSON',
+            'match_events'          => 'JSON',
+        ],
+        'game_session_telemetry' => [
+            'session_id'            => 'STRING',
+            'game_id'               => 'STRING',
+            'user_id'               => 'STRING',
+            'age'                   => 'FLOAT',
+            'game_type'             => 'STRING',
+            'score'                 => 'FLOAT',
+            'duration'              => 'FLOAT',
+            'events'                => 'JSON',
+            'created_at'            => 'STRING',
+        ],
+    ];
+
+    /**
      * GameBigQueryService constructor.
      *
      * @param BigQueryService|null $bigQueryService
@@ -52,10 +87,10 @@ class GameBigQueryService
      * Ingest arbitrary data into BigQuery with schema validation and table-specific routing.
      *
      * Mandatory validation rule:
-     * Every record must contain 'age' and ('user_id' or 'user_uuid') and neither can be empty.
+     * Every record must contain valid 'age' (numeric and >= 0) and non-empty 'user_id'.
      *
      * @param string $tableName Target BigQuery table name.
-     * @param array|object $data Single record or array of records.
+     * @param array|object|string $data Single record, array of records, or raw JSON string.
      * @param string|null $datasetId Optional target dataset ID.
      * @param mixed $identity Authenticated user identity payload.
      * @return array Ingestion result details.
@@ -80,40 +115,69 @@ class GameBigQueryService
             throw new \InvalidArgumentException("Invalid dataset ID format.");
         }
 
+        // If raw JSON string is passed, extract and decode it
+        if (is_string($data)) {
+            $decoded = json_decode(trim($data), true);
+            if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {
+                $data = (array) $decoded;
+            } else {
+                throw new \InvalidArgumentException("The data parameter contains invalid JSON: " . json_last_error_msg());
+            }
+        }
+
+        // If data is an array with JSON string elements, decode each element
+        if (is_array($data)) {
+            foreach ($data as $k => $item) {
+                if (is_string($item)) {
+                    $decodedItem = json_decode(trim($item), true);
+                    if (json_last_error() === JSON_ERROR_NONE && (is_array($decodedItem) || is_object($decodedItem))) {
+                        $data[$k] = (array) $decodedItem;
+                    }
+                }
+            }
+        }
+
         if (empty($data) || (!is_array($data) && !is_object($data))) {
-            throw new \InvalidArgumentException("Data payload cannot be empty and must be an object or array of objects.");
+            throw new \InvalidArgumentException("Data payload cannot be empty and must be an object, array of objects, or valid JSON string.");
         }
 
         $isBatch = isset($data[0]) && is_array($data[0]);
         $rows = $isBatch ? $data : [$data];
 
-        // Mandatory validation: every record must contain 'age' and ('user_id' or 'user_uuid') and neither can be empty!
-        foreach ($rows as $idx => $row) {
+        // Mandatory validation: every record must contain valid 'age' (numeric and >= 0) and non-empty 'user_id'
+        foreach ($rows as $idx => &$row) {
             if (!is_array($row)) {
                 throw new \InvalidArgumentException(sprintf("Record at index %d must be an object/associative array.", $idx));
             }
 
-            // 1. Validate 'age' is present and not empty
+            // 1. Validate 'age' is present, not empty, numeric and non-negative
             if (!array_key_exists('age', $row) || $row['age'] === null || $row['age'] === '' || (is_string($row['age']) && trim((string) $row['age']) === '')) {
                 throw new \InvalidArgumentException(sprintf(
                     "Validation failed: Record at index %d is missing required field 'age' or it is empty.",
                     $idx
                 ));
             }
-
-            // 2. Validate 'user_id' or 'user_uuid' is present and not empty
-            $userId = $row['user_id'] ?? null;
-            $userUuid = $row['user_uuid'] ?? null;
-            $hasUserId = ($userId !== null && trim((string) $userId) !== '');
-            $hasUserUuid = ($userUuid !== null && trim((string) $userUuid) !== '');
-
-            if (!$hasUserId && !$hasUserUuid) {
+            if (!is_numeric($row['age']) || (float) $row['age'] < 0) {
                 throw new \InvalidArgumentException(sprintf(
-                    "Validation failed: Record at index %d must contain either 'user_id' or 'user_uuid' and it cannot be empty.",
+                    "Validation failed: Record at index %d field 'age' must be a valid positive number.",
                     $idx
                 ));
             }
+
+            // 2. Validate 'user_id' is present and not empty
+            $userId = $row['user_id'] ?? $row['user_uuid'] ?? null;
+            if ($userId === null || trim((string) $userId) === '') {
+                throw new \InvalidArgumentException(sprintf(
+                    "Validation failed: Record at index %d is missing required field 'user_id' or it is empty.",
+                    $idx
+                ));
+            }
+
+            // Harmonize user identifier across records
+            $row['user_id'] = (string) $userId;
+            $row['user_uuid'] = (string) ($row['user_uuid'] ?? $userId);
         }
+        unset($row);
 
         // Switch condition to route implementation based on the table name
         switch ($tableName) {
@@ -140,7 +204,7 @@ class GameBigQueryService
                 return $this->postDyscalculiaAssessment($tableName, $rows, $targetDataset, $identity, $isBatch);
 
             default:
-                // Generic handler that conforms to ANY arbitrary table name and data structure sent to it
+                // Generic handler that conforms to ANY arbitrary table name and dynamic schema sent to it
                 return $this->postGenericTable($tableName, $rows, $targetDataset, $identity, $isBatch);
         }
     }
@@ -150,94 +214,7 @@ class GameBigQueryService
      */
     private function postRecogShapeRecog(array $rows, string $datasetId, $identity, bool $isBatch): array
     {
-        $bqService = $this->getBigQueryService();
-        $bqService->ensureTableExists('recog_shape_recog', $datasetId);
-
-        $tableMetadata = $bqService->getTable('recog_shape_recog', $datasetId);
-        $allowedFields = null;
-        if (!empty($tableMetadata['schema']['fields']) && is_array($tableMetadata['schema']['fields'])) {
-            $allowedFields = [];
-            foreach ($tableMetadata['schema']['fields'] as $field) {
-                if (!empty($field['name'])) {
-                    $allowedFields[$field['name']] = true;
-                }
-            }
-        }
-
-        $sanitizedRows = [];
-        foreach ($rows as $row) {
-            // Auto-generate session_id if missing
-            if (empty($row['session_id'])) {
-                $row['session_id'] = Uuid::uuid4()->toString();
-            }
-
-            // Harmonize user identifier: ensure user_id is populated from user_uuid if needed
-            if (empty($row['user_id']) && !empty($row['user_uuid'])) {
-                $row['user_id'] = (string) $row['user_uuid'];
-            }
-
-            // Auto-generate start_time if missing
-            if (empty($row['start_time'])) {
-                $row['start_time'] = gmdate('Y-m-d\TH:i:s\Z');
-            }
-
-            // Serialize JSON columns
-            if (isset($row['input_events']) && (is_array($row['input_events']) || is_object($row['input_events']))) {
-                $row['input_events'] = json_encode($row['input_events']);
-            }
-            if (isset($row['match_events']) && (is_array($row['match_events']) || is_object($row['match_events']))) {
-                $row['match_events'] = json_encode($row['match_events']);
-            }
-
-            // Normalize numeric metrics
-            if (isset($row['problem_solving_index'])) {
-                $row['problem_solving_index'] = (float) $row['problem_solving_index'];
-            }
-            if (isset($row['creative_index'])) {
-                $row['creative_index'] = (float) $row['creative_index'];
-            }
-            if (isset($row['average_time_correct'])) {
-                $row['average_time_correct'] = (float) $row['average_time_correct'];
-            }
-            if (isset($row['average_time_failed'])) {
-                $row['average_time_failed'] = (float) $row['average_time_failed'];
-            }
-            if (isset($row['total_game_time'])) {
-                $row['total_game_time'] = (float) $row['total_game_time'];
-            }
-            if (isset($row['total_correct'])) {
-                $row['total_correct'] = (int) $row['total_correct'];
-            }
-            if (isset($row['total_failed'])) {
-                $row['total_failed'] = (int) $row['total_failed'];
-            }
-
-            // Filter columns to schema if schema is introspected
-            if ($allowedFields !== null) {
-                $cleanRow = [];
-                foreach ($row as $k => $v) {
-                    if (isset($allowedFields[$k])) {
-                        $cleanRow[$k] = $v;
-                    }
-                }
-            } else {
-                $cleanRow = $row;
-            }
-
-            $sanitizedRows[] = $cleanRow;
-        }
-
-        $insertPayload = $isBatch ? $sanitizedRows : $sanitizedRows[0];
-        $result = $bqService->create('recog_shape_recog', $insertPayload, $datasetId);
-
-        return [
-            'table'          => 'recog_shape_recog',
-            'dataset'        => $datasetId,
-            'inserted_count' => $result['inserted_count'] ?? count($sanitizedRows),
-            'method'         => $result['method'] ?? 'streaming_insert',
-            'session_id'     => $sanitizedRows[0]['session_id'] ?? null,
-            'records'        => $isBatch ? $sanitizedRows : $sanitizedRows[0],
-        ];
+        return $this->postGenericTable('recog_shape_recog', $rows, $datasetId, $identity, $isBatch);
     }
 
     /**
@@ -281,7 +258,7 @@ class GameBigQueryService
     }
 
     /**
-     * Privately defined generic handler that conforms to ANY arbitrary table name and data structure sent to it.
+     * Privately defined generic handler that extracts the relevant fields according to the target BigQuery table schema.
      */
     private function postGenericTable(string $tableName, array $rows, string $datasetId, $identity, bool $isBatch): array
     {
@@ -298,6 +275,12 @@ class GameBigQueryService
                     $allowedFields[$field['name']] = true;
                     $fieldTypes[$field['name']] = strtoupper($field['type'] ?? 'STRING');
                 }
+            }
+        } elseif (isset(self::KNOWN_TABLE_SCHEMAS[$tableName])) {
+            $allowedFields = [];
+            foreach (self::KNOWN_TABLE_SCHEMAS[$tableName] as $fieldName => $fieldType) {
+                $allowedFields[$fieldName] = true;
+                $fieldTypes[$fieldName] = strtoupper($fieldType);
             }
         }
 
@@ -320,16 +303,16 @@ class GameBigQueryService
             }
 
             // Auto-generate start_time / created_at if missing and present in schema
-            if (empty($row['start_time']) && isset($allowedFields['start_time'])) {
+            if (empty($row['start_time']) && ($allowedFields === null || isset($allowedFields['start_time']))) {
                 $row['start_time'] = gmdate('Y-m-d\TH:i:s\Z');
             }
-            if (empty($row['created_at']) && isset($allowedFields['created_at'])) {
+            if (empty($row['created_at']) && ($allowedFields === null || isset($allowedFields['created_at']))) {
                 $row['created_at'] = gmdate('Y-m-d\TH:i:s\Z');
             }
 
             $cleanRow = [];
             foreach ($row as $col => $val) {
-                // If schema is known, ignore fields not declared in the BigQuery table
+                // If schema is known, extract only fields declared in the BigQuery table
                 if ($allowedFields !== null && !isset($allowedFields[$col])) {
                     continue;
                 }
@@ -340,7 +323,7 @@ class GameBigQueryService
                     $cleanRow[$col] = is_string($val) ? $val : json_encode($val);
                 } elseif ($type === 'INTEGER' || $type === 'INT64') {
                     $cleanRow[$col] = $val !== null ? (int) $val : null;
-                } elseif ($type === 'FLOAT' || $type === 'FLOAT64') {
+                } elseif ($type === 'FLOAT' || $type === 'FLOAT64' || $type === 'NUMERIC') {
                     $cleanRow[$col] = $val !== null ? (float) $val : null;
                 } elseif ($type === 'BOOLEAN' || $type === 'BOOL') {
                     $cleanRow[$col] = $val !== null ? (bool) $val : null;
